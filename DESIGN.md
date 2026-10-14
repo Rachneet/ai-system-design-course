@@ -159,7 +159,7 @@ rounded:
   focus: "2px"
 spacing:
   rail: "304px"
-  measure: "66ch"
+  measure: "980px"
   gutter: "56px"
   frame: "28px"
   sheet-inset: "44px 48px 56px"
@@ -305,7 +305,7 @@ Dark mode swaps every token in place for neutral grays (the `*-dark` tokens): a 
 - **Week Title** (750, 25px, width 86%): home week titles and the Library heading.
 - **Title Small** (700, 21px, width 92%): subsections.
 - **Lede** (400, 20.5px, 1.55): the summary under a title, in Secondary Ink; 21px at 54ch on home.
-- **Body** (400, 18px, 1.68): reading text at a 66ch measure.
+- **Body** (400, 18px, 1.68): reading text across the full lesson width (up to 980px).
 - **Body Compact** (17px): body at phone width; also the size of minor headings (h4) and Library entry titles.
 - **Blurb** (Literata 400, 16.5px): the week blurb under each home week title, at 62ch in Secondary Ink.
 - **Worked** (Archivo 400, 16.5px, 1.6, tabular): the text of the worked-numbers callout.
@@ -398,6 +398,6 @@ Every container is square: zero radius on sheets, buttons, inputs, callouts, cod
 - **Don't** use Margin Red for anything other than the current position and the single next action.
 - **Don't** use blur shadows, gradients, or translucent content surfaces.
 - **Don't** round containers; circles belong to marks only.
-- **Don't** set reading prose in Archivo or let the reading column exceed 66ch.
+- **Don't** set reading prose in Archivo, or narrow prose into a column that no longer lines up with the figures.
 - **Don't** put small uppercase labels above headings; the only small labels are the field names inside header strip cells.
 - **Don't** turn the home into a card grid; sheets are listed as numbered rows.
