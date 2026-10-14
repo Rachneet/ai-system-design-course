@@ -18,11 +18,11 @@ WORKER=relay-worker@$PROJECT.iam.gserviceaccount.com
 DEPLOYER=relay-deployer@$PROJECT.iam.gserviceaccount.com
 
 echo "Create these secrets with: printf '%s' VALUE | gcloud secrets create NAME --data-file=-"
-echo "  anthropic-key, anthropic-key-staging, database-url, database-url-staging, jwks-url, jwt-issuer"
-for s in anthropic-key database-url jwks-url jwt-issuer anthropic-key-staging database-url-staging; do
+echo "  model-api-key, model-api-key-staging, database-url, database-url-staging, jwks-url, jwt-issuer"
+for s in model-api-key database-url jwks-url jwt-issuer model-api-key-staging database-url-staging; do
   gcloud secrets add-iam-policy-binding "$s" --member="serviceAccount:$API" --role=roles/secretmanager.secretAccessor || true
 done
-for s in anthropic-key database-url; do
+for s in model-api-key database-url; do
   gcloud secrets add-iam-policy-binding "$s" --member="serviceAccount:$WORKER" --role=roles/secretmanager.secretAccessor || true
 done
 

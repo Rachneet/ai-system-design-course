@@ -40,23 +40,31 @@ jobs:
         ports: ["5432:5432"]
         options: --health-cmd pg_isready --health-interval 5s --health-retries 10
     env:
-      ANTHROPIC_API_KEY: ${{ secrets.EVAL_ANTHROPIC_API_KEY }}   # a separate key with a spend cap
+      # Separate keys with spend caps. Set the one for your provider; pick models with repository variables
+      # EVAL_MODEL and EVAL_JUDGE_MODEL (provider:model specs, ideally the judge from a different family).
+      ANTHROPIC_API_KEY: ${{ secrets.EVAL_ANTHROPIC_API_KEY }}
+      OPENAI_API_KEY: ${{ secrets.EVAL_OPENAI_API_KEY }}
+      GEMINI_API_KEY: ${{ secrets.EVAL_GEMINI_API_KEY }}
+      OPENROUTER_API_KEY: ${{ secrets.EVAL_OPENROUTER_API_KEY }}
       RELAY_DATABASE_URL: postgresql://postgres:relay@localhost:5432/relay
-      RELAY_MODEL: claude-haiku-5-5
+      RELAY_MODEL: ${{ vars.EVAL_MODEL || 'claude-haiku-5-5' }}
+      RELAY_JUDGE_MODEL: ${{ vars.EVAL_JUDGE_MODEL || vars.EVAL_MODEL || 'claude-opus-5-5' }}
+      RELAY_MEMORY_MODEL: ${{ vars.EVAL_MODEL || 'claude-haiku-5-5' }}
+      HAS_KEY: ${{ secrets.EVAL_ANTHROPIC_API_KEY != '' || secrets.EVAL_OPENAI_API_KEY != '' || secrets.EVAL_GEMINI_API_KEY != '' || secrets.EVAL_OPENROUTER_API_KEY != '' }}
     steps:
-      - if: env.ANTHROPIC_API_KEY == ''
-        run: echo "::notice::EVAL_ANTHROPIC_API_KEY is not set, so the model eval gate was skipped."
-      - if: env.ANTHROPIC_API_KEY != ''
+      - if: env.HAS_KEY != 'true'
+        run: echo "::notice::No EVAL_*_API_KEY secret is set, so the model eval gate was skipped."
+      - if: env.HAS_KEY == 'true'
         uses: actions/checkout@v7
-      - if: env.ANTHROPIC_API_KEY != ''
+      - if: env.HAS_KEY == 'true'
         uses: astral-sh/setup-uv@v10.0.1
         with:
           enable-cache: true
-      - if: env.ANTHROPIC_API_KEY != ''
+      - if: env.HAS_KEY == 'true'
         run: |
           uv sync --locked
           uv run python -m evals.run --suite pr --trials 3 --save runs/pr.json | tee runs-report.txt
-      - if: always() && env.ANTHROPIC_API_KEY != ''
+      - if: always() && env.HAS_KEY == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: eval-results

@@ -1,7 +1,10 @@
 # Deploy Relay to Google Cloud Run on every push to main that touches relay/.
 # Does nothing until these repository variables exist (Settings > Secrets and variables > Actions > Variables):
 #   GCP_PROJECT_ID, GCP_REGION, GCP_WIF_PROVIDER, GCP_DEPLOY_SA
-# Secrets live in Google Secret Manager (anthropic-key, database-url, jwks-url, jwt-issuer), not in GitHub.
+# Optional variables pick the model provider: RELAY_MODEL (default claude-haiku-5-5, any provider:model spec) and
+# MODEL_KEY_VAR, the environment variable that provider's key goes in (default ANTHROPIC_API_KEY; OPENAI_API_KEY,
+# GEMINI_API_KEY, OPENROUTER_API_KEY, HF_TOKEN). Use RELAY_MODEL=vllm:... with VLLM_BASE_URL for a self-hosted model.
+# Secrets live in Google Secret Manager (model-api-key, database-url, jwks-url, jwt-issuer), not in GitHub.
 # One-time setup: relay/infra/setup_gcp.sh
 name: deploy
 on:
@@ -21,6 +24,8 @@ concurrency:
 env:
   REGION: ${{ vars.GCP_REGION }}
   PROJECT: ${{ vars.GCP_PROJECT_ID }}
+  MODEL: ${{ vars.RELAY_MODEL || 'claude-haiku-5-5' }}
+  KEY_VAR: ${{ vars.MODEL_KEY_VAR || 'ANTHROPIC_API_KEY' }}
 
 jobs:
   deploy:
@@ -50,8 +55,8 @@ jobs:
         run: |
           gcloud run deploy relay-api-staging --image $IMAGE --region $REGION --quiet \
             --service-account relay-api@$PROJECT.iam.gserviceaccount.com \
-            --set-secrets ANTHROPIC_API_KEY=anthropic-key-staging:latest,RELAY_DATABASE_URL=database-url-staging:latest,RELAY_JWKS_URL=jwks-url:latest,RELAY_JWT_ISSUER=jwt-issuer:latest \
-            --set-env-vars RELAY_MODEL=claude-haiku-5-5 \
+            --set-secrets $KEY_VAR=model-api-key-staging:latest,RELAY_DATABASE_URL=database-url-staging:latest,RELAY_JWKS_URL=jwks-url:latest,RELAY_JWT_ISSUER=jwt-issuer:latest \
+            --set-env-vars RELAY_MODEL=$MODEL \
             --concurrency 80 --min-instances 0 --max-instances 3 --timeout 300 --allow-unauthenticated
           URL=$(gcloud run services describe relay-api-staging --region $REGION --format 'value(status.url)')
           curl -fs $URL/readyz
@@ -60,7 +65,8 @@ jobs:
         run: |
           gcloud run deploy relay-api --image $IMAGE --region $REGION --quiet --no-traffic --tag canary \
             --service-account relay-api@$PROJECT.iam.gserviceaccount.com \
-            --set-secrets ANTHROPIC_API_KEY=anthropic-key:latest,RELAY_DATABASE_URL=database-url:latest,RELAY_JWKS_URL=jwks-url:latest,RELAY_JWT_ISSUER=jwt-issuer:latest \
+            --set-secrets $KEY_VAR=model-api-key:latest,RELAY_DATABASE_URL=database-url:latest,RELAY_JWKS_URL=jwks-url:latest,RELAY_JWT_ISSUER=jwt-issuer:latest \
+            --set-env-vars RELAY_MODEL=$MODEL \
             --concurrency 80 --min-instances 1 --max-instances 20 --timeout 300 --allow-unauthenticated
           CANARY=$(gcloud run services describe relay-api --region $REGION --format 'value(status.traffic[].url)' | tr ';' '\n' | grep canary)
           curl -fs $CANARY/readyz
@@ -74,5 +80,6 @@ jobs:
           gcloud run deploy relay-worker --image $IMAGE --region $REGION --quiet \
             --command python --args=-m,app.worker --no-cpu-throttling \
             --service-account relay-worker@$PROJECT.iam.gserviceaccount.com \
-            --set-secrets ANTHROPIC_API_KEY=anthropic-key:latest,RELAY_DATABASE_URL=database-url:latest \
+            --set-secrets $KEY_VAR=model-api-key:latest,RELAY_DATABASE_URL=database-url:latest \
+            --set-env-vars RELAY_MODEL=$MODEL \
             --min-instances 1 --max-instances 3 --no-allow-unauthenticated
