@@ -15,6 +15,8 @@ All links are free to read. Starred items (★) are the ones to read if you only
 - [Production Agentic RAG course](https://github.com/jamwithai/production-agentic-rag-course), Jam with AI. A 7-week build of an arXiv research assistant with a tagged code release per week: BM25 first, then hybrid search, Langfuse, caching, and LangGraph agentic RAG. Weekly write-ups on [the Jam with AI Substack](https://jamwithai.substack.com/).
 - [Anthropic Academy](https://anthropic.skilljar.com/) and [Anthropic's course notebooks](https://github.com/anthropics/courses): the Claude API, tool use, MCP, and agent skills.
 - [LLM Twin course](https://github.com/decodingai-magazine/llm-twin-course), Decoding AI, and the companion [LLM Engineer's Handbook code](https://github.com/PacktPublishing/LLM-Engineers-Handbook): end-to-end LLMOps on AWS.
+- [Gaurav Sen's YouTube channel](https://www.youtube.com/@gkcs): short videos on AI system design topics such as multi-agent failures, chatbot latency, long context windows, and speculative decoding. His [AI Engineering course](https://interviewready.io/course-page/ai-engineering) on InterviewReady ($55) covers LLM internals, optimisations, and reasoning.
+- [Krish Naik's Agentic AI roadmap](https://github.com/krishnaik06/Roadmap-To-Learn-Agentic-AI): free YouTube playlists for LangChain, LangGraph, MCP, CrewAI, and AutoGen. Strongest for breadth across frameworks.
 - [LangChain Academy](https://academy.langchain.com/) for LangGraph, and [DeepLearning.AI short courses](https://www.deeplearning.ai/short-courses/) for one-to-two-hour introductions to specific tools.
 
 ## Foundations
@@ -113,7 +115,10 @@ All links are free to read. Starred items (★) are the ones to read if you only
 
 ## Protocols and SDKs
 
-- [Model Context Protocol](https://modelcontextprotocol.io/).
+- [Model Context Protocol](https://modelcontextprotocol.io/) and [A2A, the agent-to-agent protocol](https://a2a-protocol.org/latest/).
+- [Code execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp), Anthropic.
+- Inference: [Optimizing your LLM in production](https://huggingface.co/blog/optimize-llm), [vLLM](https://docs.vllm.ai/en/latest/), [PagedAttention](https://arxiv.org/abs/2309.06180), [speculative decoding](https://arxiv.org/abs/2211.17192).
+- [Why Do Multi-Agent LLM Systems Fail?](https://arxiv.org/abs/2503.13657)
 - [Claude tool use docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview) and [Claude cookbooks](https://github.com/anthropics/claude-cookbooks).
 - Agent frameworks to compare: [Pydantic AI](https://github.com/pydantic/pydantic-ai), [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/), [Google ADK](https://google.github.io/adk-docs/), [LlamaIndex](https://docs.llamaindex.ai/en/stable/).
 - [Ollama](https://ollama.com/) for running open models locally.
