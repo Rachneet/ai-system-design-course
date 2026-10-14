@@ -1,0 +1,84 @@
+# Relay alert rules. SLO: 99.5% of chat turns complete without error over 30 days (error budget 0.5%).
+# Burn-rate thresholds follow the Google SRE workbook's multi-window method.
+groups:
+  - name: relay-slo
+    rules:
+      - record: relay:turn_error_ratio:rate5m
+        expr: sum(rate(relay_chat_turns_total{outcome="error"}[5m])) / clamp_min(sum(rate(relay_chat_turns_total[5m])), 1e-9)
+      - record: relay:turn_error_ratio:rate30m
+        expr: sum(rate(relay_chat_turns_total{outcome="error"}[30m])) / clamp_min(sum(rate(relay_chat_turns_total[30m])), 1e-9)
+      - record: relay:turn_error_ratio:rate1h
+        expr: sum(rate(relay_chat_turns_total{outcome="error"}[1h])) / clamp_min(sum(rate(relay_chat_turns_total[1h])), 1e-9)
+      - record: relay:turn_error_ratio:rate6h
+        expr: sum(rate(relay_chat_turns_total{outcome="error"}[6h])) / clamp_min(sum(rate(relay_chat_turns_total[6h])), 1e-9)
+
+      - alert: ChatAvailabilityFastBurn
+        expr: relay:turn_error_ratio:rate1h > (14.4 * 0.005) and relay:turn_error_ratio:rate5m > (14.4 * 0.005)
+        labels: {severity: page}
+        annotations:
+          summary: "Chat errors are burning the monthly error budget about 14x too fast (2% per hour)"
+          runbook: ops/runbooks/chat-availability.md
+      - alert: ChatAvailabilitySlowBurn
+        expr: relay:turn_error_ratio:rate6h > (6 * 0.005) and relay:turn_error_ratio:rate30m > (6 * 0.005)
+        labels: {severity: page}
+        annotations:
+          summary: "Chat errors are burning the error budget 6x too fast"
+          runbook: ops/runbooks/chat-availability.md
+
+  - name: relay-ai
+    rules:
+      - alert: ProviderErrorsHigh
+        expr: sum(rate(relay_provider_errors_total[5m])) > 0.2 or sum(rate(relay_llm_fallbacks_total{reason!="forced"}[5m])) > 0.2
+        for: 5m
+        labels: {severity: page}
+        annotations:
+          summary: "Model provider failing; traffic is retrying or on the fallback model"
+          runbook: ops/runbooks/provider-outage.md
+      - alert: CostSpike
+        expr: sum(increase(relay_llm_cost_usd_total[1h])) > 2 * sum(increase(relay_llm_cost_usd_total[1h] offset 1w)) and sum(increase(relay_llm_cost_usd_total[1h])) > 1
+        for: 15m
+        labels: {severity: page}
+        annotations:
+          summary: "Model spend this hour is more than twice the same hour last week"
+          runbook: ops/runbooks/cost-spike.md
+      - alert: AgentLooping
+        expr: sum(rate(relay_agent_stopped_total{reason="step_limit"}[15m])) / clamp_min(sum(rate(relay_chat_turns_total[15m])), 1e-9) > 0.02
+        for: 10m
+        labels: {severity: ticket}
+        annotations:
+          summary: "More than 2% of turns hit the step limit"
+          runbook: ops/runbooks/agent-quality.md
+      - alert: OnlineJudgeDrop
+        expr: |
+          (sum(increase(relay_online_judge_verdicts_total{verdict="pass"}[6h])) / clamp_min(sum(increase(relay_online_judge_verdicts_total[6h])), 1))
+          < 0.9 * (sum(increase(relay_online_judge_verdicts_total{verdict="pass"}[7d])) / clamp_min(sum(increase(relay_online_judge_verdicts_total[7d])), 1))
+          and sum(increase(relay_online_judge_verdicts_total[6h])) > 30
+        labels: {severity: ticket}
+        annotations:
+          summary: "Online judge pass rate fell more than 10% below its 7-day baseline (with at least 30 verdicts)"
+          runbook: ops/runbooks/agent-quality.md
+      - alert: GuardrailAnomaly
+        expr: |
+          sum(rate(relay_guardrail_fires_total[1h])) > 3 * sum(rate(relay_guardrail_fires_total[1h] offset 1d))
+          or (sum(rate(relay_chat_turns_total[6h])) > 0.1 and sum(increase(relay_guardrail_fires_total[6h])) == 0)
+        for: 30m
+        labels: {severity: ticket}
+        annotations:
+          summary: "Guardrail firing rate tripled, or dropped to zero (a broken guardrail looks like silence)"
+          runbook: ops/runbooks/agent-quality.md
+      - alert: PromptCacheBroken
+        expr: |
+          sum(rate(relay_llm_tokens_total{kind="cache_read"}[30m]))
+          / clamp_min(sum(rate(relay_llm_tokens_total{kind=~"input|cache_read|cache_write"}[30m])), 1) < 0.3
+          and sum(rate(relay_chat_turns_total[30m])) > 0.05
+        for: 30m
+        labels: {severity: ticket}
+        annotations:
+          summary: "Under 30% of input tokens are cache reads: a prompt prefix probably changed"
+          runbook: ops/runbooks/cost-spike.md
+      - alert: JobsDeadLettered
+        expr: sum(increase(relay_jobs_total{outcome="dead"}[1h])) > 0
+        labels: {severity: ticket}
+        annotations:
+          summary: "Background jobs exhausted their retries"
+          runbook: ops/runbooks/agent-quality.md

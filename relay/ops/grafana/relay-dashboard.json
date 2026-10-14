@@ -1,0 +1,432 @@
+{
+ "title": "Relay",
+ "uid": "relay",
+ "schemaVersion": 39,
+ "time": {
+  "from": "now-6h",
+  "to": "now"
+ },
+ "templating": {
+  "list": [
+   {
+    "name": "datasource",
+    "type": "datasource",
+    "query": "prometheus"
+   }
+  ]
+ },
+ "panels": [
+  {
+   "type": "row",
+   "title": "Health",
+   "id": 1,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 0
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Turns/s by outcome",
+   "id": 2,
+   "gridPos": {
+    "h": 7,
+    "w": 6,
+    "x": 0,
+    "y": 1
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "${datasource}"
+   },
+   "targets": [
+    {
+     "expr": "sum by (outcome) (rate(relay_chat_turns_total[5m]))",
+     "refId": "A"
+    }
+   ]
+  },
+  {
+   "type": "timeseries",
+   "title": "TTFT p95 (s)",
+   "id": 3,
+   "gridPos": {
+    "h": 7,
+    "w": 6,
+    "x": 6,
+    "y": 1
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "${datasource}"
+   },
+   "targets": [
+    {
+     "expr": "histogram_quantile(0.95, sum by (le) (rate(relay_ttft_seconds_bucket[5m])))",
+     "refId": "A"
+    }
+   ]
+  },
+  {
+   "type": "timeseries",
+   "title": "Turn p95 (s)",
+   "id": 4,
+   "gridPos": {
+    "h": 7,
+    "w": 6,
+    "x": 12,
+    "y": 1
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "${datasource}"
+   },
+   "targets": [
+    {
+     "expr": "histogram_quantile(0.95, sum by (le) (rate(relay_turn_seconds_bucket[5m])))",
+     "refId": "A"
+    }
+   ]
+  },
+  {
+   "type": "timeseries",
+   "title": "Provider errors/s",
+   "id": 5,
+   "gridPos": {
+    "h": 7,
+    "w": 6,
+    "x": 18,
+    "y": 1
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "${datasource}"
+   },
+   "targets": [
+    {
+     "expr": "sum by (type) (rate(relay_provider_errors_total[5m]))",
+     "refId": "A"
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "title": "Cost",
+   "id": 6,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 8
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "USD per hour by model",
+   "id": 7,
+   "gridPos": {
+    "h": 7,
+    "w": 6,
+    "x": 0,
+    "y": 9
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "${datasource}"
+   },
+   "targets": [
+    {
+     "expr": "sum by (model) (increase(relay_llm_cost_usd_total[1h]))",
+     "refId": "A"
+    }
+   ]
+  },
+  {
+   "type": "timeseries",
+   "title": "USD per turn",
+   "id": 8,
+   "gridPos": {
+    "h": 7,
+    "w": 6,
+    "x": 6,
+    "y": 9
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "${datasource}"
+   },
+   "targets": [
+    {
+     "expr": "sum(rate(relay_llm_cost_usd_total[1h])) / clamp_min(sum(rate(relay_chat_turns_total[1h])), 1e-9)",
+     "refId": "A"
+    }
+   ]
+  },
+  {
+   "type": "timeseries",
+   "title": "Cache read share of input",
+   "id": 9,
+   "gridPos": {
+    "h": 7,
+    "w": 6,
+    "x": 12,
+    "y": 9
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "${datasource}"
+   },
+   "targets": [
+    {
+     "expr": "sum(rate(relay_llm_tokens_total{kind=\"cache_read\"}[30m])) / clamp_min(sum(rate(relay_llm_tokens_total{kind=~\"input|cache_read|cache_write\"}[30m])), 1)",
+     "refId": "A"
+    }
+   ]
+  },
+  {
+   "type": "timeseries",
+   "title": "Tokens/s by kind",
+   "id": 10,
+   "gridPos": {
+    "h": 7,
+    "w": 6,
+    "x": 18,
+    "y": 9
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "${datasource}"
+   },
+   "targets": [
+    {
+     "expr": "sum by (kind) (rate(relay_llm_tokens_total[5m]))",
+     "refId": "A"
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "title": "Agent behaviour",
+   "id": 11,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 16
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Steps per turn p95",
+   "id": 12,
+   "gridPos": {
+    "h": 7,
+    "w": 6,
+    "x": 0,
+    "y": 17
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "${datasource}"
+   },
+   "targets": [
+    {
+     "expr": "histogram_quantile(0.95, sum by (le) (rate(relay_agent_steps_bucket[15m])))",
+     "refId": "A"
+    }
+   ]
+  },
+  {
+   "type": "timeseries",
+   "title": "Stops by reason",
+   "id": 13,
+   "gridPos": {
+    "h": 7,
+    "w": 6,
+    "x": 6,
+    "y": 17
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "${datasource}"
+   },
+   "targets": [
+    {
+     "expr": "sum by (reason) (rate(relay_agent_stopped_total[15m]))",
+     "refId": "A"
+    }
+   ]
+  },
+  {
+   "type": "timeseries",
+   "title": "Tool calls by outcome",
+   "id": 14,
+   "gridPos": {
+    "h": 7,
+    "w": 6,
+    "x": 12,
+    "y": 17
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "${datasource}"
+   },
+   "targets": [
+    {
+     "expr": "sum by (tool, outcome) (rate(relay_tool_calls_total[5m]))",
+     "refId": "A"
+    }
+   ]
+  },
+  {
+   "type": "timeseries",
+   "title": "Guardrail fires",
+   "id": 15,
+   "gridPos": {
+    "h": 7,
+    "w": 6,
+    "x": 18,
+    "y": 17
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "${datasource}"
+   },
+   "targets": [
+    {
+     "expr": "sum by (kind) (rate(relay_guardrail_fires_total[15m]))",
+     "refId": "A"
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "title": "Quality",
+   "id": 16,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 24
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Online judge pass rate",
+   "id": 17,
+   "gridPos": {
+    "h": 7,
+    "w": 6,
+    "x": 0,
+    "y": 25
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "${datasource}"
+   },
+   "targets": [
+    {
+     "expr": "sum by (judge) (increase(relay_online_judge_verdicts_total{verdict=\"pass\"}[6h])) / clamp_min(sum by (judge) (increase(relay_online_judge_verdicts_total[6h])), 1)",
+     "refId": "A"
+    }
+   ]
+  },
+  {
+   "type": "timeseries",
+   "title": "Thumbs down share",
+   "id": 18,
+   "gridPos": {
+    "h": 7,
+    "w": 6,
+    "x": 6,
+    "y": 25
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "${datasource}"
+   },
+   "targets": [
+    {
+     "expr": "sum(increase(relay_feedback_total{rating=\"down\"}[1d])) / clamp_min(sum(increase(relay_feedback_total[1d])), 1)",
+     "refId": "A"
+    }
+   ]
+  },
+  {
+   "type": "timeseries",
+   "title": "Routes",
+   "id": 19,
+   "gridPos": {
+    "h": 7,
+    "w": 6,
+    "x": 12,
+    "y": 25
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "${datasource}"
+   },
+   "targets": [
+    {
+     "expr": "sum by (route) (rate(relay_routes_total[15m]))",
+     "refId": "A"
+    }
+   ]
+  },
+  {
+   "type": "timeseries",
+   "title": "Fallbacks",
+   "id": 20,
+   "gridPos": {
+    "h": 7,
+    "w": 6,
+    "x": 18,
+    "y": 25
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "${datasource}"
+   },
+   "targets": [
+    {
+     "expr": "sum by (reason) (rate(relay_llm_fallbacks_total[15m]))",
+     "refId": "A"
+    }
+   ]
+  },
+  {
+   "type": "row",
+   "title": "Capacity",
+   "id": 21,
+   "gridPos": {
+    "h": 1,
+    "w": 24,
+    "x": 0,
+    "y": 32
+   }
+  },
+  {
+   "type": "timeseries",
+   "title": "Jobs by outcome",
+   "id": 22,
+   "gridPos": {
+    "h": 7,
+    "w": 6,
+    "x": 0,
+    "y": 33
+   },
+   "datasource": {
+    "type": "prometheus",
+    "uid": "${datasource}"
+   },
+   "targets": [
+    {
+     "expr": "sum by (kind, outcome) (rate(relay_jobs_total[15m]))",
+     "refId": "A"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,8 @@
+global:
+  scrape_interval: 15s
+rule_files: [alerts.yml]
+scrape_configs:
+  - job_name: relay-api
+    static_configs: [{targets: ["api:8080"]}]
+  - job_name: relay-worker
+    static_configs: [{targets: ["worker:8081"]}]

@@ -1,0 +1,21 @@
+# Local observability stack: docker compose -f docker-compose.yml -f ops/docker-compose.observability.yml up
+# Prometheus :9090, Grafana :3000 (anonymous admin, local only), Jaeger UI :16686, Collector OTLP :4318.
+services:
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    volumes: ["./ops/prometheus:/etc/prometheus:ro"]
+    ports: ["9090:9090"]
+  grafana:
+    image: grafana/grafana:11.2.0
+    environment: {GF_AUTH_ANONYMOUS_ENABLED: "true", GF_AUTH_ANONYMOUS_ORG_ROLE: Admin}
+    volumes: ["./ops/grafana:/var/lib/grafana/dashboards:ro"]
+    ports: ["3000:3000"]
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    ports: ["16686:16686"]
+  collector:
+    image: otel/opentelemetry-collector-contrib:0.111.0
+    command: ["--config=/etc/otelcol/config.yaml"]
+    environment: {TRACE_BACKEND_ENDPOINT: "http://jaeger:4318"}
+    volumes: ["./ops/otel-collector.yaml:/etc/otelcol/config.yaml:ro"]
+    ports: ["4318:4318"]
