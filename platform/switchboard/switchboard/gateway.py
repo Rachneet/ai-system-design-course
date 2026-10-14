@@ -1,4 +1,5 @@
-"""The data plane: POST /v1/messages, Anthropic Messages API compatible."""
+"""The data plane: POST /v1/messages (Anthropic Messages API) and POST /v1/chat/completions (OpenAI-compatible,
+for every other provider). Both run the same keys, limits, budgets, PII policy, fallbacks and metering."""
 
 import asyncio
 import json
@@ -18,11 +19,12 @@ from .keys import Caller, KeyStore
 from .ledger import LedgerWriter
 from .limits import Limiter
 from .pii import scrub_request
-from .upstream import RETRYABLE_STATUS, Breaker, Upstream, UsageParser
+from .upstream import RETRYABLE_STATUS, Breaker, ChatUpstream, ChatUsageParser, Upstream, UsageParser, chat_usage
 
 log = structlog.get_logger("switchboard")
 tracer = trace.get_tracer("switchboard")
 PASS_HEADERS = ("content-type", "retry-after", "anthropic-ratelimit-requests-remaining", "request-id")
+CHAT_PASS_HEADERS = ("content-type", "retry-after", "x-ratelimit-remaining-requests", "x-request-id")
 
 
 def error(status: int, kind: str, message: str, **headers: str) -> JSONResponse:
@@ -32,9 +34,18 @@ def error(status: int, kind: str, message: str, **headers: str) -> JSONResponse:
     )
 
 
+def chat_error(status: int, kind: str, message: str, **headers: str) -> JSONResponse:
+    """Errors in the OpenAI shape, so OpenAI-compatible SDKs surface them normally."""
+    return JSONResponse(
+        {"error": {"message": message, "type": kind, "code": None}}, status_code=status, headers=headers
+    )
+
+
 class Gateway:
-    def __init__(self, cfg: Settings, pool, upstream: Upstream):
+    def __init__(self, cfg: Settings, pool, upstream: Upstream, chat_upstreams: dict[str, ChatUpstream] | None = None):
         self.cfg, self.pool, self.upstream = cfg, pool, upstream
+        self.chat_upstreams = chat_upstreams or {}
+        pricing.register(cfg.chat_models)
         self.keys = KeyStore(pool, cfg.key_cache_ttl_s)
         self.limiter = Limiter(pool, cfg.heartbeat_s)
         self.budgets = Budgets(pool, cfg.budget_cache_s)
@@ -66,46 +77,64 @@ class Gateway:
         await self.ledger.stop()  # final flush: graceful shutdown loses nothing
         await self.limiter.stop()
 
-    async def handle(self, request: Request) -> Response:
+    async def handle(self, request: Request, chat: bool = False) -> Response:
         started = time.perf_counter()
         request_id = "sbr_" + uuid.uuid4().hex
-        with tracer.start_as_current_span("switchboard.messages") as span:
+        with tracer.start_as_current_span("switchboard.chat" if chat else "switchboard.messages") as span:
             span.set_attribute("switchboard.request_id", request_id)
-            response = await self._handle(request, request_id, started, span)
+            response = await self._handle(request, request_id, started, span, chat)
             response.headers["x-request-id"] = request_id
             return response
 
-    async def _handle(self, request: Request, request_id: str, started: float, span) -> Response:
+    def _serves(self, model: str, chat: bool) -> bool:
+        """Each model belongs to one API style: chat_models to /v1/chat/completions, the rest to /v1/messages."""
+        in_chat = model in self.cfg.chat_models
+        return (
+            pricing.known(model)
+            and in_chat == chat
+            and (not chat or self.cfg.chat_models[model].get("provider") in self.chat_upstreams)
+        )
+
+    async def _send(self, candidate: str, payload: bytes, chat: bool, version: str, betas: list[str]):
+        if not chat:
+            return await self.upstream.send(payload, version, betas)
+        spec = self.cfg.chat_models[candidate]
+        if spec.get("upstream_model"):
+            payload = json.dumps(json.loads(payload) | {"model": spec["upstream_model"]}).encode()
+        return await self.chat_upstreams[spec["provider"]].send(payload)
+
+    async def _handle(self, request: Request, request_id: str, started: float, span, chat: bool = False) -> Response:
+        fail = chat_error if chat else error  # errors in the shape the caller's SDK expects
         presented = request.headers.get("x-api-key") or request.headers.get("authorization", "").removeprefix("Bearer ")
         caller = await self.keys.verify(presented)
         if caller is None:
             metrics.rejections.labels(reason="auth").inc()
-            return error(401, "authentication_error", "Invalid, expired, or revoked Switchboard key.")
+            return fail(401, "authentication_error", "Invalid, expired, or revoked Switchboard key.")
         span.set_attributes({"switchboard.app": caller.app_id, "switchboard.team": caller.team_id})
 
         raw = await request.body()
         if len(raw) > self.cfg.max_body_bytes:
             metrics.rejections.labels(reason="too_large").inc()
-            return error(413, "request_too_large", f"Request body exceeds {self.cfg.max_body_bytes} bytes.")
+            return fail(413, "request_too_large", f"Request body exceeds {self.cfg.max_body_bytes} bytes.")
         try:
             body = json.loads(raw)
             model = body["model"]
             assert isinstance(model, str) and isinstance(body.get("messages"), list)
         except (ValueError, KeyError, AssertionError, TypeError):
             metrics.rejections.labels(reason="invalid").inc()
-            return error(400, "invalid_request_error", "Body must be a Messages API request with model and messages.")
+            return fail(400, "invalid_request_error", "Body must be a request with a model and a messages list.")
 
-        if not pricing.known(model):
+        if not self._serves(model, chat):
             metrics.rejections.labels(reason="unknown_model").inc()
-            return error(400, "invalid_request_error", f"Model {model} is not available through this gateway.")
+            return fail(400, "invalid_request_error", f"Model {model} is not available through this gateway.")
         if caller.allowed_models and model not in caller.allowed_models:
             metrics.rejections.labels(reason="model_policy").inc()
-            return error(403, "permission_error", f"This app may not use {model}.")
+            return fail(403, "permission_error", f"This app may not use {model}.")
 
         wait = self.limiter.take(f"rpm:{caller.app_id}", caller.rpm)
         if wait:
             metrics.rejections.labels(reason="rpm").inc()
-            return error(
+            return fail(
                 429,
                 "rate_limit_error",
                 "Request rate limit reached for this app.",
@@ -115,13 +144,13 @@ class Gateway:
         wait = self.limiter.take(f"tpm:{caller.app_id}", caller.tpm, estimate)
         if wait:
             metrics.rejections.labels(reason="tpm").inc()
-            return error(
+            return fail(
                 429, "rate_limit_error", "Token rate limit reached for this app.", **{"retry-after": str(int(wait) + 1)}
             )
         scope = await self.budgets.exhausted(caller.org_id, caller.team_id, caller.app_id)
         if scope:
             metrics.rejections.labels(reason=f"budget_{scope}").inc()
-            return error(
+            return fail(
                 429,
                 "rate_limit_error",
                 f"The monthly budget for this {scope} is used up.",
@@ -140,13 +169,16 @@ class Gateway:
         if caller.log_bodies and audit_body is None:
             audit_body = scrub_request(body)[0]
 
+        if chat and body.get("stream") and not (body.get("stream_options") or {}).get("include_usage"):
+            # Only the final chunk carries usage, and only when asked for: needed for metering and budgets.
+            forward = json.dumps(json.loads(forward) | {"stream_options": {"include_usage": True}}).encode()
         version = request.headers.get("anthropic-version", self.cfg.default_anthropic_version)
         requested_betas = [b.strip() for b in request.headers.get("anthropic-beta", "").split(",") if b.strip()]
         betas = [b for b in requested_betas if b in self.cfg.allowed_beta_headers]
         candidates = [model] + [
             m
             for m in self.cfg.fallbacks.get(model, [])
-            if pricing.known(m) and (not caller.allowed_models or m in caller.allowed_models)
+            if self._serves(m, chat) and (not caller.allowed_models or m in caller.allowed_models)
         ]
         pre_upstream = time.perf_counter() - started
         metrics.overhead.observe(pre_upstream)
@@ -159,7 +191,7 @@ class Gateway:
                 continue
             payload = forward if candidate == model else json.dumps(json.loads(forward) | {"model": candidate}).encode()
             try:
-                attempt = await self.upstream.send(payload, version, betas)
+                attempt = await self._send(candidate, payload, chat, version, betas)
             except httpx.TransportError as e:
                 breaker.failure()
                 metrics.upstream_errors.labels(model=candidate, kind=type(e).__name__).inc()
@@ -193,7 +225,7 @@ class Gateway:
             }
             self.later(self.finish(caller, event, estimate, audit_body, None))
             metrics.requests.labels(model=model, status_class="5xx").inc()
-            return error(502, "api_error", f"No upstream model could serve the request ({last_error}).")
+            return fail(502, "api_error", f"No upstream model could serve the request ({last_error}).")
         if served != model:
             metrics.fallbacks.labels(requested=model, served=served).inc()
         span.set_attributes(
@@ -203,7 +235,7 @@ class Gateway:
                 "http.response.status_code": resp.status_code,
             }
         )
-        headers = {h: resp.headers[h] for h in PASS_HEADERS if h in resp.headers}
+        headers = {h: resp.headers[h] for h in (CHAT_PASS_HEADERS if chat else PASS_HEADERS) if h in resp.headers}
         headers["x-switchboard-model"] = served
         if set(requested_betas) - set(betas):
             headers["x-switchboard-dropped-betas"] = ",".join(sorted(set(requested_betas) - set(betas)))
@@ -211,7 +243,7 @@ class Gateway:
         if event["stream"] and resp.status_code == 200:
             headers["server-timing"] = f"gateway;dur={pre_upstream * 1000:.2f}"
             return StreamingResponse(
-                self._stream(resp, caller, event, served, started, estimate, audit_body),
+                self._stream(resp, caller, event, served, started, estimate, audit_body, chat),
                 status_code=200,
                 headers=headers,
                 media_type="text/event-stream",
@@ -226,8 +258,12 @@ class Gateway:
         usage, error_type = {}, None
         try:
             parsed = json.loads(data)
-            usage = {k: v for k, v in (parsed.get("usage") or {}).items() if isinstance(v, int)}
-            error_type = (parsed.get("error") or {}).get("type") if parsed.get("type") == "error" else None
+            if chat:
+                usage = chat_usage(parsed.get("usage"))
+                error_type = (parsed.get("error") or {}).get("type") if parsed.get("error") else None
+            else:
+                usage = {k: v for k, v in (parsed.get("usage") or {}).items() if isinstance(v, int)}
+                error_type = (parsed.get("error") or {}).get("type") if parsed.get("type") == "error" else None
         except ValueError:
             error_type = "unparseable_response"
         elapsed = int((time.perf_counter() - started) * 1000)
@@ -252,9 +288,17 @@ class Gateway:
         )
 
     async def _stream(
-        self, resp: httpx.Response, caller: Caller, event: dict, served: str, started: float, estimate: int, audit_body
+        self,
+        resp: httpx.Response,
+        caller: Caller,
+        event: dict,
+        served: str,
+        started: float,
+        estimate: int,
+        audit_body,
+        chat: bool = False,
     ):
-        parser, first, status = UsageParser(), None, 200
+        parser, first, status = (ChatUsageParser() if chat else UsageParser()), None, 200
         captured: list[bytes] = []
         try:
             async for chunk in resp.aiter_raw():

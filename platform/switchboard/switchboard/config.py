@@ -21,6 +21,14 @@ class Settings(BaseSettings):
         "claude-sonnet-5-5": ["claude-haiku-5-5"],
     }
 
+    # OpenAI-compatible data plane (/v1/chat/completions). Providers are any Chat Completions endpoints: OpenAI,
+    # Gemini's OpenAI-compatible endpoint, OpenRouter, Hugging Face Inference Providers, vLLM, Ollama, a LiteLLM proxy.
+    # providers: {"openai": {"base_url": "https://api.openai.com/v1", "api_key": "sk-..."}}
+    # chat_models: {"gpt-5": {"provider": "openai", "prices": [in, cache_write, cache_read, out]}} (USD per million)
+    # A chat model may set "upstream_model" when the provider's name differs from the one apps use.
+    providers: dict[str, dict] = Field(default={}, repr=False)
+    chat_models: dict[str, dict] = {}
+
     max_body_bytes: int = 8_000_000
     connect_timeout_s: float = 5.0
     read_timeout_s: float = 600.0

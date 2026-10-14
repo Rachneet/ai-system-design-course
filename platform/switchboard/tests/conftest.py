@@ -63,6 +63,23 @@ async def gw(pg_uri, schema, upstream):
         allowed_beta_headers=["prompt-caching-2024-07-31"],
         breaker_threshold=3,
         budget_cache_s=0.0,
+        providers={
+            "openai": {"base_url": "http://upstream/v1", "api_key": "openai-secret"},
+            "local": {"base_url": "http://upstream/p2/v1"},  # a keyless self-hosted server, e.g. vLLM or Ollama
+        },
+        chat_models={
+            "gpt-test": {"provider": "openai", "prices": [1.0, 0.0, 0.1, 4.0]},
+            "llama-local": {
+                "provider": "local",
+                "prices": [0, 0, 0, 0],
+                "upstream_model": "meta-llama/Llama-3.3-70B-Instruct",
+            },
+        },
+        fallbacks={
+            "claude-opus-5-5": ["claude-sonnet-5-5"],
+            "claude-sonnet-5-5": ["claude-haiku-5-5"],
+            "gpt-test": ["llama-local"],
+        },
     )
     app = create_app(cfg, transport=httpx.ASGITransport(app=upstream))
     transport = httpx.ASGITransport(app=app)
@@ -82,4 +99,8 @@ async def provision(client, *, app_id="support-bot", team="cx", org="acme", **po
 
 
 def msg(model="claude-sonnet-5-5", text="hello", **extra) -> dict:
+    return {"model": model, "max_tokens": 256, "messages": [{"role": "user", "content": text}]} | extra
+
+
+def chat(model="gpt-test", text="hello", **extra) -> dict:
     return {"model": model, "max_tokens": 256, "messages": [{"role": "user", "content": text}]} | extra

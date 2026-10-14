@@ -1,8 +1,10 @@
 # Switchboard: an AI gateway
 
-One endpoint between every internal app and the model provider. Apps call Switchboard exactly as they would call the
-Anthropic Messages API (same request, same streaming events, same error shape), with a Switchboard key instead of a
-provider key. Part of the enterprise track of the [AI System Design Course](../../README.md).
+One endpoint between every internal app and every model provider. Apps call Switchboard exactly as they would call
+the provider (same request, same streaming events, same error shape), with a Switchboard key instead of a provider
+key. Two API styles are served: the Anthropic Messages API at `/v1/messages`, and the OpenAI-compatible Chat
+Completions API at `/v1/chat/completions`, which reaches OpenAI, Google Gemini, OpenRouter, Hugging Face Inference
+Providers, and self-hosted vLLM or Ollama servers. Part of the enterprise track of the [AI System Design Course](../../README.md).
 
 ## What it does
 
@@ -10,6 +12,7 @@ provider key. Part of the enterprise track of the [AI System Design Course](../.
 |---|---|
 | Identity | Per-app keys `sbk_<id>_<secret>`; only a SHA-256 is stored; expiry and instant revocation |
 | Tenancy | org → team → app, each with an optional monthly budget |
+| Providers | A model catalog maps each model to a provider; fallbacks may cross providers (a hosted model falling back to a self-hosted one) |
 | Policy | Allowed models per app, enforced on fallbacks too; allow-listed `anthropic-beta` headers |
 | Cost and abuse limits | Requests and tokens per minute per app; monthly budgets at every level |
 | Reliability | Timeouts, circuit breakers, fallback chains tried before the first byte reaches the client |
@@ -46,6 +49,35 @@ import anthropic
 client = anthropic.Anthropic(base_url="http://localhost:8000", api_key="sbk_...")
 ```
 
+Other providers go in two settings (JSON in environment variables). Prices are yours to copy from each provider's
+pricing page; they change too often to hard-code:
+
+```bash
+export SWITCHBOARD_PROVIDERS='{
+  "openai": {"base_url": "https://api.openai.com/v1", "api_key": "sk-..."},
+  "gemini": {"base_url": "https://generativelanguage.googleapis.com/v1beta/openai/", "api_key": "..."},
+  "openrouter": {"base_url": "https://openrouter.ai/api/v1", "api_key": "..."},
+  "local": {"base_url": "http://vllm:8000/v1"}
+}'
+export SWITCHBOARD_CHAT_MODELS='{
+  "gpt-5": {"provider": "openai", "prices": [0, 0, 0, 0]},
+  "llama-70b": {"provider": "local", "upstream_model": "meta-llama/Llama-3.3-70B-Instruct", "prices": [0, 0, 0, 0]}
+}'
+export SWITCHBOARD_FALLBACKS='{"gpt-5": ["llama-70b"]}'  # replaces the default chains: list them all
+```
+
+Then point any OpenAI-compatible SDK at it:
+
+```python
+from openai import OpenAI
+
+client = OpenAI(base_url="http://localhost:8000/v1", api_key="sbk_...")
+client.chat.completions.create(model="gpt-5", messages=[{"role": "user", "content": "hi"}])
+```
+
+Streaming requests get `stream_options.include_usage` added when missing, because only the final chunk carries token
+usage; that is the one change the gateway makes to these bodies, and it does not affect the cached prompt prefix.
+
 Chargeback: `GET /admin/usage?month=2026-10&group_by=team`.
 
 ## Tests and measurements
@@ -75,5 +107,5 @@ cannot show (the mock provider shares the CPU, so end-to-end capacity needs sepa
 
 ## Not built yet
 
-OpenAI-compatible endpoint; per-tenant data-residency routing; Redis-backed exact global limits; SSO for `/admin`;
+Responses API and embeddings endpoints; per-tenant data-residency routing; Redis-backed exact global limits; SSO for `/admin`;
 signed images (cosign); OpenTofu deployment. Each is a planned follow-up in `docs/enterprise-track.md`.

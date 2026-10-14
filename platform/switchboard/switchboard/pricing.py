@@ -9,6 +9,13 @@ PRICES = {  # (input, 5-minute cache write, cache read, output)
 }
 
 
+def register(chat_models: dict[str, dict]) -> None:
+    """Add prices for OpenAI-compatible models from configuration (other providers' prices change too often to
+    hard-code; copy them from each provider's pricing page)."""
+    for name, spec in chat_models.items():
+        PRICES[name] = tuple(float(p) for p in spec.get("prices", (0, 0, 0, 0)))
+
+
 def known(model: str) -> bool:
     return model in PRICES
 

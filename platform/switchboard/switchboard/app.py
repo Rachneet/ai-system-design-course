@@ -1,4 +1,4 @@
-"""Switchboard: an AI gateway. Data plane at /v1/messages, control plane at /admin."""
+"""Switchboard: an AI gateway. Data plane at /v1/messages and /v1/chat/completions, control plane at /admin."""
 
 import logging
 from contextlib import asynccontextmanager
@@ -12,7 +12,7 @@ from .admin import router as admin_router
 from .config import Settings, settings
 from .db import open_pool
 from .gateway import Gateway
-from .upstream import Upstream
+from .upstream import ChatUpstream, Upstream
 
 structlog.configure(
     processors=[
@@ -27,8 +27,8 @@ structlog.configure(
 def create_app(cfg: Settings = settings, transport=None) -> FastAPI:
     @asynccontextmanager
     async def lifespan(app: FastAPI):
-        if not cfg.anthropic_api_key and transport is None:
-            raise RuntimeError("SWITCHBOARD_ANTHROPIC_API_KEY is required")
+        if not cfg.anthropic_api_key and not cfg.providers and transport is None:
+            raise RuntimeError("Set SWITCHBOARD_ANTHROPIC_API_KEY or SWITCHBOARD_PROVIDERS")
         app.state.settings = cfg
         app.state.pool = await open_pool(cfg.database_url, cfg.db_schema)
         upstream = Upstream(
@@ -38,11 +38,19 @@ def create_app(cfg: Settings = settings, transport=None) -> FastAPI:
             cfg.read_timeout_s,
             transport=transport,
         )
-        app.state.gateway = Gateway(cfg, app.state.pool, upstream)
+        chat_upstreams = {
+            name: ChatUpstream(
+                p["base_url"], p.get("api_key", ""), cfg.connect_timeout_s, cfg.read_timeout_s, transport
+            )
+            for name, p in cfg.providers.items()
+        }
+        app.state.gateway = Gateway(cfg, app.state.pool, upstream, chat_upstreams)
         await app.state.gateway.start()
         yield
         await app.state.gateway.stop()  # finish requests' bookkeeping and flush the ledger before exiting
         await upstream.close()
+        for c in chat_upstreams.values():
+            await c.close()
         await app.state.pool.close()
 
     app = FastAPI(title="Switchboard", version="0.1.0", lifespan=lifespan)
@@ -52,6 +60,11 @@ def create_app(cfg: Settings = settings, transport=None) -> FastAPI:
     async def messages(request: Request) -> Response:
         """Anthropic Messages API, proxied with keys, limits, budgets, PII policy, fallbacks and metering."""
         return await request.app.state.gateway.handle(request)
+
+    @app.post("/v1/chat/completions", tags=["data plane"])
+    async def chat_completions(request: Request) -> Response:
+        """OpenAI-compatible Chat Completions for every other provider, with the same controls and metering."""
+        return await request.app.state.gateway.handle(request, chat=True)
 
     @app.get("/healthz", tags=["ops"])
     async def healthz():

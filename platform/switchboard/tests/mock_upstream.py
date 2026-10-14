@@ -84,3 +84,47 @@ async def messages(request: Request):
             yield f"event: {f['type']}\ndata: {json.dumps(f)}\n\n".encode()
 
     return StreamingResponse(events(), media_type="text/event-stream")
+
+
+def chat_usage_for(body: dict) -> dict:
+    prompt = max(1, len(json.dumps(body.get("messages", []))) // 4)
+    return {"prompt_tokens": prompt + 100, "completion_tokens": 9, "prompt_tokens_details": {"cached_tokens": 100}}
+
+
+@app.post("/v1/chat/completions")
+@app.post("/p2/v1/chat/completions")
+async def chat_completions(request: Request):
+    """A stand-in for any OpenAI-compatible provider. /p2 is a second provider, for cross-provider fallback."""
+    raw = await request.body()
+    app.state.received.append(raw)
+    app.state.headers.append(dict(request.headers) | {"path": request.url.path})
+    body = json.loads(raw)
+    model = body["model"]
+    if model in app.state.fail:
+        return JSONResponse({"error": {"message": "busy", "type": "server_error"}}, status_code=app.state.fail[model])
+    usage = chat_usage_for(body)
+    if not body.get("stream"):
+        return JSONResponse(
+            {
+                "id": "chatcmpl-1",
+                "object": "chat.completion",
+                "model": model,
+                "choices": [
+                    {
+                        "index": 0,
+                        "message": {"role": "assistant", "content": f"echo from {model}"},
+                        "finish_reason": "stop",
+                    }
+                ],
+                "usage": usage,
+            }
+        )
+
+    async def events():
+        yield f"data: {json.dumps({'model': model, 'choices': [{'index': 0, 'delta': {'content': f'streamed from {model}'}}]})}\n\n".encode()
+        yield f"data: {json.dumps({'model': model, 'choices': [{'index': 0, 'delta': {}, 'finish_reason': 'stop'}]})}\n\n".encode()
+        if (body.get("stream_options") or {}).get("include_usage"):
+            yield f"data: {json.dumps({'model': model, 'choices': [], 'usage': usage})}\n\n".encode()
+        yield b"data: [DONE]\n\n"
+
+    return StreamingResponse(events(), media_type="text/event-stream")
