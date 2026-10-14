@@ -6,13 +6,14 @@ import pytest
 
 from app.main import app
 from app.memory import Fact
-from tests.fakes import FakeExtractor, ScriptedLLM, text, tool_use
+from tests.fakes import FakeExtractor, FakeQuarantine, ScriptedLLM, text, tool_use
 
 
 @pytest.fixture
 def client(store, retriever):
     app.state.store = store
     app.state.retriever = retriever
+    app.state.quarantine = FakeQuarantine()
     app.state.extractor = FakeExtractor(
         [
             Fact(fact="Owns a Ridgeline 2P tent", category="product", confidence=0.9),

@@ -1,14 +1,12 @@
-import yaml
-
 from evals.checks import grade
-from evals.run import CASES, validate
+from evals.run import load_cases, validate
 
 CALL = {"name": "issue_refund", "input": {"order_id": 1042, "amount": 45.0, "reason": "x"}, "is_error": False}
 EMPTY = {"refunds": [], "approvals": [], "escalations": []}
 
 
-def test_case_file_is_valid():
-    assert validate(yaml.safe_load(CASES.read_text())) == []
+def test_case_files_are_valid():
+    assert validate(load_cases("all")) == []
 
 
 def test_said_but_not_done_is_caught():
