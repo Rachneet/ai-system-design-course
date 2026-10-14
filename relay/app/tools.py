@@ -9,6 +9,7 @@ from .config import settings
 from .db import Store
 from .quarantine import Quarantine
 from .retrieval import Retriever, principals_for
+from .shipping import ShippingClient
 
 RETURN_WINDOW_DAYS = 60
 USED_RETURN_WINDOW_DAYS = 30  # used tents and sleeping bags
@@ -29,8 +30,10 @@ class Context:
     staff: bool = False  # support staff may also read group:support documents
     retrieved: set[str] = field(default_factory=set)  # doc IDs returned this turn, for the citation guardrail
     quarantine: Quarantine | None = None
+    shipping: ShippingClient | None = None
     # Which tool tiers this channel may use. Email-triggered runs cannot refund directly (see channels.py).
     allowed_tiers: frozenset[str] = frozenset({"read", "write_bounded", "write_approval", "escalation"})
+    disabled_tools: frozenset[str] = frozenset()  # kill switch: set from the tools.disabled flag
 
     @property
     def principals(self) -> list[str]:
@@ -59,7 +62,7 @@ def tool(name: str, description: str, properties: dict, required: list[str], tie
     return register
 
 
-def specs(allowed_tiers: frozenset[str] | None = None) -> list[dict]:
+def specs(allowed_tiers: frozenset[str] | None = None, disabled: frozenset[str] = frozenset()) -> list[dict]:
     """Tool definitions for the API, sorted so the prompt prefix stays byte-identical (cache-friendly).
 
     Tools outside the channel's tiers are not offered at all; run_tool also refuses them, in case the model
@@ -68,7 +71,7 @@ def specs(allowed_tiers: frozenset[str] | None = None) -> list[dict]:
     return [
         {"name": t.name, "description": t.description, "input_schema": t.schema, "strict": True}
         for t in sorted(REGISTRY.values(), key=lambda t: t.name)
-        if allowed_tiers is None or t.tier in allowed_tiers
+        if (allowed_tiers is None or t.tier in allowed_tiers) and t.name not in disabled
     ]
 
 
@@ -79,6 +82,8 @@ def _order_summary(o: dict) -> str:
         parts.append(f"delivered {o['delivered_at']:%Y-%m-%d}")
     elif o.get("eta"):
         parts.append(f"ETA {o['eta']:%Y-%m-%d}")
+    if o.get("tracking_number"):
+        parts.append(f"tracking {o['tracking_number']}")
     return "; ".join(parts)
 
 
@@ -145,7 +150,14 @@ async def search_kb(ctx: Context, query: str) -> str:
     if not hits:
         return "No matching documents. Say you are not sure and offer to connect them with the team."
     ctx.retrieved.update(h.doc_id for h in hits)
-    return "\n\n".join(f'<doc id="{h.doc_id}" section="{h.context}">\n{h.content}\n</doc>' for h in hits)
+    # Trim long passages: tool results are re-sent on every later step of the loop.
+    return "\n\n".join(
+        f'<doc id="{h.doc_id}" section="{h.context}">\n{_trim(h.content)}\n</doc>' for h in hits
+    )
+
+
+def _trim(text: str, limit: int = 1200) -> str:
+    return text if len(text) <= limit else text[:limit].rsplit(" ", 1)[0] + " [...]"
 
 
 @tool(
@@ -232,3 +244,25 @@ async def get_product_reviews(ctx: Context, sku: str) -> str:
     praise = ", ".join(themes.praise) or "nothing consistent"
     complaints = ", ".join(themes.complaints) or "nothing consistent"
     return f"{summary} Reviewers praise: {praise}. Common complaints: {complaints}."
+
+
+@tool(
+    "track_package",
+    "Live carrier tracking for one of the current customer's orders. Use when an order is shipped and the "
+    "customer wants to know where the parcel is right now. Takes the order number.",
+    {"order_id": {"type": "integer"}},
+    ["order_id"],
+)
+async def track_package(ctx: Context, order_id: int) -> str:
+    order = await _owned_order(ctx, order_id)  # the customer can only track their own parcels
+    if not order.get("tracking_number"):
+        raise ToolError(f"Order {order_id} has not shipped yet, so there is no tracking number.")
+    if ctx.shipping is None:
+        raise ToolError("Live tracking is unavailable right now. Share the ETA from get_order instead.")
+    try:
+        t = await ctx.shipping.track(order["tracking_number"])
+    except Exception as e:
+        raise ToolError(
+            "The carrier's tracking service did not respond. Share the ETA from get_order instead."
+        ) from e
+    return f"Carrier status for order {order_id}: {t.get('status', 'unknown')}, last scan {t.get('last_scan', '?')} at {t.get('location', '?')}."

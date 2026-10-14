@@ -30,10 +30,11 @@ async def seed(store: Store, data: dict, now: datetime) -> None:
                     "price": o["total"],
                 }
             ]
+            tracking = f"NW{o['id']}" if o.get("status") in ("shipped", "delivered") else None
             await c.execute(
-                "INSERT INTO orders (id, customer_id, status, total, items, eta, delivered_at) "
-                "VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                (o["id"], o["customer_id"], o["status"], o["total"], Jsonb(items), eta, delivered),
+                "INSERT INTO orders (id, customer_id, status, total, items, eta, delivered_at, tracking_number) "
+                "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                (o["id"], o["customer_id"], o["status"], o["total"], Jsonb(items), eta, delivered, tracking),
             )
         for rv in data.get("reviews", []):
             await c.execute(
