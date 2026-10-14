@@ -5,7 +5,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=JetBrains+Mono:wght@400;600&family=Kalam:wght@400;700&display=swap">
 <style>
 /* Layout: a plain neutral frame (index rail, outer margin); each lesson is a numbered worksheet on a white sheet
-   with a calm 66ch reading column and a margin index. High contrast first: no textures behind text. */
+   with a 66ch reading column; figures, tables and code use the full width. The lesson outline lives in the index
+   rail under the current lesson. High contrast first: no textures behind text. */
 :root {
   --pad: #f2f3f5;          /* page frame: plain neutral, no texture */
   --pad-line: #e3e5e9;
@@ -95,6 +96,10 @@ button { font: inherit; color: inherit; }
 .nav a { display: grid; grid-template-columns: 16px 28px 1fr; gap: 8px; align-items: start; padding: 6px 6px 6px 2px; color: var(--ink); text-decoration: none; }
 .nav a:hover { background: color-mix(in srgb, var(--sheet) 70%, transparent); }
 .nav .no { font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); padding-top: 1px; font-variant-numeric: tabular-nums; }
+.toc { list-style: none; margin: 2px 0 10px 54px; padding: 0 0 0 10px; border-left: 1px solid var(--rule); }
+.toc a { display: block; padding: 3px 0; font-size: 13px; line-height: 1.3; color: var(--ink-2); text-decoration: none; }
+.toc a:hover { color: var(--ink); text-decoration: underline; text-decoration-color: var(--pen); }
+.toc a.on { color: var(--ink); font-weight: 600; box-shadow: -11px 0 0 -9px var(--pen); }
 .nav a[aria-current="page"] { background: var(--sheet); }
 .nav a[aria-current="page"] .no { color: var(--red); font-weight: 600; }
 .nav a[aria-current="page"] .t { text-decoration: underline; text-decoration-color: var(--red); text-decoration-thickness: 2px; text-underline-offset: 4px; }
@@ -127,9 +132,9 @@ main { min-width: 0; padding-block: 28px 80px; padding-left: max(28px, env(safe-
 .header-strip small { display: block; font-size: 11px; color: var(--ink-2); letter-spacing: .02em; }
 .header-strip span { display: block; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .header-strip .sheetno span { font-family: var(--font-mono); font-size: 15px; }
-.sheet-body { display: grid; grid-template-columns: minmax(0, var(--measure)) 230px; gap: 0 56px; padding: 44px 48px 56px; justify-content: space-between; }
-.sheet-body.wide { grid-template-columns: minmax(0, 1fr); }
-article { min-width: 0; }
+.sheet-body { padding: 44px 48px 56px; }
+/* One column. Prose keeps the reading measure; figures, tables, code, calculators and quizzes use the full width. */
+article { min-width: 0; max-width: 980px; }
 
 h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.12; text-wrap: balance; color: var(--ink); }
 h1 { font-size: clamp(34px, 4.4vw, 52px); font-weight: 800; font-stretch: 82%; letter-spacing: -0.02em; margin: 0 0 16px; }
@@ -137,7 +142,8 @@ h1 { font-size: clamp(34px, 4.4vw, 52px); font-weight: 800; font-stretch: 82%; l
 .body h2 { font-size: 28px; font-weight: 750; font-stretch: 88%; letter-spacing: -0.01em; margin: 2.3em 0 .55em; padding-top: 14px; border-top: 1px solid var(--ink); }
 .body h3 { font-size: 21px; font-weight: 700; font-stretch: 92%; margin: 1.9em 0 .4em; }
 .body h4 { font-size: 17px; margin: 1.5em 0 .3em; }
-.body p, .body li { max-width: var(--measure); }
+.body p, .body li, .body h2, .body h3, .body h4, .body blockquote { max-width: var(--measure); }
+.body h2 { max-width: none; }
 .body ul, .body ol { padding-left: 1.3em; }
 .body li { margin: .3em 0; }
 .body li::marker { color: var(--ink-2); }
@@ -267,14 +273,6 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
 .why { margin-top: 10px; padding-left: 30px; font-size: 15.5px; color: var(--ink-2); }
 .why strong { color: var(--ink); }
 
-/* Margin: on-this-sheet index and figure list. */
-.margin { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; font-family: var(--font-display); font-size: 13.5px; }
-.margin b { display: block; font-size: 12px; color: var(--ink-2); padding-bottom: 6px; border-bottom: 1px solid var(--ink); margin-bottom: 6px; }
-.margin a { display: grid; grid-template-columns: 22px 1fr; gap: 6px; padding: 4px 0; color: var(--ink); text-decoration: none; line-height: 1.3; }
-.margin a span:first-child { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink-2); padding-top: 1px; }
-.margin .figs-head { margin-top: 22px; }
-.margin .fig-link { grid-template-columns: 34px 1fr; }
-.margin a:hover span:last-child { text-decoration: underline; text-decoration-color: var(--pen); }
 
 .sign-off { margin-top: 48px; display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 16px 18px; border: 1px solid var(--ink); background: var(--box); font-family: var(--font-display); }
 .sign-off p { margin: 0; flex: 1 1 240px; font-size: 15px; color: var(--ink-2); }
@@ -333,7 +331,6 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
 .library a:hover b { text-decoration: underline; text-decoration-color: var(--pen); }
 .note { margin-top: 40px; color: var(--ink-2); font-size: 14.5px; max-width: 72ch; }
 
-@media (max-width: 1240px) { .sheet-body { grid-template-columns: minmax(0, var(--measure)); } .margin { display: none; } }
 @media (max-width: 900px) {
   :root { --rail: min(88vw, 340px); }
   .app { grid-template-columns: minmax(0, 1fr); }
@@ -729,32 +726,21 @@ function renderEntry(e) {
       <div><small>Time</small><span>${e.minutes ? `${e.minutes} min` : "As needed"}</span></div>
       <div><small>Status</small><span>${tracked ? (done.has(e.id) ? "Done" : "Not done yet") : "Reference"}</span></div>
     </div>`;
-  const nextLabel = n => `${sheetNo[n.id] ? `Sheet ${sheetNo[n.id]}` : "Library"}`;
+  const nextLabel = n => `${sheetNo[n.id] ? `Lesson ${Number(sheetNo[n.id])}` : "Library"}`;
   return `<div class="sheet">${strip}<div class="sheet-body"><article>
     <h1>${esc(e.title)}</h1>
     ${e.summary ? `<p class="lede">${esc(e.summary)}</p>` : ""}
     <div class="body">${body}</div>
     ${tracked ? `<div class="sign-off"><button class="mark" id="doneBtn" type="button" aria-pressed="${done.has(e.id)}">${tickBox(done.has(e.id), justTicked === e.id)}${done.has(e.id) ? "Done" : "Mark as done"}</button><p>${done.has(e.id) ? "Marked as done. Click again to undo." : "Mark it done once you can answer the self-check questions without looking back."}</p></div>` : ""}
     <nav class="pager" aria-label="Lessons">${prev ? `<a class="prev" href="#${prev.id}"><small>${nextLabel(prev)}</small><b>${esc(prev.title)}</b></a>` : "<span></span>"}${next ? `<a class="next" href="#${next.id}"><small>Next: ${nextLabel(next)}</small><b>${esc(next.title)}</b></a>` : ""}</nav>
-  </article><aside class="margin" id="margin"></aside></div></div>`;
+  </article></div></div>`;
 }
 
+let outline = [];
 function enhance(root, e) {
   const heads = [...root.querySelectorAll(".body h2")];
   heads.forEach(h => h.id = slug(h.textContent));
-  const margin = root.querySelector("#margin");
-  const figs = [...root.querySelectorAll("figure.fig")].map(f => {
-    let h = f.previousElementSibling; while (h && h.tagName !== "H2" && h.tagName !== "H3") h = h.previousElementSibling;
-    return { id: f.id, no: f.querySelector("figcaption b").textContent.replace("Fig. ", ""), near: h ? h.textContent : e.title };
-  });
-  if (margin && (heads.length > 2 || figs.length)) {
-    margin.innerHTML = (heads.length > 2 ? "<b>In this lesson</b>" + heads.map((h, i) => `<a href="#${e.id}" data-target="${h.id}"><span>${pad2(i + 1)}</span><span>${esc(h.textContent)}</span></a>`).join("") : "")
-      + (figs.length ? `<b class="figs-head">Figures</b>` + figs.map(f => `<a class="fig-link" href="#${e.id}" data-target="${f.id}"><span>${f.no}</span><span>${esc(f.near)}</span></a>`).join("") : "");
-    margin.addEventListener("click", ev => {
-      const a = ev.target.closest("a[data-target]"); if (!a) return;
-      ev.preventDefault(); document.getElementById(a.dataset.target)?.scrollIntoView({ behavior: "smooth", block: "start" });
-    });
-  }
+  outline = heads;
   root.querySelectorAll(".copy").forEach(b => b.addEventListener("click", async () => {
     const pre = b.nextElementSibling;
     try { await navigator.clipboard.writeText(pre.innerText); b.textContent = "Copied"; }
@@ -791,14 +777,49 @@ function enhance(root, e) {
   mountWidgets(root);
 }
 
+/* ---------- Lesson outline in the index rail, with the section in view marked ---------- */
+let outlineSpy = null;
+function mountOutline() {
+  outlineSpy?.disconnect();
+  const cur = document.querySelector('.nav a[aria-current="page"]');
+  const rail = document.getElementById("rail");
+  if (cur && rail) { // bring the current lesson into view inside the index, without scrolling the page
+    const off = cur.getBoundingClientRect().top - rail.getBoundingClientRect().top;
+    if (off < 80 || off > rail.clientHeight * 0.6) rail.scrollTop += off - 120;
+  }
+  if (!cur || outline.length < 2) return;
+  const ol = document.createElement("ol");
+  ol.className = "toc";
+  ol.setAttribute("aria-label", "In this lesson");
+  ol.innerHTML = outline.map(h => `<li><a href="${esc(location.hash || "#home")}" data-target="${h.id}">${esc(h.textContent)}</a></li>`).join("");
+  cur.after(ol);
+  ol.addEventListener("click", ev => {
+    const a = ev.target.closest("a[data-target]"); if (!a) return;
+    ev.preventDefault();
+    closeMenu();
+    document.getElementById(a.dataset.target)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+  const links = Object.fromEntries([...ol.querySelectorAll("a")].map(a => [a.dataset.target, a]));
+  if (!window.IntersectionObserver) return;
+  outlineSpy = new IntersectionObserver(entries => {
+    const top = entries.filter(x => x.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
+    if (!top) return;
+    Object.values(links).forEach(a => a.classList.remove("on"));
+    links[top.target.id]?.classList.add("on");
+  }, { rootMargin: "0px 0px -70% 0px" });
+  outline.forEach(h => outlineSpy.observe(h));
+}
+
 function route() {
   const id = (location.hash || "#home").slice(1);
   const main = document.getElementById("main");
   const e = byId[id];
   main.innerHTML = e ? renderEntry(e) : renderHome();
+  outline = [];
   if (e) enhance(main, e);
   else drawSketches(main);
   renderNav(e ? e.id : null);
+  mountOutline();
   document.title = e ? `${e.title} · AI System Design` : "AI System Design";
   closeMenu();
 }
