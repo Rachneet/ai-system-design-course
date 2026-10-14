@@ -1,0 +1,139 @@
+{
+  "title": "Choose the visual world for AI System Design",
+  "question": "The roll assigned Computation Pad. Keep it, take an alternate, or re-roll.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "Computation Pad",
+      "kicker": "THE ROLL",
+      "lineage": "engineering computation paper and lab notebooks",
+      "thesis": "Every lesson is a dated, numbered worksheet; every lab is a worked problem with the result boxed.",
+      "palette": ["#e7efe3", "#fbfcf8", "#24312a", "#2b5fa8", "#c4412e"],
+      "materials": ["pale-green computation paper", "faint grid", "graphite and blue ballpoint ink", "boxed answers", "red margin line"],
+      "viewport": "Home is the pad's cover page: a header strip with course name, sheet count and your next sheet; the six weeks listed as numbered sheet ranges. A lesson opens with a worksheet header (sheet 14 of 37, time, checked date) and a calm reading column on near-white, with the grid living only in the frame and margins.",
+      "risk": "Grid paper can turn into a gimmick or visual noise behind text if it reaches the reading column.",
+      "raised": [
+        {"from": "challenger-quarterly", "raise": "The reading column holds a fixed measure of about 66 characters; navigation lives in the margin, never inside the text."},
+        {"from": "challenger-rail", "raise": "Progress state is carried by mark shape (open box, ticked box, boxed result), never by colour alone."},
+        {"from": "challenger-cracktro", "raise": "Nothing moves behind the text while you read; motion is limited to marks being made."},
+        {"from": "challenger-crease", "raise": "Diagrams are numbered as figures (Fig. 3.2) and referenced from the text, like plates."},
+        {"from": "challenger-wpa", "raise": "Flat inks only: no gradients, glows or shadows anywhere."}
+      ],
+      "comp": ".impeccable/mocks/decision/assigned-2.webp",
+      "wireframe": {"cols": 12, "rows": 10, "regions": [
+        {"label": "margin index", "x": 0, "y": 0, "w": 3, "h": 10, "accent": true},
+        {"label": "worksheet header", "x": 3, "y": 0, "w": 9, "h": 1},
+        {"label": "reading column", "x": 3, "y": 1, "w": 6, "h": 9},
+        {"label": "margin notes, figures", "x": 9, "y": 1, "w": 3, "h": 9}
+      ]}
+    },
+    {
+      "id": "model-pick",
+      "label": "Request for Comments",
+      "kicker": "IMPECCABLE’S PICK",
+      "lineage": "IETF RFC standards documents",
+      "thesis": "The course as a numbered standards series: each lesson an RFC with sections, requirement keywords and references.",
+      "palette": ["#fdfdfc", "#1c1c1c", "#6b6b6b", "#0a5bd3"],
+      "materials": ["monospaced plaintext", "numbered sections", "ASCII figures", "header block"],
+      "viewport": "A lesson opens with an RFC-style header block (number, category, date) and a numbered table of contents; design rules read as MUST and SHOULD statements.",
+      "risk": "Familiar to engineers and close to the docs-site default; monospace body text tires readers over long lessons.",
+      "comp": ".impeccable/mocks/decision/model-pick-2.webp"
+    },
+    {
+      "id": "challenger-provenance",
+      "label": "Provenance Ribbon",
+      "verdict": "competitive",
+      "lineage": "museum provenance records",
+      "thesis": "Every claim in the course carries its custody: source, check date, and revision, visible on a ribbon.",
+      "palette": ["#f1ece3", "#1d1d1b", "#b0261e", "#8a8a85"],
+      "materials": ["ledger type", "red custody ribbon", "dated stamps"],
+      "viewport": "Each lesson shows a ribbon of its sources and fact-check revisions beside the text.",
+      "case": "Fuses partly: sourced, fact-checked numbers are the course's real differentiator; engineers do not identify with museum records.",
+      "risk": "Buff ground drifts toward the cream-paper default.",
+      "comp": ".impeccable/mocks/decision/challenger-provenance.webp",
+      "hero": "https://impeccable.style/worlds/cards/exhibition-museum-curation-provenance-ribbon-hero.webp"
+    },
+    {
+      "id": "challenger-quarterly",
+      "label": "Literary quarterly interior",
+      "verdict": "declined",
+      "lineage": "small-press literary quarterlies",
+      "thesis": "Leaves of text on a deep blue ground under raking light.",
+      "palette": ["#1d2f6f", "#f1ebd9", "#161616", "#d8432a"],
+      "materials": ["laid paper", "raking light"],
+      "viewport": "Cream leaves on oltremare with a giant vermilion numeral.",
+      "case": "Fuses poorly: a literary object, not an engineer's.",
+      "risk": "Precious for a technical course.",
+      "kept": "A fixed reading measure; navigation in the margin.",
+      "hero": "https://impeccable.style/worlds/cards/rw-botteghe-quarterly-interior-hero.webp"
+    },
+    {
+      "id": "challenger-rail",
+      "label": "Emission-line rail",
+      "verdict": "declined",
+      "lineage": "spectrogram plates",
+      "thesis": "Every destination a tick on one calibrated rail.",
+      "palette": ["#2a2c2e", "#e9e4d8", "#f2c230"],
+      "materials": ["charcoal continuum", "hairline emission lines"],
+      "viewport": "A rail of hairlines with one open plate.",
+      "case": "Fuses poorly: elegant but abstract wayfinding.",
+      "risk": "Hard to learn.",
+      "kept": "State carried by mark shape, not colour.",
+      "hero": "https://impeccable.style/worlds/cards/operate-c-emission-line-rail-hero.webp"
+    },
+    {
+      "id": "challenger-cracktro",
+      "label": "Cracktro scroller",
+      "verdict": "declined",
+      "lineage": "demoscene title screens",
+      "thesis": "Bitmap text over drifting dust fields.",
+      "palette": ["#050505", "#efe9da", "#f3a712"],
+      "materials": ["bitmap face", "emissive void"],
+      "viewport": "One still line of text over drifting layers.",
+      "case": "Fuses poorly: bitmap type and drift fight long reading.",
+      "risk": "Nostalgia costume.",
+      "kept": "The reading plane holds still.",
+      "hero": "https://impeccable.style/worlds/cards/operate-c-cracktro-scroller-queue-hero.webp"
+    },
+    {
+      "id": "challenger-crease",
+      "label": "Curved-crease shell",
+      "verdict": "declined",
+      "lineage": "deployable paper structures",
+      "thesis": "One crease turns a flat sheet into structure.",
+      "palette": ["#f2ede2", "#2b2b2b", "#7d7d7d"],
+      "materials": ["cotton paper", "compass arc"],
+      "viewport": "A disc rising along one arc.",
+      "case": "Fuses poorly: no link to the course.",
+      "risk": "Decorative.",
+      "kept": "Figures numbered like plates.",
+      "hero": "https://impeccable.style/worlds/cards/paper-folds-pleats-deployable-curved-crease-shell-hero.webp"
+    },
+    {
+      "id": "challenger-wpa",
+      "label": "WPA park poster",
+      "verdict": "declined",
+      "lineage": "1930s national-park silkscreens",
+      "thesis": "Flat-ink landscapes with one imperative in block caps.",
+      "palette": ["#2c8c8c", "#2e4d34", "#d39a3a", "#f0e6cf"],
+      "materials": ["silkscreen planes"],
+      "viewport": "A layered landscape and a caption bar.",
+      "case": "Fuses poorly: scenery has nothing to show for a technical course.",
+      "risk": "Pastiche.",
+      "kept": "Flat inks, no gradients.",
+      "hero": "https://impeccable.style/worlds/cards/posters-covers-sleeves-wpa-park-poster-hero.webp"
+    }
+  ],
+  "reroll": {"registers": ["safer", "bolder"]},
+  "buildPath": {"value": "code", "toggle": false},
+  "canon": true,
+  "canonCard": {
+    "label": "The category standard",
+    "thesis": "A documentation site, executed impeccably.",
+    "palette": ["#ffffff", "#111827", "#2563eb"],
+    "materials": ["clean grid", "sidebar navigation"],
+    "viewport": "Left navigation, centred article, on-this-page rail, the arrangement every docs reader expects.",
+    "risk": "Indistinguishable from every other course and docs site by design."
+  },
+  "steer": true
+}

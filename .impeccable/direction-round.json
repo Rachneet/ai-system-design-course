@@ -1,0 +1,138 @@
+{
+  "title": "Choose the visual world for AI System Design",
+  "question": "The roll assigned Drawing Set. Keep it, take an alternate, or re-roll.",
+  "options": [
+    {
+      "id": "assigned",
+      "label": "Drawing Set",
+      "kicker": "THE ROLL",
+      "lineage": "cyanotype engineering drawing sets and their title blocks",
+      "thesis": "The course as an issued drawing set: every lesson is a numbered sheet of one system, Relay.",
+      "palette": ["#13365c", "#f3f6f9", "#d8e4ef", "#c8372d"],
+      "materials": ["cyanotype blue ground", "white line work", "whiteprint reading sheet", "redline markup"],
+      "viewport": "Home is the cover sheet: Prussian-blue field, the course title in a drawing title block, and a sheet index of the six weeks as numbered sheet groups. A lesson opens on whiteprint with its own title block (sheet number, time, status, last checked) beside a calm reading column.",
+      "risk": "Blueprints are the obvious reading of 'system design'; set timidly it becomes clip-art blueprint wallpaper.",
+      "raised": [
+        {"from": "challenger-datamatics", "raise": "Every number in the course (costs, latencies, token math) sets in tabular monospace columns with full commitment, like dimension strings."},
+        {"from": "challenger-cyclorama", "raise": "The six weeks are discrete labelled phases of the set, never a colour-only progression."},
+        {"from": "challenger-drawcord", "raise": "One accent colour, redline red, is reserved for 'you are here' and the single next action; nothing else may use it."},
+        {"from": "challenger-stickers", "raise": "Completion is a permanent mark: a finished sheet gets a CHECKED stamp in its title block that stays."}
+      ],
+      "comp": ".impeccable/mocks/decision/assigned.webp",
+      "wireframe": {"cols": 12, "rows": 10, "regions": [
+        {"label": "sheet index rail", "x": 0, "y": 0, "w": 3, "h": 10, "accent": true},
+        {"label": "title block", "x": 9, "y": 0, "w": 3, "h": 2},
+        {"label": "reading column (whiteprint)", "x": 3, "y": 1, "w": 6, "h": 9},
+        {"label": "detail diagram", "x": 9, "y": 3, "w": 3, "h": 3}
+      ]}
+    },
+    {
+      "id": "model-pick",
+      "label": "Six Lines to Production",
+      "kicker": "IMPECCABLE’S PICK",
+      "lineage": "Vignelli and Beck transit diagrams",
+      "thesis": "Each week is a coloured line, each lesson a station, and Relay is the train that rides all six.",
+      "palette": ["#1b1f24", "#f2f4f5", "#0f7b6c", "#e2a400", "#c0392b", "#2f6fdb"],
+      "materials": ["transit diagram strokes", "station roundels", "platform signage"],
+      "viewport": "Home is the network map with your current station lit; a lesson page shows its line strip across the top like a platform sign.",
+      "risk": "Familiar: course roadmaps drawn as transit maps are common, and six line colours compete with diagrams.",
+      "comp": ".impeccable/mocks/decision/model-pick.webp"
+    },
+    {
+      "id": "challenger-patent",
+      "label": "Patent Drawing Sheet",
+      "verdict": "competitive",
+      "lineage": "utility patent drawing sheets",
+      "thesis": "Every lesson is a figure of one invention, its parts numbered and leader-linked to the text that explains them.",
+      "palette": ["#141414", "#ffffff", "#b3122e"],
+      "materials": ["india ink line", "white bond", "section hatching", "carmine annotation"],
+      "viewport": "A lesson opens as FIG. 3 of the Relay specification, with numbered parts whose leaders point to the paragraphs that explain them.",
+      "case": "Fuses well: numbered system diagrams tied to the text are a real reading aid; loses narrowly on audience identification.",
+      "risk": "Patent sheets read as legal and cold to some readers.",
+      "comp": ".impeccable/mocks/decision/challenger-patent.webp",
+      "hero": "https://impeccable.style/worlds/cards/notation-diagram-systems-patent-drawing-sheet-hero.webp"
+    },
+    {
+      "id": "challenger-selectrail",
+      "label": "Cutting Bench Rail",
+      "verdict": "competitive",
+      "lineage": "film editing select rails",
+      "thesis": "The course as a perforated rail of frames, with a folded flag exactly where you stopped.",
+      "palette": ["#0d0d0d", "#f26a1b", "#ffffff"],
+      "materials": ["film perforation", "grain orange field", "grease-pencil marks"],
+      "viewport": "A rail of 36 frames crosses the top of every page; your flag sits on the lesson you left, and finished frames carry a grease cross.",
+      "case": "Fuses partly: 'resume where you stopped' maps perfectly to progress; engineers do not identify with film editing.",
+      "risk": "Orange-on-black at a third of the screen is tiring over a 50-minute lesson.",
+      "comp": ".impeccable/mocks/decision/challenger-selectrail.webp",
+      "hero": "https://impeccable.style/worlds/cards/operate-a-cutting-bench-select-rail-hero.webp"
+    },
+    {
+      "id": "challenger-datamatics",
+      "label": "Data-sublime field",
+      "verdict": "declined",
+      "lineage": "Ryoji Ikeda datamatics",
+      "thesis": "The course as a barcode field of pure black and white data.",
+      "palette": ["#000000", "#ffffff"],
+      "materials": ["hairline bars", "monospace numerics"],
+      "viewport": "A barcode lattice with dense numbers in the margin.",
+      "case": "Fuses poorly: strobing data fields fight 50-minute reading sessions.",
+      "risk": "Unreadable for long-form study.",
+      "kept": "Numbers set with total tabular commitment.",
+      "hero": "https://impeccable.style/worlds/cards/ikeda-datamatics-hero.webp"
+    },
+    {
+      "id": "challenger-cyclorama",
+      "label": "Cyclorama dawn",
+      "verdict": "declined",
+      "lineage": "theatre lighting cycloramas",
+      "thesis": "Weeks as lighting phases from night to day.",
+      "palette": ["#07070b", "#2747c9", "#e37a9a", "#fafafa"],
+      "materials": ["light wash", "horizon bands"],
+      "viewport": "A dark-to-light horizon rising as you progress.",
+      "case": "Fuses poorly: atmosphere without wayfinding.",
+      "risk": "Mood over structure.",
+      "kept": "Discrete, labelled phases.",
+      "hero": "https://impeccable.style/worlds/cards/stagecraft-theater-lighting-cyclorama-dawn-hero.webp"
+    },
+    {
+      "id": "challenger-drawcord",
+      "label": "Drawcord cape",
+      "verdict": "declined",
+      "lineage": "transforming garment design",
+      "thesis": "One gold cord transforms a flat plane into structure.",
+      "palette": ["#0b0b0b", "#c9a227", "#4a4f57"],
+      "materials": ["matte silk", "gold cord"],
+      "viewport": "A black field with one gold control line.",
+      "case": "Fuses poorly: no tie to engineers or the course.",
+      "risk": "Fashion costume on a technical course.",
+      "kept": "One accent reserved for the single control.",
+      "hero": "https://impeccable.style/worlds/cards/textiles-weave-drape-fashion-drawcord-transforming-cape-hero.webp"
+    },
+    {
+      "id": "challenger-stickers",
+      "label": "Sticker accretion",
+      "verdict": "declined",
+      "lineage": "road cases and laptop lids",
+      "thesis": "Progress as layers of stickers.",
+      "palette": ["#141414", "#ff3d7f", "#1fb2ff", "#ffd400"],
+      "materials": ["die-cut vinyl", "adhesive scars"],
+      "viewport": "Nothing fully legible by design.",
+      "case": "Fuses poorly: illegibility is the point of the source.",
+      "risk": "Breaks reading.",
+      "kept": "Completion marks that stay.",
+      "hero": "https://impeccable.style/worlds/cards/vernacular-ephemera-layered-sticker-accretion-hero.webp"
+    }
+  ],
+  "reroll": {"registers": ["safer", "bolder"]},
+  "buildPath": {"value": "code", "toggle": false},
+  "canon": true,
+  "canonCard": {
+    "label": "The category standard",
+    "thesis": "A documentation site, executed impeccably.",
+    "palette": ["#ffffff", "#111827", "#2563eb"],
+    "materials": ["clean grid", "sidebar navigation"],
+    "viewport": "Left navigation, centred article, on-this-page rail, the arrangement every docs reader expects.",
+    "risk": "Indistinguishable from every other course and docs site by design."
+  },
+  "steer": true
+}

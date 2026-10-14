@@ -3,3 +3,6 @@ __pycache__/
 .DS_Store
 scripts/*_links.txt
 scripts/link_status.txt
+.impeccable/mocks/
+.impeccable/config.local.json
+.impeccable/questions/
