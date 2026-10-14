@@ -72,6 +72,7 @@ button { font: inherit; color: inherit; }
   padding-block: 22px 40px; padding-left: max(18px, env(safe-area-inset-left, 0px)); padding-right: 18px;
   font-family: var(--font-display); font-size: 14px; line-height: 1.35; border-right: 1px solid var(--rule);
   scrollbar-width: thin; scrollbar-color: var(--ink-2) var(--sheet);
+  overscroll-behavior: contain; /* reaching the end of the index must not scroll the lesson behind it */
 }
 /* A solid track so the scroll position is easy to see. */
 .rail::-webkit-scrollbar { width: 10px; }
@@ -237,7 +238,7 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
 
 /* ---------- Pad cover (home) ---------- */
 .cover { padding: 40px 48px 56px; }
-.header-strip.pad-strip { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.4fr) auto; }
+.header-strip.pad-strip { grid-template-columns: auto minmax(0, 1fr) auto auto; }
 .pad-strip a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--red); text-decoration-thickness: 2px; text-underline-offset: 3px; }
 .pad-strip .mono span { font-family: var(--font-mono); }
 .cover h1 { font-size: clamp(36px, 4.4vw, 60px); font-stretch: 72%; line-height: 1; margin-bottom: 16px; max-width: 24ch; text-wrap: balance; }
@@ -252,6 +253,7 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
 .wk { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 24px; padding: 22px 0 24px; border-bottom: 1px solid var(--rule); }
 .wk-no { font-family: var(--font-display); }
 .wk-no b { display: block; font-size: 40px; font-weight: 800; font-stretch: 70%; line-height: 1; }
+.wk-no small + small { margin-top: 2px; }
 .wk-no small { display: block; margin-top: 6px; white-space: nowrap; font: 600 12.5px var(--font-mono); color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .wk h2 { margin: 0 0 4px; font-size: 25px; font-weight: 750; font-stretch: 86%; }
 .wk p { margin: 0 0 14px; color: var(--ink-2); font-size: 16.5px; max-width: 62ch; }
@@ -275,7 +277,7 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
   .app { grid-template-columns: minmax(0, 1fr); }
   .rail { position: fixed; inset: 0 auto 0 0; width: var(--rail); z-index: 20; transform: translateX(-102%); visibility: hidden; transition: transform .22s cubic-bezier(.2,.7,.2,1), visibility 0s .22s; padding-top: calc(20px + env(safe-area-inset-top, 0px)); }
   .app.open .rail { transform: none; visibility: visible; transition-delay: 0s; border-right: 1.5px solid var(--ink); }
-  .scrim { position: fixed; inset: 0; background: rgba(10, 18, 14, .45); z-index: 15; }
+  .scrim { position: fixed; inset: 0; background: rgba(12, 14, 18, .45); z-index: 15; }
   .topbar { display: flex; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; align-items: center; gap: 12px; padding-block: 9px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); background: var(--sheet); color: var(--ink); border-bottom: 1px solid var(--ink); font-family: var(--font-display); }
   .topbar b { font-weight: 800; font-stretch: 85%; }
   .topbar span { margin-left: auto; font: 600 12.5px var(--font-mono); color: var(--ink-2); }
@@ -308,16 +310,16 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
     <b>AI System Design</b>
     <span id="topTally"></span>
   </header>
-  <nav class="rail" id="rail" aria-label="Sheet index">
-    <a class="pad-title" href="#home"><b>AI System Design</b><span>A free course, worked one sheet at a time</span></a>
+  <nav class="rail" id="rail" aria-label="Course index">
+    <a class="pad-title" href="#home"><b>AI System Design</b><span>A free, hands-on course for engineers</span></a>
     <label for="q" class="search-label">Search the course</label>
     <input class="search" id="q" type="search" placeholder="Search the course" autocomplete="off">
-    <div class="tally"><span>Sheets checked</span><b id="tally"></b></div>
+    <div class="tally"><span>Lessons done</span><b id="tally"></b></div>
     <ul class="results" id="results" hidden></ul>
     <div id="navWrap"></div>
     <div class="rail-foot">
       <button class="tool" id="themeBtn" type="button">Theme: system</button>
-      <button class="tool" id="resetBtn" type="button">Clear ticks</button>
+      <button class="tool" id="resetBtn" type="button">Reset progress</button>
     </div>
   </nav>
   <div class="scrim" id="scrim" hidden></div>
@@ -452,8 +454,8 @@ function renderNav(current) {
   }
   document.getElementById("navWrap").innerHTML = html;
   const n = trackable.filter(e => done.has(e.id)).length;
-  document.getElementById("tally").textContent = `${pad2(n)} / ${pad2(trackable.length)}`;
-  document.getElementById("topTally").textContent = `${pad2(n)} / ${pad2(trackable.length)}`;
+  document.getElementById("tally").textContent = `${n} of ${trackable.length}`;
+  document.getElementById("topTally").textContent = `${n} of ${trackable.length}`;
 }
 
 function renderHome() {
@@ -464,7 +466,7 @@ function renderHome() {
     const items = g[w] || [];
     const c = items.filter(e => done.has(e.id)).length;
     const first = sheetNo[items[0]?.id], last = sheetNo[items[items.length - 1]?.id];
-    return `<section class="wk"><div class="wk-no"><b>${w === 0 ? "Start" : `Week ${w}`}</b><small>Sheets ${first}-${last} · ${c}/${items.length}</small></div><div>
+    return `<section class="wk"><div class="wk-no"><b>${w === 0 ? "Start" : `Week ${w}`}</b><small>Lessons ${Number(first)}-${Number(last)}</small><small>${c} of ${items.length} done</small></div><div>
       <h2>${esc(WEEKS[w].title)}</h2><p>${esc(WEEKS[w].blurb)}</p>
       <ul class="sheets">${items.map(e => `<li><a href="#${e.id}"${e.id === next.id ? ' class="next-up"' : ""}>${tickBox(done.has(e.id))}<span class="no">${sheetNo[e.id]}</span><span class="t">${esc(e.short || e.title)}${e.kind === "lab" ? '<span class="lab-tag">lab</span>' : ""}</span></a></li>`).join("")}</ul>
     </div></section>`;
@@ -472,16 +474,16 @@ function renderHome() {
   const extras = (g[7] || []).map(e => `<li><a href="#${e.id}"><b>${esc(e.title)}</b><span>${esc(e.summary || "")}</span></a></li>`).join("");
   const minutes = COURSE.reduce((s, e) => s + e.minutes, 0);
   const strip = `<div class="header-strip pad-strip">
-      <div><small>Pad</small><span>AI System Design</span></div>
-      <div class="mono"><small>Checked</small><span>${pad2(n)} of ${pad2(trackable.length)}</span></div>
-      <div><small>Next</small><span><a href="#${next.id}">Sheet ${sheetNo[next.id]}, ${esc(next.short || next.title)}</a></span></div>
-      <div><small>Total</small><span>About ${Math.round(minutes / 60)} h</span></div>
+      <div><small>Your progress</small><span>${n} of ${trackable.length} lessons done</span></div>
+      <div><small>Up next</small><span><a href="#${next.id}">${Number(sheetNo[next.id])}. ${esc(next.short || next.title)}</a></span></div>
+      <div><small>Length</small><span>6 weeks, about ${Math.round(minutes / 60)} hours</span></div>
+      <div><small>Price</small><span>Free</span></div>
     </div>`;
   return `<div class="sheet">${strip}<div class="cover">
     <h1>Design AI systems that survive production.</h1>
     <p class="lede">Six weeks on agents, retrieval, evals, security, deployment and operations, worked through one system you build from prototype to monitored service. Free, with tested reference code for every lab.</p>
     <div class="resume">
-      <a class="go" href="#${next.id}">${n ? "Continue" : "Start"}: sheet ${sheetNo[next.id]}</a>
+      <a class="go" href="#${next.id}">${n ? `Continue with lesson ${Number(sheetNo[next.id])}` : "Start the course"}</a>
     </div>
     <div class="weeks">${[0, 1, 2, 3, 4, 5, 6].map(week).join("")}</div>
     <section class="library"><h2>Library</h2><ul>${extras}</ul></section>
@@ -500,19 +502,19 @@ function renderEntry(e) {
   const kind = { lesson: "Lesson", lab: "Lab", page: "Reference" }[e.kind] || e.kind;
   const weekCell = e.week >= 1 && e.week <= 6 ? `Week ${e.week}: ${WEEKS[e.week].title}` : groupName(e.week);
   const strip = `<div class="header-strip">
-      <div class="sheetno"><small>Sheet</small><span>${no ? `${no} of ${pad2(trackable.length)}` : "Ref."}</span></div>
-      <div class="wk-cell"><small>Section</small><span>${esc(weekCell)}</span></div>
+      <div class="sheetno"><small>Lesson</small><span>${no ? `${Number(no)} of ${trackable.length}` : "Reference"}</span></div>
+      <div class="wk-cell"><small>Week</small><span>${esc(weekCell)}</span></div>
       <div><small>Type</small><span>${kind}</span></div>
       <div><small>Time</small><span>${e.minutes ? `${e.minutes} min` : "As needed"}</span></div>
-      <div><small>Status</small><span>${tracked ? (done.has(e.id) ? "Checked" : "Open") : "Reference"}</span></div>
+      <div><small>Status</small><span>${tracked ? (done.has(e.id) ? "Done" : "Not done yet") : "Reference"}</span></div>
     </div>`;
   const nextLabel = n => `${sheetNo[n.id] ? `Sheet ${sheetNo[n.id]}` : "Library"}`;
   return `<div class="sheet">${strip}<div class="sheet-body"><article>
     <h1>${esc(e.title)}</h1>
     ${e.summary ? `<p class="lede">${esc(e.summary)}</p>` : ""}
     <div class="body">${body}</div>
-    ${tracked ? `<div class="sign-off"><button class="mark" id="doneBtn" type="button" aria-pressed="${done.has(e.id)}">${tickBox(done.has(e.id), justTicked === e.id)}${done.has(e.id) ? "Sheet checked" : "Check this sheet"}</button><p>${done.has(e.id) ? "Ticked. Click again to clear it." : "Tick it once you can answer the self-check without looking back."}</p></div>` : ""}
-    <nav class="pager" aria-label="Sheets">${prev ? `<a class="prev" href="#${prev.id}"><small>${nextLabel(prev)}</small><b>${esc(prev.title)}</b></a>` : "<span></span>"}${next ? `<a class="next" href="#${next.id}"><small>Next: ${nextLabel(next)}</small><b>${esc(next.title)}</b></a>` : ""}</nav>
+    ${tracked ? `<div class="sign-off"><button class="mark" id="doneBtn" type="button" aria-pressed="${done.has(e.id)}">${tickBox(done.has(e.id), justTicked === e.id)}${done.has(e.id) ? "Done" : "Mark as done"}</button><p>${done.has(e.id) ? "Marked as done. Click again to undo." : "Mark it done once you can answer the self-check questions without looking back."}</p></div>` : ""}
+    <nav class="pager" aria-label="Lessons">${prev ? `<a class="prev" href="#${prev.id}"><small>${nextLabel(prev)}</small><b>${esc(prev.title)}</b></a>` : "<span></span>"}${next ? `<a class="next" href="#${next.id}"><small>Next: ${nextLabel(next)}</small><b>${esc(next.title)}</b></a>` : ""}</nav>
   </article><aside class="margin" id="margin"></aside></div></div>`;
 }
 
@@ -525,7 +527,7 @@ function enhance(root, e) {
     return { id: f.id, no: f.querySelector("figcaption b").textContent.replace("Fig. ", ""), near: h ? h.textContent : e.title };
   });
   if (margin && (heads.length > 2 || figs.length)) {
-    margin.innerHTML = (heads.length > 2 ? "<b>On this sheet</b>" + heads.map((h, i) => `<a href="#${e.id}" data-target="${h.id}"><span>${pad2(i + 1)}</span><span>${esc(h.textContent)}</span></a>`).join("") : "")
+    margin.innerHTML = (heads.length > 2 ? "<b>In this lesson</b>" + heads.map((h, i) => `<a href="#${e.id}" data-target="${h.id}"><span>${pad2(i + 1)}</span><span>${esc(h.textContent)}</span></a>`).join("") : "")
       + (figs.length ? `<b class="figs-head">Figures</b>` + figs.map(f => `<a class="fig-link" href="#${e.id}" data-target="${f.id}"><span>${f.no}</span><span>${esc(f.near)}</span></a>`).join("") : "");
     margin.addEventListener("click", ev => {
       const a = ev.target.closest("a[data-target]"); if (!a) return;
@@ -608,8 +610,8 @@ document.getElementById("themeBtn").addEventListener("click", () => {
 });
 let armed = false;
 document.getElementById("resetBtn").addEventListener("click", ev => {
-  if (!armed) { armed = true; ev.target.textContent = "Click again to clear all"; setTimeout(() => { armed = false; ev.target.textContent = "Clear ticks"; }, 3000); return; }
-  done = new Set(); store.set("aisd.done", []); armed = false; ev.target.textContent = "Ticks cleared"; route();
+  if (!armed) { armed = true; ev.target.textContent = "Click again to reset"; setTimeout(() => { armed = false; ev.target.textContent = "Reset progress"; }, 3000); return; }
+  done = new Set(); store.set("aisd.done", []); armed = false; ev.target.textContent = "Progress reset"; route();
 });
 const app = document.getElementById("app"), scrim = document.getElementById("scrim"), menuBtn = document.getElementById("menuBtn");
 function closeMenu() { const was = app.classList.contains("open"); app.classList.remove("open"); scrim.hidden = true; menuBtn.setAttribute("aria-expanded", "false"); if (was) menuBtn.focus(); }
