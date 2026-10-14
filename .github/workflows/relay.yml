@@ -63,3 +63,56 @@ jobs:
           path: |
             relay/runs/pr.json
             relay/runs-report.txt
+
+  container:
+    needs: test
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: relay
+          POSTGRES_DB: relay
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+    env:
+      DB: postgresql://postgres:relay@localhost:5432/relay
+      SECRET: ci-only-secret-0123456789-abcdefghijklmnop
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build image
+        run: docker build -t relay:ci relay
+      - name: Inspect image
+        run: |
+          docker image ls relay:ci --format 'size {{.Size}}'
+          test "$(docker run --rm relay:ci id -u)" = "10001"
+      - name: Migrate
+        run: docker run --rm --network host -e RELAY_DATABASE_URL=$DB relay:ci python -m app.migrate
+      - name: Start API and worker (offline backends, no API key)
+        run: |
+          common="--network host -e RELAY_DATABASE_URL=$DB -e RELAY_LLM_BACKEND=echo -e RELAY_EMBEDDINGS=hash -e RELAY_AUTH_MODE=dev -e RELAY_DEV_JWT_SECRET=$SECRET"
+          docker run -d --name api $common -e PORT=8080 relay:ci
+          docker run -d --name worker $common -e PORT=8081 relay:ci python -m app.worker
+          for i in $(seq 1 30); do curl -fs localhost:8080/readyz && curl -fs localhost:8081/healthz && break; sleep 2; done
+      - name: Smoke test
+        run: |
+          TOKEN=$(docker run --rm -e RELAY_AUTH_MODE=dev -e RELAY_DEV_JWT_SECRET=$SECRET relay:ci python -m scripts.dev_token c_77)
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST localhost:8080/chat -H 'content-type: application/json' -d '{"message":"hi"}')" = "401"
+          OUT=$(curl -fsN -X POST localhost:8080/chat -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' -d '{"message":"hello relay"}')
+          echo "$OUT"
+          echo "$OUT" | grep -q '(echo) hello relay'
+          SID=$(echo "$OUT" | grep -o '"session_id": "[^"]*"' | tail -1 | cut -d'"' -f4)
+          curl -fsN -X POST localhost:8080/chat -H "Authorization: Bearer $TOKEN" -H 'content-type: application/json' -d "{\"message\":\"again\",\"session_id\":\"$SID\"}" | grep -q '"done": true'
+          curl -fs localhost:8080/sessions/$SID -H "Authorization: Bearer $TOKEN" | grep -q 'again'
+      - name: Worker indexed the knowledge base
+        run: |
+          for i in $(seq 1 30); do n=$(psql "$DB" -tAc "SELECT count(*) FROM documents"); [ "$n" = "30" ] && break; sleep 2; done
+          test "$n" = "30"
+          psql "$DB" -tAc "SELECT count(*) FROM chunks"
+      - name: Graceful shutdown
+        run: |
+          docker stop --time 20 api worker
+          test "$(docker inspect api --format '{{.State.ExitCode}}')" = "0"
+          test "$(docker inspect worker --format '{{.State.ExitCode}}')" = "0"
+      - if: failure()
+        run: docker logs api; docker logs worker
