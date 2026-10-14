@@ -128,9 +128,25 @@ flowchart TB
 - **Handoff (swarm).** One agent owns the conversation at a time and transfers control to another, passing a summary. Good for support flows with clear departments. The risk is lost context at each transfer.
 - **Pipeline.** Fixed sequence of specialised agents. This is really a workflow with agentic steps, and it is often the right answer.
 
+### How multi-agent systems fail
+
+The most systematic study so far, [Why Do Multi-Agent LLM Systems Fail?](https://arxiv.org/abs/2503.13657), annotated more than 1,600 traces from 7 popular multi-agent frameworks and grouped what went wrong into a taxonomy (MAST) of 14 failure modes in 3 categories:
+
+- **System design issues**: unclear role or task specifications, agents ignoring their constraints, losing conversation history, not knowing when to stop.
+- **Inter-agent misalignment**: agents withholding information, ignoring each other's input, drifting off task, or acting on assumptions instead of asking.
+- **Task verification**: stopping too early, checking results superficially or not at all.
+
+Human annotators agreed on the labels with a kappa of 0.88, so these are recognisable, repeatable failures, not noise. Most of them are design problems you can fix with better specifications, clearer handoffs, and explicit verification steps, rather than with a stronger model. Use the taxonomy as a checklist when you read multi-agent traces.
+
 ### Writing the delegation
 
 Most multi-agent failures are bad delegation, not bad models. When the orchestrator spawns a worker, the task description must include: the objective, the output format, which tools to use, what is out of scope, and how much effort to spend. "Research return policies" produces sprawling duplicate work. "Find the return window and restocking fee for tents in the 2026 returns policy; return a two-line answer with the document ID; do not search order data" does not.
+
+## Agents talking to other agents: A2A
+
+MCP connects an agent to tools and data. The [Agent2Agent protocol (A2A)](https://a2a-protocol.org/latest/) connects an agent to *other agents*, which may be built by other teams or vendors on other frameworks, without either side exposing its internal memory, tools, or prompts. In the protocol's own words, "MCP is for agent-to-tool communication" and "A2A is for agent-to-agent communication". Google started it and donated it to the Linux Foundation, where a steering committee with members from AWS, Microsoft, Salesforce, SAP, and others maintains it.
+
+You need A2A when an agent must delegate to an agent you do not control, for example your support agent asking a carrier's agent about a lost parcel. Inside one codebase, plain function calls or sub-agents are simpler. Everything in Week 3 still applies: another organisation's agent is untrusted input, so treat its replies like a third-party tool result.
 
 ## Choosing a framework (or not)
 
@@ -156,6 +172,8 @@ The labs use the raw SDK so that you see every token. After the course, pick a f
 - [LLM Powered Autonomous Agents](https://lilianweng.github.io/posts/2023-06-23-agent/), Lilian Weng. Planning, memory, and tool use in one survey.
 - [ReAct: Synergizing Reasoning and Acting](https://arxiv.org/abs/2210.03629), the paper behind the think-act-observe loop.
 - [AI Agents for Beginners](https://github.com/microsoft/ai-agents-for-beginners), Microsoft. Free lessons with code.
+- [Why Do Multi-Agent LLM Systems Fail?](https://arxiv.org/abs/2503.13657), the MAST failure taxonomy.
+- [A2A protocol](https://a2a-protocol.org/latest/), for agent-to-agent interoperability.
 
 ```quiz
 [
@@ -163,6 +181,7 @@ The labs use the raw SDK so that you see every token. After the course, pick a f
   {"q": "Which situation most justifies splitting work across sub-agents?", "options": ["Each step needs the full conversation history", "A task needs reading hundreds of thousands of tokens of search results, of which only a summary matters", "You want lower latency on a simple FAQ", "You want to reduce token spend"], "answer": 1, "why": "Context isolation is the strongest reason. Sub-agents absorb large, noisy inputs and pass back condensed results so the orchestrator's context stays focused."},
   {"q": "The model requests three tools in one turn. How should you return the results?", "options": ["Three separate user messages, one per result", "One user message containing all three tool_result blocks", "Only the first result; the model will ask again", "Concatenate them into a text block"], "answer": 1, "why": "Return all results together in one message. Splitting them works but gradually teaches the model to stop calling tools in parallel."},
   {"q": "A tool call fails because the order ID does not exist. What is the best behaviour?", "options": ["Raise an exception and end the run", "Return a tool_result with is_error true and a message the model can act on", "Silently return an empty object", "Retry the same call five times"], "answer": 1, "why": "Errors are information. A clear error result lets the model recover, for example by asking the customer to confirm the order number."},
+  {"q": "According to the MAST study of multi-agent failures, where do most failures come from?", "options": ["Weak base models", "System design, misalignment between agents, and missing verification, which are mostly fixable by design", "Network errors", "Tokenizer bugs"], "answer": 1, "why": "The 14 failure modes cluster into specification and design issues, inter-agent misalignment, and task verification. Better specifications, handoffs, and checks address most of them."},
   {"q": "In the routing example, what produced most of the cost saving?", "options": ["Shorter answers", "Sending the easy majority of traffic to a much cheaper model with a smaller prompt", "Removing tools", "Streaming"], "answer": 1, "why": "70% of traffic moved from $4/$20 to $0.10/$0.50 per million tokens with a smaller prompt. Routing is usually the largest single cost lever in a product with mixed difficulty."}
 ]
 ```

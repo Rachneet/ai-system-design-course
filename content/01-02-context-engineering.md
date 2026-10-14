@@ -135,6 +135,7 @@ Model providers now ship parts of this as API features, so check before you buil
 - **Server-side compaction** summarises earlier turns when the context nears a threshold, and returns a compaction block you keep in history.
 - **Memory tools** give the agent a file-like store it reads and writes across sessions.
 - **Tool search** lets you mark most tools as deferred, so only their names sit in context and full definitions load when the agent searches for them. Use it when an agent has dozens of tools.
+- **Code execution with MCP** goes further: tools are presented as code modules, and the agent writes a short program that calls them, filters the results, and returns only what matters. Anthropic's [write-up](https://www.anthropic.com/engineering/code-execution-with-mcp) reports one workflow dropping from 150,000 tokens to 2,000 (a 98.7% saving), because large intermediate results never pass through the model. The price is running model-written code, which needs a sandbox with resource limits and monitoring.
 - **Skills** package instructions, scripts, and reference files in folders that the agent loads only when a task needs them, an example of *progressive disclosure*: a one-line description in context and the full content on demand.
 
 The trade-off is portability: provider features differ, so wrap them behind your own interface and keep the eval suite as the judge of whether they help.
