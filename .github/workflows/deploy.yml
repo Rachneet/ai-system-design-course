@@ -1,0 +1,78 @@
+# Deploy Relay to Google Cloud Run on every push to main that touches relay/.
+# Does nothing until these repository variables exist (Settings > Secrets and variables > Actions > Variables):
+#   GCP_PROJECT_ID, GCP_REGION, GCP_WIF_PROVIDER, GCP_DEPLOY_SA
+# Secrets live in Google Secret Manager (anthropic-key, database-url, jwks-url, jwt-issuer), not in GitHub.
+# One-time setup: relay/infra/setup_gcp.sh
+name: deploy
+on:
+  push:
+    branches: [main]
+    paths: ["relay/**", ".github/workflows/deploy.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write   # keyless auth to Google Cloud via Workload Identity Federation
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+env:
+  REGION: ${{ vars.GCP_REGION }}
+  PROJECT: ${{ vars.GCP_PROJECT_ID }}
+
+jobs:
+  deploy:
+    if: vars.GCP_PROJECT_ID != ''
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: google-github-actions/auth@v3
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SA }}
+      - uses: google-github-actions/setup-gcloud@v3
+      - name: Build and push (tag = git SHA; the same image goes to staging and production)
+        run: |
+          IMAGE=$REGION-docker.pkg.dev/$PROJECT/relay/relay:${GITHUB_SHA::12}
+          echo "IMAGE=$IMAGE" >> "$GITHUB_ENV"
+          gcloud auth configure-docker $REGION-docker.pkg.dev --quiet
+          docker build -t $IMAGE relay && docker push $IMAGE
+      - name: Migrate (additive schema, safe for the running revision)
+        run: |
+          gcloud run jobs deploy relay-migrate --image $IMAGE --region $REGION \
+            --command python --args=-m,app.migrate \
+            --service-account relay-api@$PROJECT.iam.gserviceaccount.com \
+            --set-secrets RELAY_DATABASE_URL=database-url:latest
+          gcloud run jobs execute relay-migrate --region $REGION --wait
+      - name: Deploy staging and smoke test
+        run: |
+          gcloud run deploy relay-api-staging --image $IMAGE --region $REGION --quiet \
+            --service-account relay-api@$PROJECT.iam.gserviceaccount.com \
+            --set-secrets ANTHROPIC_API_KEY=anthropic-key-staging:latest,RELAY_DATABASE_URL=database-url-staging:latest,RELAY_JWKS_URL=jwks-url:latest,RELAY_JWT_ISSUER=jwt-issuer:latest \
+            --set-env-vars RELAY_MODEL=claude-haiku-5-5 \
+            --concurrency 80 --min-instances 0 --max-instances 3 --timeout 300 --allow-unauthenticated
+          URL=$(gcloud run services describe relay-api-staging --region $REGION --format 'value(status.url)')
+          curl -fs $URL/readyz
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST $URL/chat -H 'content-type: application/json' -d '{"message":"hi"}')" = "401"
+      - name: Deploy production with no traffic, then canary at 10%
+        run: |
+          gcloud run deploy relay-api --image $IMAGE --region $REGION --quiet --no-traffic --tag canary \
+            --service-account relay-api@$PROJECT.iam.gserviceaccount.com \
+            --set-secrets ANTHROPIC_API_KEY=anthropic-key:latest,RELAY_DATABASE_URL=database-url:latest,RELAY_JWKS_URL=jwks-url:latest,RELAY_JWT_ISSUER=jwt-issuer:latest \
+            --concurrency 80 --min-instances 1 --max-instances 20 --timeout 300 --allow-unauthenticated
+          CANARY=$(gcloud run services describe relay-api --region $REGION --format 'value(status.traffic[].url)' | tr ';' '\n' | grep canary)
+          curl -fs $CANARY/readyz
+          gcloud run services update-traffic relay-api --region $REGION --to-tags canary=10
+      - name: Watch the canary, then promote
+        run: |
+          sleep 600   # Lab 5 replaces this with a check on error rate, latency and judge pass rate
+          gcloud run services update-traffic relay-api --region $REGION --to-latest
+      - name: Deploy worker
+        run: |
+          gcloud run deploy relay-worker --image $IMAGE --region $REGION --quiet \
+            --command python --args=-m,app.worker --no-cpu-throttling \
+            --service-account relay-worker@$PROJECT.iam.gserviceaccount.com \
+            --set-secrets ANTHROPIC_API_KEY=anthropic-key:latest,RELAY_DATABASE_URL=database-url:latest \
+            --min-instances 1 --max-instances 3 --no-allow-unauthenticated
