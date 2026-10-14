@@ -11,12 +11,14 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from .agent import run_turn
+from .channels import handle_email
 from .config import settings
 from .db import NotFound, Store, open_pool
-from .guardrails import check_reply, redact_cards
+from .guardrails import check_reply, redact_cards, sanitize_output
 from .llm import AnthropicLLM
 from .memory import AnthropicExtractor, remember
 from .prompts import system_prompt
+from .quarantine import AnthropicQuarantine
 from .retrieval import Retriever
 from .tools import Context
 
@@ -33,6 +35,8 @@ async def lifespan(app: FastAPI):
         app.state.llm = AnthropicLLM(settings.model, settings.max_tokens, settings.refusal_fallback)
     if not hasattr(app.state, "extractor"):
         app.state.extractor = AnthropicExtractor(settings.memory_model)
+    if not hasattr(app.state, "quarantine"):
+        app.state.quarantine = AnthropicQuarantine(settings.memory_model)
     if not hasattr(app.state, "retriever"):
         from .embeddings import LocalEmbedder, LocalReranker  # loads local models; tests inject fakes instead
 
@@ -88,6 +92,7 @@ async def chat(
         now=now,
         retriever=request.app.state.retriever,
         staff=staff,
+        quarantine=request.app.state.quarantine,
     )
 
     def guard(draft: str, result) -> list[str]:
@@ -99,7 +104,7 @@ async def chat(
         queue: asyncio.Queue[str | None] = asyncio.Queue()
 
         async def on_text(t: str) -> None:
-            await queue.put(t)
+            await queue.put(sanitize_output(t))  # guarded mode emits whole drafts, so links are never split
 
         async def work():
             try:
@@ -130,6 +135,30 @@ async def chat(
 async def remember_session(store: Store, extractor, customer_id: str, session_id: UUID) -> None:
     messages = await store.load_session(session_id, customer_id)
     await remember(store, extractor, customer_id, session_id, messages)
+
+
+class EmailIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    subject: str = Field(max_length=300)
+    body: str = Field(min_length=1, max_length=20_000)
+
+
+@app.post("/emails")
+async def inbound_email(body: EmailIn, request: Request, customer_id: str = Depends(current_customer)):
+    """Triage an inbound email and draft a reply for a human to review (assist mode). Nothing is sent."""
+    ctx = Context(
+        store=request.app.state.store,
+        customer_id=customer_id,
+        now=datetime.now(UTC),
+        retriever=request.app.state.retriever,
+        quarantine=request.app.state.quarantine,
+    )
+    outcome = await handle_email(ctx, request.app.state.llm, body.subject, redact_cards(body.body)[0])
+    return {
+        "triage": outcome.triage.model_dump(),
+        "draft": outcome.draft,
+        "stopped": outcome.result.stopped if outcome.result else None,
+    }
 
 
 @app.get("/sessions/{session_id}")

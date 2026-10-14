@@ -32,8 +32,8 @@ class TurnResult:
 async def run_tool(ctx: Context, block: dict, timeout_s: float) -> dict:
     tool = REGISTRY.get(block["name"])
     try:
-        if tool is None:
-            raise ToolError(f"Unknown tool {block['name']}.")
+        if tool is None or tool.tier not in ctx.allowed_tiers:
+            raise ToolError(f"Tool {block['name']} is not available here.")
         out = await asyncio.wait_for(tool.fn(ctx, **block["input"]), timeout=timeout_s)
         return {"type": "tool_result", "tool_use_id": block["id"], "content": out}
     except ToolError as e:
@@ -74,7 +74,10 @@ async def run_turn(
 
     for _ in range(settings.max_steps):
         resp = await llm.respond(
-            system=system, tools=specs(), messages=messages, on_text=hold if guard else on_text
+            system=system,
+            tools=specs(ctx.allowed_tiers),
+            messages=messages,
+            on_text=hold if guard else on_text,
         )
         result.steps += 1
         result.usage.update(resp.usage)

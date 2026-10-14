@@ -6,7 +6,8 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql://postgres:relay@localhost:5432/relay"
     model: str = "claude-opus-5-5"  # set RELAY_MODEL=claude-haiku-5-5 for cheap development
-    memory_model: str = "claude-haiku-5-5"
+    memory_model: str = "claude-haiku-5-5"  # also used for quarantine and the user simulator
+    judge_model: str = "claude-opus-5-5"  # pinned; changing it changes every judged score
     refusal_fallback: bool = True  # server-side fallback model when the main model declines
     max_steps: int = 8
     max_tokens: int = 4096

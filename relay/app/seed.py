@@ -35,6 +35,11 @@ async def seed(store: Store, data: dict, now: datetime) -> None:
                 "VALUES (%s, %s, %s, %s, %s, %s, %s)",
                 (o["id"], o["customer_id"], o["status"], o["total"], Jsonb(items), eta, delivered),
             )
+        for rv in data.get("reviews", []):
+            await c.execute(
+                "INSERT INTO reviews (sku, rating, body) VALUES (%s, %s, %s)",
+                (rv["sku"], rv["rating"], rv["body"]),
+            )
         for r in data.get("refunds", []):
             await c.execute(
                 "INSERT INTO refunds (order_id, amount, reason) VALUES (%s, %s, %s)",

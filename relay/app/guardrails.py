@@ -56,3 +56,22 @@ def check_reply(reply: str, retrieved: set[str], tool_calls: list[dict]) -> list
     if redact_cards(reply)[1]:
         problems.append("contains a card number")
     return problems
+
+
+ALLOWED_LINK_HOSTS = ("northwind.example",)
+MD_IMAGE = re.compile(r"!\[[^\]]*\]\([^)]*\)")
+MD_LINK = re.compile(r"\[([^\]]*)\]\(([^)\s]+)[^)]*\)")
+BARE_URL = re.compile(r"\bhttps?://[^\s)<>\]]+")
+
+
+def _allowed(url: str) -> bool:
+    host = re.sub(r"^https?://", "", url).split("/")[0].split(":")[0].lower()
+    return any(host == h or host.endswith("." + h) for h in ALLOWED_LINK_HOSTS)
+
+
+def sanitize_output(text: str) -> str:
+    """Close the exfiltration channel: a rendered image or link to an attacker's server can carry private data
+    in its URL. Drop all Markdown images; keep links only to our own domain."""
+    text = MD_IMAGE.sub("", text)
+    text = MD_LINK.sub(lambda m: f"{m.group(1)} ({m.group(2)})" if _allowed(m.group(2)) else m.group(1), text)
+    return BARE_URL.sub(lambda m: m.group() if _allowed(m.group()) else "[link removed]", text)

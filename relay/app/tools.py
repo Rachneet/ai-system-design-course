@@ -7,6 +7,7 @@ from uuid import UUID
 
 from .config import settings
 from .db import Store
+from .quarantine import Quarantine
 from .retrieval import Retriever, principals_for
 
 RETURN_WINDOW_DAYS = 60
@@ -27,6 +28,9 @@ class Context:
     retriever: Retriever | None = None
     staff: bool = False  # support staff may also read group:support documents
     retrieved: set[str] = field(default_factory=set)  # doc IDs returned this turn, for the citation guardrail
+    quarantine: Quarantine | None = None
+    # Which tool tiers this channel may use. Email-triggered runs cannot refund directly (see channels.py).
+    allowed_tiers: frozenset[str] = frozenset({"read", "write_bounded", "write_approval", "escalation"})
 
     @property
     def principals(self) -> list[str]:
@@ -55,11 +59,16 @@ def tool(name: str, description: str, properties: dict, required: list[str], tie
     return register
 
 
-def specs() -> list[dict]:
-    """Tool definitions for the API, sorted so the prompt prefix stays byte-identical (cache-friendly)."""
+def specs(allowed_tiers: frozenset[str] | None = None) -> list[dict]:
+    """Tool definitions for the API, sorted so the prompt prefix stays byte-identical (cache-friendly).
+
+    Tools outside the channel's tiers are not offered at all; run_tool also refuses them, in case the model
+    names a tool it was not given.
+    """
     return [
         {"name": t.name, "description": t.description, "input_schema": t.schema, "strict": True}
         for t in sorted(REGISTRY.values(), key=lambda t: t.name)
+        if allowed_tiers is None or t.tier in allowed_tiers
     ]
 
 
@@ -197,3 +206,29 @@ async def request_refund_approval(ctx: Context, order_id: int, amount: float, re
 async def escalate_to_human(ctx: Context, reason: str) -> str:
     ticket = await ctx.store.create_escalation(ctx.customer_id, ctx.session_id, reason)
     return f"Escalated as ticket #{ticket}. Tell the customer a teammate will reply by email within 4 hours."
+
+
+@tool(
+    "get_product_reviews",
+    "Summarise what customers say about a product, by SKU (e.g. TENT-RDG-2P). Returns the average rating and the "
+    "themes reviewers praise or complain about. Raw review text is not available to you.",
+    {"sku": {"type": "string"}},
+    ["sku"],
+)
+async def get_product_reviews(ctx: Context, sku: str) -> str:
+    async with ctx.store.conn() as c:
+        rows = await (
+            await c.execute("SELECT rating, body FROM reviews WHERE sku = %s", (sku.upper(),))
+        ).fetchall()
+    if not rows:
+        return f"No reviews for {sku}."
+    avg = sum(r["rating"] for r in rows) / len(rows)  # computed in code, not by a model
+    summary = f"{sku.upper()}: average {avg:.1f}/5 from {len(rows)} reviews."
+    if ctx.quarantine is None:
+        return summary
+    themes = await ctx.quarantine.review_themes(
+        [r["body"] for r in rows]
+    )  # tool-less model, enum output only
+    praise = ", ".join(themes.praise) or "nothing consistent"
+    complaints = ", ".join(themes.complaints) or "nothing consistent"
+    return f"{summary} Reviewers praise: {praise}. Common complaints: {complaints}."

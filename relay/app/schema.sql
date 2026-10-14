@@ -106,3 +106,13 @@ CREATE TABLE IF NOT EXISTS ingest_jobs (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS ingest_jobs_ready ON ingest_jobs (run_after) WHERE status = 'queued';
+
+-- ---- Lab 3: untrusted third-party content ---------------------------------------------------------
+CREATE TABLE IF NOT EXISTS reviews (
+  id         serial PRIMARY KEY,
+  sku        text NOT NULL,
+  rating     int NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  body       text NOT NULL,            -- written by strangers: never shown to the tool-using model
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS reviews_sku ON reviews (sku);
