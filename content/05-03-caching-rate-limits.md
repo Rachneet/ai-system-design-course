@@ -16,7 +16,7 @@ The levers, roughly in order of payoff per unit of effort:
 
 | Lever | Saves | Effort | Risk |
 |---|---|---|---|
-| Prompt caching | Input cost (up to ~90% on cached part), TTFT | Low | Low |
+| Prompt caching | Input cost (90–95% off the cached part), TTFT | Low | Low |
 | Trimming context (tool results, history) | Input cost, latency | Low–medium | Medium (quality) |
 | Shorter outputs | Output cost, latency | Low | Low–medium |
 | Model routing (small model for easy traffic) | Cost, latency | Medium | Medium (quality) |
@@ -35,10 +35,10 @@ How to get high hit rates:
 - **Deterministic serialisation.** Sort tools; serialise JSON with sorted keys.
 - **Append, do not rewrite.** Each turn appends to the message list, so the previous turn's whole context is a cached prefix of the next request.
 - **Put cache breakpoints** where your provider requires them (for example on the system prompt and the last message), or use automatic caching where offered.
-- **Mind the TTL.** Caches expire after minutes of inactivity (often 5 minutes by default, with longer options at a higher write price). Long pauses between turns lose the cache.
-- **Mind minimum sizes.** Very short prefixes are not cached.
+- **Mind the TTL.** The default cache lifetime is 5 minutes, refreshed each time it is read. A 1-hour option costs 2x base input to write instead of 1.25x. Long pauses between turns lose a 5-minute cache.
+- **Mind minimum sizes.** Prefixes shorter than the model's minimum (512 tokens on current Claude models, more on some older ones) are silently not cached.
 
-> [!numbers] An agent turn with 12,000 prefix tokens (system + tools + history) and 3 loop iterations, on Sonnet 5.5 ($2 input, $0.20 cache read per million). Without caching: 3 × 12,000 × $2 / 1e6 = **$0.072**. With caching after the first call: 12,000 × $2 / 1e6 + 2 × 12,000 × $0.20 / 1e6 = **$0.029** (ignoring cache-write premiums and the small per-step growth). Across a long conversation the savings compound as history grows.
+> [!numbers] An agent turn with 12,000 prefix tokens (system + tools + history) and 3 loop iterations, on Sonnet 5.5. Prices per million tokens: $2 input, $2.50 for a 5-minute cache write (1.25x), $0.10 for a cache read (0.05x). Without caching: 3 × 12,000 × $2 / 1e6 = **$0.072**. With caching, the first call writes the prefix and the next two read it: 12,000 × $2.50 / 1e6 + 2 × 12,000 × $0.10 / 1e6 = $0.030 + $0.0024 = **$0.032** (ignoring the small per-step growth). The write premium is paid back after a single read, and across a long conversation the savings compound as history grows.
 
 ## Response caching
 

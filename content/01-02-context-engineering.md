@@ -15,7 +15,7 @@ Because the model is stateless, every turn is a fresh read of whatever you put i
 A useful frame: the context window is working memory with three properties.
 
 1. **It is finite.** Even a 1M-token window fills up on a long agent run.
-2. **It is not uniform.** Models attend less reliably to information buried in the middle of long contexts. See [Lost in the Middle](https://arxiv.org/abs/2307.03172) and Chroma's [Context Rot](https://research.trychroma.com/context-rot) study, which found accuracy degrading as input length grows even on simple tasks.
+2. **It is not uniform.** Models attend less reliably to information buried in the middle of long contexts. See [Lost in the Middle](https://arxiv.org/abs/2307.03172) and Chroma's [Context Rot](https://www.trychroma.com/research/context-rot) study, which found accuracy degrading as input length grows even on simple tasks.
 3. **It is paid for on every turn.** Every token you add is re-billed each loop iteration unless cached.
 
 > [!rule] Give the model the smallest set of high-signal tokens that lets it do the next step well. More context is not more help.
@@ -127,9 +127,21 @@ def maybe_compact(messages, budget_tokens=60_000, keep_last=6):
 
 For very long tasks, have the agent maintain an explicit scratchpad (a `notes` or `todo` tool, or a file) with its plan and progress. After compaction it reads its notes and continues. Sub-agents are the other escape valve: delegate a reading-heavy subtask so its tokens never enter the main context.
 
+### Let the platform help
+
+Model providers now ship parts of this as API features, so check before you build your own:
+
+- **Context editing** clears old tool results (and optionally old thinking) from the request automatically.
+- **Server-side compaction** summarises earlier turns when the context nears a threshold, and returns a compaction block you keep in history.
+- **Memory tools** give the agent a file-like store it reads and writes across sessions.
+- **Tool search** lets you mark most tools as deferred, so only their names sit in context and full definitions load when the agent searches for them. Use it when an agent has dozens of tools.
+- **Skills** package instructions, scripts, and reference files in folders that the agent loads only when a task needs them, an example of *progressive disclosure*: a one-line description in context and the full content on demand.
+
+The trade-off is portability: provider features differ, so wrap them behind your own interface and keep the eval suite as the judge of whether they help.
+
 ## Context and caching are one design
 
-Prompt caching gives a large discount (often 90%) on input tokens that match a previously seen prefix. It only works if the prefix is byte-identical. Common ways teams accidentally break it:
+Prompt caching gives a large discount (90 to 95% on current Claude models) on input tokens that match a previously seen prefix. It only works if the prefix is byte-identical. Common ways teams accidentally break it:
 
 - Putting a timestamp, request ID, or user name in the system prompt.
 - Serialising tool definitions in a different order each time (unsorted dicts).
@@ -168,7 +180,7 @@ Write budgets down. They make trade-offs explicit and give you something to aler
 - [Effective context engineering for AI agents](https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents), Anthropic.
 - [Context Engineering for Agents](https://rlancemartin.github.io/2025/06/23/context_engineering/), Lance Martin. A taxonomy: write, select, compress, isolate.
 - [The New Skill in AI is Context Engineering](https://www.philschmid.de/context-engineering), Philipp Schmid.
-- [Context Rot](https://research.trychroma.com/context-rot), Chroma research on long-context degradation.
+- [Context Rot](https://www.trychroma.com/research/context-rot), Chroma research on long-context degradation.
 - [Lost in the Middle](https://arxiv.org/abs/2307.03172), the paper on position effects in long contexts.
 - [12-factor agents](https://github.com/humanlayer/12-factor-agents), especially "own your context window".
 

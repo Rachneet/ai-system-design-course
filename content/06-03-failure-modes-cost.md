@@ -70,23 +70,23 @@ Build a per-conversation model from measured averages:
 
 ### Worked example: Relay, three designs
 
-Measured profile: a conversation averages 3 user turns; each turn averages 2.5 model calls in the agent loop. System prompt + tools = 6,000 tokens. History grows about 1,500 tokens per turn. Tool results and retrieval add 2,500 tokens per call. Output averages 250 tokens per call. Prices per million tokens: Sonnet 5.5 $2 in / $0.20 cached / $10 out; Haiku 5.5 $0.10 in / $0.50 out (we ignore Haiku cache savings for simplicity).
+Measured profile: a conversation averages 3 user turns; each turn averages 2.5 model calls in the agent loop. System prompt + tools = 6,000 tokens. History grows about 1,500 tokens per turn. Tool results and retrieval add 2,500 tokens per call. Output averages 250 tokens per call. Prices per million tokens: Sonnet 5.5 $2 input, $2.50 cache write, $0.10 cache read, $10 output; Haiku 5.5 $0.10 input, $0.50 output (we ignore Haiku caching for simplicity).
 
 Average input per call: 6,000 (prefix) + ~3,000 (average history) + 2,500 (tool results) ≈ 11,500 tokens. Calls per conversation: 3 × 2.5 = 7.5.
 
 **Design A: Sonnet for everything, no caching.**
 Input: 7.5 × 11,500 × $2 / 1e6 = $0.1725. Output: 7.5 × 250 × $10 / 1e6 = $0.01875. **≈ $0.19 per conversation.**
 
-**Design B: Sonnet with prompt caching.** Assume 75% of input tokens are served from cache after the first call (stable prefix + appended history).
-Input: 7.5 × 11,500 × (0.25 × $2 + 0.75 × $0.20) / 1e6 = 7.5 × 11,500 × $0.65 / 1e6 ≈ $0.056. Output unchanged at $0.019. **≈ $0.075 per conversation**, 61% cheaper.
+**Design B: Sonnet with prompt caching.** Assume 75% of input tokens are read from cache and the other 25% are new tokens written to the cache (stable prefix + appended history).
+Input: 7.5 × 11,500 × (0.25 × $2.50 + 0.75 × $0.10) / 1e6 = 7.5 × 11,500 × $0.70 / 1e6 ≈ $0.060. Output unchanged at $0.019. **≈ $0.079 per conversation**, 59% cheaper.
 
 **Design C: B plus routing 60% of conversations to Haiku with a 4,000-token prompt and 2 calls per turn.**
-Haiku conversation: 3 × 2 = 6 calls × (4,000 + 3,000 + 1,500 = 8,500 in × $0.10 + 250 out × $0.50) / 1e6 = 6 × $0.000975 ≈ $0.006. Blended: 0.6 × $0.006 + 0.4 × $0.075 ≈ **$0.034 per conversation**, 82% cheaper than A.
+Haiku conversation: 3 × 2 = 6 calls × (4,000 + 3,000 + 1,500 = 8,500 in × $0.10 + 250 out × $0.50) / 1e6 = 6 × $0.000975 ≈ $0.006. Blended: 0.6 × $0.006 + 0.4 × $0.079 ≈ **$0.035 per conversation**, 82% cheaper than A.
 
 | | A | B | C |
 |---|---|---|---|
-| Cost per conversation | $0.19 | $0.075 | $0.034 |
-| At 50,000 conversations/day, monthly | $285k | $113k | $51k |
+| Cost per conversation | $0.19 | $0.079 | $0.035 |
+| At 50,000 conversations/day, monthly | $285k | $119k | $53k |
 | Complexity | Lowest | Low | Router + 2 prompts + evals per route |
 | Quality risk | Baseline | None (same model) | Must verify per category |
 

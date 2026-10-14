@@ -32,20 +32,22 @@ The classic four (latency, traffic, errors, saturation, from Google's [SRE book]
 Record usage on every model call (you already have it in spans): model, input tokens, cached input tokens, output tokens, and the feature, user, and tenant it served. Compute cost from a price table versioned in your repo.
 
 ```python
-PRICES = {  # USD per million tokens, from the provider's pricing page; review on model changes
-    "claude-opus-5-5":   {"in": 4.00, "out": 20.00, "cache_read": 0.20},
-    "claude-sonnet-5-5": {"in": 2.00, "out": 10.00, "cache_read": 0.20},
-    "claude-haiku-5-5":  {"in": 0.10, "out": 0.50,  "cache_read": 0.01},  # check current cache price
+PRICES = {  # USD per million tokens, from the provider's pricing page (checked 2026-10-14)
+    "claude-opus-5-5":   {"in": 4.00, "cache_write": 5.00,  "cache_read": 0.20, "out": 20.00},
+    "claude-sonnet-5-5": {"in": 2.00, "cache_write": 2.50,  "cache_read": 0.10, "out": 10.00},
+    "claude-haiku-5-5":  {"in": 0.10, "cache_write": 0.125, "cache_read": 0.01, "out": 0.50},  # prompts ≤100k tokens
 }
 
 def cost_usd(model, usage) -> float:
     p = PRICES[model]
-    cached = usage.cache_read_input_tokens or 0
-    uncached = usage.input_tokens                       # cache reads are reported separately
-    return (uncached * p["in"] + cached * p["cache_read"] + usage.output_tokens * p["out"]) / 1e6
+    # The three input counts are disjoint: input_tokens is only the uncached part.
+    return (usage.input_tokens * p["in"]
+            + (usage.cache_creation_input_tokens or 0) * p["cache_write"]   # 5-minute writes
+            + (usage.cache_read_input_tokens or 0) * p["cache_read"]
+            + usage.output_tokens * p["out"]) / 1e6
 ```
 
-> [!warn] Check exactly how your provider reports cached tokens and cache writes. Cache writes are often billed at a premium over normal input. Getting this wrong makes your cost dashboards disagree with the invoice, and nobody trusts a dashboard that disagrees with the invoice. Reconcile against the provider's usage report monthly.
+> [!warn] Check exactly how your provider reports cached tokens and cache writes. On the Claude API, `input_tokens`, `cache_creation_input_tokens`, and `cache_read_input_tokens` are separate counts that add up to the total input. Cache writes cost more than normal input (1.25x for 5-minute, 2x for 1-hour caches), and Haiku 5.5 charges higher rates when a prompt exceeds 100,000 tokens. Getting this wrong makes your cost dashboards disagree with the invoice, and nobody trusts a dashboard that disagrees with the invoice. Reconcile against the provider's usage report monthly.
 
 Dashboards to build:
 
