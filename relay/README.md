@@ -4,7 +4,7 @@ Relay is the support agent for Northwind Outfitters (a fictional outdoor gear st
 [AI System Design Course](../README.md). This folder is the working reference. Each lab has a git tag
 (`lab1`, `lab2`, ...) so you can compare your code with a known-good version at every stage.
 
-**Current stage: Lab 3** (eval suite and agent security), built on Labs 1 and 2:
+**Current stage: Lab 4** (secure API and deployment), built on Labs 1 to 3:
 
 - **Lab 1, agent service:** async FastAPI, streaming over server-sent events, tools with code-enforced limits,
   sessions in Postgres, a bounded agent loop, and background memory.
@@ -16,6 +16,11 @@ Relay is the support agent for Northwind Outfitters (a fictional outdoor gear st
   binary LLM judges with calibration tooling, a merge gate with an exact McNemar test against a baseline,
   error-analysis tooling, and hardened tools: tool tiers per channel, quarantined handling of reviews and emails,
   and link sanitising.
+- **Lab 4, secure API and deployment:** JWT verification against an identity provider's JWKS (with a dev signing
+  mode for local work), per-customer rate limits and daily token budgets in Postgres, a refund-approval state
+  machine with Idempotency-Key replay, a worker process with an outbox-style job queue (memory extraction now
+  waits until a session is quiet), readiness checks, a non-root container image, a CI job that runs the real
+  containers, and a Cloud Run pipeline with staging, a 10% canary, and one-command rollback.
 
 ## Layout
 
@@ -28,6 +33,12 @@ app/embeddings.py local embedding and reranking models (fastembed, CPU, no API k
 app/guardrails.py card redaction (Luhn), citation and refund-promise checks, link and image sanitising
 app/quarantine.py tool-less model calls that turn reviews and emails into narrow structured fields
 app/channels.py   the email channel: assist mode, no direct refunds
+app/auth.py       bearer-token verification; identity and staff role come only from the token
+app/limits.py     token-bucket rate limits and daily token budgets
+app/approvals.py  approval state machine and Idempotency-Key handling
+app/jobs.py       job queue with debouncing and retries;  app/worker.py runs it (python -m app.worker)
+Dockerfile        multi-stage uv build, non-root, one image for API and worker
+infra/            one-time Google Cloud setup (.github/workflows/deploy.yml does the rest)
 app/llm.py       the model boundary (Anthropic SDK, prompt caching, refusal fallback); tests swap in a script
 app/db.py        Postgres repository; every customer read is scoped in SQL
 app/memory.py    background fact extraction from the customer's own words, with a poisoning filter
@@ -36,7 +47,7 @@ prompts/         the system prompt, versioned with the code
 kb/              30 documents with front matter: title and acl (5 are internal, group:support only)
 evals/cases/     dev/ and heldout/ case files; generated ones come from evals/generate.py
 evals/           runner, grader, gates.yaml, judges (+ calibration data), simulator, error analysis, retrieval eval
-tests/           64 tests that need no API key: embedded Postgres + a scripted model
+tests/           76 tests that need no API key: embedded Postgres + a scripted model
 ```
 
 ## Run the tests (no API key, no Docker)
@@ -54,12 +65,27 @@ schema, and replace the model with a script, so they are free and run offline.
 
 ```bash
 docker compose up -d                 # Postgres with pgvector (or point RELAY_DATABASE_URL at any Postgres 16)
-cp .env.example .env                 # add ANTHROPIC_API_KEY
+cp .env.example .env                 # add ANTHROPIC_API_KEY and a random RELAY_DEV_JWT_SECRET
+uv run python -m app.migrate
 uv run python -m scripts.seed_demo
-uv run python -m app.ingest sync     # index kb/ (downloads ~150 MB of local models on first run)
+uv run python -m app.worker &        # indexes kb/ (downloads ~150 MB of local models on first run), runs jobs
 uv run uvicorn app.main:app --reload
-uv run python -m scripts.chat --customer c_77     # in another terminal
+uv run python -m scripts.chat --customer c_77     # in another terminal; mints a dev token
 ```
+
+Staff endpoints (`GET /approvals`, `POST /approvals/{id}/decision`) need a token with the staff role:
+`uv run python -m scripts.dev_token s_1 --staff`.
+
+## Deploy
+
+CI builds the image and runs it on every push: migration, API and worker containers, an authenticated two-turn
+chat, knowledge-base indexing by the worker, and a graceful shutdown. The image is 417 MB, most of it the local
+embedding and reranking runtime (ONNX). A deployment that calls a hosted embedding API instead could drop that.
+
+`.github/workflows/deploy.yml` deploys to Cloud Run once you run `infra/setup_gcp.sh` and set four repository
+variables. **It has not been run against a real Google Cloud project**; expect to adjust names and flags on your
+first deploy. Rollback is one command:
+`gcloud run services update-traffic relay-api --to-revisions=PREVIOUS_REVISION=100`.
 
 ## Measure retrieval (free, local)
 
@@ -115,6 +141,6 @@ cost the runner prints after your first real run.
 
 ## Not in the reference yet
 
-Authentication (Lab 4 replaces the `X-Customer-Id` and `X-Role` headers with JWTs), PDF parsing (Markdown only),
+PDF parsing (Markdown only),
 contextual chunk descriptions (needs an API key; see the Lab 2 page), model-generated red-team paraphrases,
-tracing (Lab 5), a job queue for memory extraction (Lab 4), and online judging of production traffic (Lab 5).
+tracing, cost dashboards, alerts, and online judging of production traffic (Lab 5).
