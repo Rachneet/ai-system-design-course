@@ -1,12 +1,9 @@
 """LLM judges: one binary criterion each, reasoning before verdict, calibrated against labels in judges/*.jsonl."""
 
-from pathlib import Path
 from typing import Literal
 
 import anthropic
 from pydantic import BaseModel
-
-DATA = Path(__file__).parent / "judges"
 
 
 class Verdict(BaseModel):

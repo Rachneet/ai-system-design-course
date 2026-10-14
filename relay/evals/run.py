@@ -33,7 +33,9 @@ from app.db import Store
 from app.embeddings import LocalEmbedder, LocalReranker
 from app.guardrails import check_reply, sanitize_output
 from app.ingest import Doc, reconcile, run_once, sha, sync_document
+from app.judges import CRITERIA, AnthropicJudge, render
 from app.llm import AnthropicLLM
+from app.pricing import cost_usd
 from app.prompts import system_prompt
 from app.quarantine import AnthropicQuarantine
 from app.retrieval import Retriever
@@ -41,7 +43,6 @@ from app.seed import seed
 from app.tools import REGISTRY, Context
 
 from .checks import grade
-from .judges import CRITERIA, AnthropicJudge, render
 from .simulator import DONE, AnthropicSimulator
 
 NOW = datetime(2026, 10, 1, 10, 0, tzinfo=UTC)
@@ -65,11 +66,6 @@ EXPECT_KEYS = {
 }
 MODES = ("input", "turns", "simulator", "email")
 SOURCES = {"handwritten", "synthetic-template", "redteam", "redteam-variant", "prod-trace"}
-PRICES = {  # USD per million tokens (input, cache write, cache read, output), checked 2026-10-14
-    "claude-opus-5-5": (4.00, 5.00, 0.20, 20.00),
-    "claude-sonnet-5-5": (2.00, 2.50, 0.10, 10.00),
-    "claude-haiku-5-5": (0.10, 0.125, 0.01, 0.50),
-}
 
 
 @dataclass
@@ -130,13 +126,7 @@ async def snapshot(store: Store) -> dict:
 
 
 def cost(usage: dict, model: str) -> float:
-    p_in, p_write, p_read, p_out = PRICES.get(model, (0, 0, 0, 0))
-    return (
-        usage.get("input_tokens", 0) * p_in
-        + usage.get("cache_creation_input_tokens", 0) * p_write
-        + usage.get("cache_read_input_tokens", 0) * p_read
-        + usage.get("output_tokens", 0) * p_out
-    ) / 1e6
+    return cost_usd(usage, model)
 
 
 async def converse(case: dict, ctx: Context, deps: Deps) -> dict:

@@ -11,7 +11,7 @@ import json
 import random
 from pathlib import Path
 
-OUT = Path(__file__).parent / "judges"
+OUT = Path(__file__).parent / "judges"  # evals/paths.py JUDGE_DATA
 
 
 def convo(customer: str, tools: list[tuple[str, str]], reply: str) -> str:

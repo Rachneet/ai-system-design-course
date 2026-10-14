@@ -157,4 +157,34 @@ CREATE UNIQUE INDEX IF NOT EXISTS jobs_one_queued ON jobs (kind, dedupe_key) WHE
 CREATE INDEX IF NOT EXISTS jobs_ready ON jobs (run_after) WHERE status = 'queued';
 
 ALTER TABLE approvals ADD COLUMN IF NOT EXISTS decided_by text;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS tracking_number text;
 ALTER TABLE approvals ADD COLUMN IF NOT EXISTS decided_at timestamptz;
+
+-- ---- Lab 5: feedback, online judging, flags ------------------------------------------------------
+CREATE TABLE IF NOT EXISTS feedback (
+  id          serial PRIMARY KEY,
+  session_id  uuid NOT NULL,
+  customer_id text NOT NULL,
+  rating      text NOT NULL CHECK (rating IN ('up', 'down')),
+  reason      text,
+  comment     text,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS online_judgements (
+  id          serial PRIMARY KEY,
+  session_id  uuid NOT NULL,
+  judge       text NOT NULL,
+  verdict     text NOT NULL CHECK (verdict IN ('pass', 'fail')),
+  reasoning   text,
+  trigger     text NOT NULL,            -- sample | feedback
+  reviewed    boolean NOT NULL DEFAULT false,
+  created_at  timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS flags (
+  key        text PRIMARY KEY,
+  value      jsonb NOT NULL,
+  updated_by text,
+  updated_at timestamptz NOT NULL DEFAULT now()
+);

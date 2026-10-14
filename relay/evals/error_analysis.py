@@ -15,7 +15,8 @@ from pathlib import Path
 
 import yaml
 
-from .judges import render
+from app.judges import render
+
 from .run import load_cases
 
 HERE = Path(__file__).parent

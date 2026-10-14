@@ -10,6 +10,8 @@ GET  /healthz, /readyz          liveness and readiness
 
 import asyncio
 import json
+import random
+import time
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from typing import Literal
@@ -17,36 +19,34 @@ from uuid import UUID, uuid4
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
+from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
 from pydantic import BaseModel, ConfigDict, Field
+from starlette.responses import Response
 
-from . import approvals
+from . import approvals, metrics, online
 from .agent import run_turn
 from .auth import Principal, current_principal, staff_only
 from .channels import handle_email
 from .config import settings
 from .db import NotFound, Store, open_pool
+from .flags import Flags
 from .guardrails import check_reply, redact_cards, sanitize_output
 from .limits import enforce_budget, enforce_rate, record_usage
 from .prompts import system_prompt
 from .retrieval import Retriever
+from .router import SIMPLE_TIERS, is_simple
+from .telemetry import setup as setup_tracing
+from .telemetry import tracer
 from .tools import Context
-from .wiring import build_embedder, build_llm, build_quarantine, build_reranker
-
-PRICES = {  # USD per million tokens (input, cache write, cache read, output), checked 2026-10-14
-    "claude-opus-5-5": (4.00, 5.00, 0.20, 20.00),
-    "claude-sonnet-5-5": (2.00, 2.50, 0.10, 10.00),
-    "claude-haiku-5-5": (0.10, 0.125, 0.01, 0.50),
-}
-
-
-def cost_usd(usage: dict) -> float:
-    p_in, p_write, p_read, p_out = PRICES.get(settings.model, (0, 0, 0, 0))
-    return (
-        usage.get("input_tokens", 0) * p_in
-        + usage.get("cache_creation_input_tokens", 0) * p_write
-        + usage.get("cache_read_input_tokens", 0) * p_read
-        + usage.get("output_tokens", 0) * p_out
-    ) / 1e6
+from .wiring import (
+    build_embedder,
+    build_llm,
+    build_quarantine,
+    build_reranker,
+    build_router,
+    build_shipping,
+    build_small_llm,
+)
 
 
 @asynccontextmanager
@@ -63,12 +63,28 @@ async def lifespan(app: FastAPI):
         app.state.quarantine = build_quarantine()
     if not hasattr(app.state, "retriever"):
         app.state.retriever = Retriever(app.state.store, build_embedder(), build_reranker())
+    for name, build in (
+        ("small_llm", build_small_llm),
+        ("router", build_router),
+        ("shipping", build_shipping),
+    ):
+        if not hasattr(app.state, name):
+            setattr(app.state, name, build())
+    setup_tracing("relay-api")
     yield
     if pool is not None:
         await pool.close()
 
 
 app = FastAPI(title="Relay", lifespan=lifespan)
+
+
+def state(request: Request, name: str):
+    """App state with safe defaults, so tests can inject only what they need."""
+    flags = getattr(request.app.state, "flags", None)
+    if name == "flags" and (flags is None or flags.store is not request.app.state.store):
+        request.app.state.flags = Flags(request.app.state.store)
+    return getattr(request.app.state, name, None)
 
 
 class ChatIn(BaseModel):
@@ -86,6 +102,12 @@ async def chat(body: ChatIn, request: Request, who: Principal = Depends(current_
     store: Store = request.app.state.store
     await enforce_rate(store, who.customer_id, settings.messages_per_minute, settings.message_burst)
     await enforce_budget(store, who.customer_id, settings.daily_token_budget)
+    flags = await state(request, "flags").all()
+    if not flags["agent.enabled"]:  # kill switch: pause the assistant without a deploy
+        paused = "Our assistant is paused right now. Please email support@northwind.example and we'll reply within a day."
+        return StreamingResponse(
+            iter([sse({"text": paused}), sse({"done": True, "paused": True})]), media_type="text/event-stream"
+        )
     session_id = body.session_id or uuid4()
     try:
         history = await store.load_session(session_id, who.customer_id, create=True)
@@ -102,8 +124,18 @@ async def chat(body: ChatIn, request: Request, who: Principal = Depends(current_
         retriever=request.app.state.retriever,
         staff=who.staff,
         quarantine=request.app.state.quarantine,
+        shipping=state(request, "shipping"),
+        disabled_tools=frozenset(flags["tools.disabled"]),
     )
     system = system_prompt(await store.memories(who.customer_id), now)
+    llm = request.app.state.llm
+    if hasattr(llm, "force_fallback"):
+        llm.force_fallback = bool(flags["agent.force_fallback"])
+    route = "full"
+    router = state(request, "router")
+    if flags["routing.enabled"] and router is not None and is_simple(await router.classify(text)):
+        route, llm, ctx.allowed_tiers = "simple", state(request, "small_llm"), SIMPLE_TIERS
+    metrics.routes.labels(route=route).inc()
 
     def guard(draft: str, result) -> list[str]:
         return check_reply(draft, ctx.retrieved, result.tool_calls)
@@ -116,32 +148,46 @@ async def chat(body: ChatIn, request: Request, who: Principal = Depends(current_
 
         async def work():
             try:
-                return await run_turn(
-                    ctx, request.app.state.llm, system, [*history, user_msg], on_text, guard=guard
-                )
+                with tracer.start_as_current_span("POST /chat turn") as span:
+                    span.set_attributes(
+                        {
+                            "relay.route": route,
+                            "gen_ai.conversation.id": str(session_id),
+                            "enduser.pseudo.id": who.customer_id,
+                        }
+                    )  # pseudonymous ID, never an email
+                    return await run_turn(ctx, llm, system, [*history, user_msg], on_text, guard=guard)
             finally:
                 await queue.put(None)
 
+        started, first = time.perf_counter(), None
         task = asyncio.create_task(work())
         try:
             while (chunk := await queue.get()) is not None:
+                if first is None:
+                    first = time.perf_counter() - started
+                    metrics.ttft.observe(first)
                 yield sse({"text": chunk})
             result = await task
         except asyncio.CancelledError:  # client disconnected: stop paying for an answer nobody will read
             task.cancel()
+            metrics.turns.labels(outcome="cancelled").inc()
             raise
         except Exception:
+            metrics.turns.labels(outcome="error").inc()
             yield sse({"error": "Something went wrong. Please try again.", "session_id": str(session_id)})
             raise
+        metrics.turn_seconds.observe(time.perf_counter() - started)
+        metrics.turns.labels(outcome="stopped" if result.stopped else "ok").inc()
         await store.save_turn(
             session_id,
             who.customer_id,
             len(history),
             [user_msg, *result.new_messages],
             memory_delay_s=settings.memory_idle_s,
+            judge=random.random() < settings.online_judge_rate,
         )
-        usage = dict(result.usage)
-        await record_usage(store, who.customer_id, sum(usage.values()), cost_usd(usage))
+        await record_usage(store, who.customer_id, sum(result.usage.values()), result.cost_usd)
         yield sse(
             {"done": True, "session_id": str(session_id), "steps": result.steps, "stopped": result.stopped}
         )
@@ -211,6 +257,73 @@ async def decide(
         store, who.customer_id, idempotency_key, {"approval": approval_id, **body.model_dump()}, run
     )
     return JSONResponse(payload, status_code=status)
+
+
+class FeedbackIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    session_id: UUID
+    rating: Literal["up", "down"]
+    reason: Literal["wrong_info", "did_not_do_it", "too_long", "unsafe", "other"] | None = None
+    comment: str | None = Field(default=None, max_length=2000)
+
+
+@app.post("/feedback", status_code=204)
+async def feedback(body: FeedbackIn, request: Request, who: Principal = Depends(current_principal)):
+    store: Store = request.app.state.store
+    try:
+        await store.load_session(body.session_id, who.customer_id)  # only rate your own conversations
+    except NotFound:
+        raise HTTPException(404, "Session not found") from None
+    from .jobs import enqueue
+
+    async with store.conn() as c, c.transaction():
+        await c.execute(
+            "INSERT INTO feedback (session_id, customer_id, rating, reason, comment) VALUES (%s, %s, %s, %s, %s)",
+            (
+                body.session_id,
+                who.customer_id,
+                body.rating,
+                body.reason,
+                redact_cards(body.comment)[0] if body.comment else None,
+            ),
+        )
+        if body.rating == "down":  # every thumbs-down is judged and lands in the review queue
+            await enqueue(
+                c,
+                "judge_session",
+                f"{body.session_id}:feedback",
+                {"session_id": str(body.session_id), "customer_id": who.customer_id, "trigger": "feedback"},
+            )
+    metrics.feedback.labels(rating=body.rating).inc()
+    return Response(status_code=204)
+
+
+@app.get("/review-queue")
+async def review_queue(request: Request, _: Principal = Depends(staff_only)):
+    return {"items": await online.review_queue(request.app.state.store)}
+
+
+@app.get("/flags")
+async def get_flags(request: Request, _: Principal = Depends(staff_only)):
+    return await state(request, "flags").all()
+
+
+class FlagIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    key: Literal["tools.disabled", "agent.enabled", "agent.force_fallback", "routing.enabled"]
+    value: bool | list[str]
+
+
+@app.put("/flags")
+async def set_flag(body: FlagIn, request: Request, who: Principal = Depends(staff_only)):
+    await state(request, "flags").set(body.key, body.value, who.customer_id)
+    return await state(request, "flags").all()
+
+
+@app.get("/metrics")
+async def prometheus_metrics():
+    # Expose on an internal port or restrict at the load balancer in production.
+    return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 @app.get("/healthz")

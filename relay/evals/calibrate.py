@@ -10,8 +10,9 @@ import hashlib
 import json
 
 from app.config import settings
+from app.judges import CRITERIA, AnthropicJudge
 
-from .judges import CRITERIA, DATA, AnthropicJudge
+from .paths import JUDGE_DATA as DATA
 
 
 def split_of(example_id: str) -> str:
