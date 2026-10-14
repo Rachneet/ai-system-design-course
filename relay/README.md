@@ -4,7 +4,7 @@ Relay is the support agent for Northwind Outfitters (a fictional outdoor gear st
 [AI System Design Course](../README.md). This folder is the working reference. Each lab has a git tag
 (`lab1`, `lab2`, ...) so you can compare your code with a known-good version at every stage.
 
-**Current stage: Lab 4** (secure API and deployment), built on Labs 1 to 3:
+**Current stage: Lab 5** (observability, scaling and optimization), built on Labs 1 to 4:
 
 - **Lab 1, agent service:** async FastAPI, streaming over server-sent events, tools with code-enforced limits,
   sessions in Postgres, a bounded agent loop, and background memory.
@@ -21,6 +21,11 @@ Relay is the support agent for Northwind Outfitters (a fictional outdoor gear st
   machine with Idempotency-Key replay, a worker process with an outbox-style job queue (memory extraction now
   waits until a session is quiet), readiness checks, a non-root container image, a CI job that runs the real
   containers, and a Cloud Run pipeline with staging, a 10% canary, and one-command rollback.
+- **Lab 5, observability and optimization:** OpenTelemetry traces following the GenAI conventions (one trace per
+  turn; content recording is opt-in and redacted), Prometheus metrics, a carrier MCP server whose spans join
+  Relay's trace through `params._meta`, retries with full jitter, a circuit breaker and fallback model, fault
+  injection for game days, kill switches (`/flags`), an optional small-model router, feedback and online judging
+  with a review queue, alert rules with runbooks, a tail-sampling Collector config, and a Grafana dashboard.
 
 ## Layout
 
@@ -37,6 +42,11 @@ app/auth.py       bearer-token verification; identity and staff role come only f
 app/limits.py     token-bucket rate limits and daily token budgets
 app/approvals.py  approval state machine and Idempotency-Key handling
 app/jobs.py       job queue with debouncing and retries;  app/worker.py runs it (python -m app.worker)
+app/telemetry.py  tracing setup, redaction, trace links for jobs;  app/metrics.py  Prometheus metrics
+app/resilience.py retries, circuit breaker, fallback, fault injection;  app/flags.py  kill switches
+app/router.py     optional small-model routing;  app/online.py  online judging and the review queue
+mcp_servers/      the carrier tracking MCP server (python -m mcp_servers.shipping)
+ops/              alert rules, runbooks, Collector config, Grafana dashboard, local observability stack
 Dockerfile        multi-stage uv build, non-root, one image for API and worker
 infra/            one-time Google Cloud setup (.github/workflows/deploy.yml does the rest)
 app/llm.py       the model boundary (Anthropic SDK, prompt caching, refusal fallback); tests swap in a script
@@ -47,7 +57,7 @@ prompts/         the system prompt, versioned with the code
 kb/              30 documents with front matter: title and acl (5 are internal, group:support only)
 evals/cases/     dev/ and heldout/ case files; generated ones come from evals/generate.py
 evals/           runner, grader, gates.yaml, judges (+ calibration data), simulator, error analysis, retrieval eval
-tests/           76 tests that need no API key: embedded Postgres + a scripted model
+tests/           92 tests that need no API key: embedded Postgres + a scripted model
 ```
 
 ## Run the tests (no API key, no Docker)
@@ -75,6 +85,23 @@ uv run python -m scripts.chat --customer c_77     # in another terminal; mints a
 
 Staff endpoints (`GET /approvals`, `POST /approvals/{id}/decision`) need a token with the staff role:
 `uv run python -m scripts.dev_token s_1 --staff`.
+
+## Observe
+
+```bash
+docker compose -f docker-compose.yml -f ops/docker-compose.observability.yml up -d
+OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 uv run uvicorn app.main:app      # traces to Jaeger :16686
+uv run python -m mcp_servers.shipping &   # then RELAY_SHIPPING_MCP_URL=http://localhost:8090/mcp
+```
+
+Prometheus scrapes `/metrics` on the API and worker; import `ops/grafana/relay-dashboard.json` into Grafana.
+CI checks that every metric the alerts and dashboard use exists in the code, and validates the rules and the
+Collector config with `promtool` and the Collector itself. **Game day:** `RELAY_FAULT_RATE=0.5` makes half of the
+primary model calls fail; watch retries, the breaker, the fallback, and `ProviderErrorsHigh`.
+
+**Not measured yet.** The optimization table in the Lab 5 page needs real model traffic: run the simulator load
+with an API key, record cost per conversation, TTFT and turn p95, then enable each optimization (routing is off by
+default behind the `routing.enabled` flag) and re-run the PR eval suite to confirm quality holds.
 
 ## Deploy
 
@@ -141,6 +168,5 @@ cost the runner prints after your first real run.
 
 ## Not in the reference yet
 
-PDF parsing (Markdown only),
-contextual chunk descriptions (needs an API key; see the Lab 2 page), model-generated red-team paraphrases,
-tracing, cost dashboards, alerts, and online judging of production traffic (Lab 5).
+PDF parsing (Markdown only), contextual chunk descriptions (needs an API key), model-generated red-team
+paraphrases, and measured before/after optimization numbers (need real model traffic).
