@@ -71,27 +71,39 @@ async def run_tool(ctx: Context, block: dict, timeout_s: float) -> dict:
         return result
 
 
+OTEL_PROVIDER = {
+    "gemini": "gcp.gemini"
+}  # OTel's well-known names where they differ from Relay's spec prefixes
+
+
 async def call_model(llm: LLM, **kwargs) -> LLMResponse:
     model = getattr(llm, "model", "unknown")
+    provider = getattr(llm, "provider", "unknown")
     with tracer.start_as_current_span(f"chat {model}") as span:
         span.set_attributes(
             {
                 "gen_ai.operation.name": "chat",
-                "gen_ai.provider.name": "anthropic",
+                "gen_ai.provider.name": OTEL_PROVIDER.get(provider, provider),
                 "gen_ai.request.model": model,
             }
         )
         resp = await llm.respond(**kwargs)
         served_by = resp.usage.get("model", model) if isinstance(resp.usage.get("model"), str) else model
+        served_provider = (
+            resp.usage.get("provider") if isinstance(resp.usage.get("provider"), str) else provider
+        )
         u = {k: v for k, v in resp.usage.items() if isinstance(v, int)}
+        cache_read, cache_write = u.get("cache_read_input_tokens", 0), u.get("cache_creation_input_tokens", 0)
         span.set_attributes(
             {
+                "gen_ai.provider.name": OTEL_PROVIDER.get(served_provider, served_provider),
                 "gen_ai.response.model": served_by,
                 "gen_ai.response.finish_reasons": [resp.stop_reason],
-                "gen_ai.usage.input_tokens": u.get("input_tokens", 0),
+                # The spec counts cached tokens inside input_tokens; Relay's usage keeps them separate.
+                "gen_ai.usage.input_tokens": u.get("input_tokens", 0) + cache_read + cache_write,
                 "gen_ai.usage.output_tokens": u.get("output_tokens", 0),
-                "gen_ai.usage.cache_read.input_tokens": u.get("cache_read_input_tokens", 0),
-                "gen_ai.usage.cache_write.input_tokens": u.get("cache_creation_input_tokens", 0),
+                "gen_ai.usage.cache_read.input_tokens": cache_read,
+                "gen_ai.usage.cache_write.input_tokens": cache_write,
             }
         )
         record_content(span, "gen_ai.output.messages", _text(resp.content))

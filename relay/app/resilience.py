@@ -83,12 +83,19 @@ class ResilientLLM:
     def model(self) -> str:
         return getattr(self.primary, "model", "unknown")
 
+    @property
+    def provider(self) -> str:
+        return getattr(self.primary, "provider", "unknown")
+
     async def _fallback(self, reason: str, **kwargs) -> LLMResponse:
         if self.fallback is None:
             raise RuntimeError(f"primary model unavailable ({reason}) and no fallback configured")
         metrics.fallbacks.labels(reason=reason).inc()
         resp = await self.fallback.respond(**kwargs)
         resp.usage["model"] = getattr(self.fallback, "model", "fallback")
+        resp.usage["provider"] = getattr(
+            self.fallback, "provider", "unknown"
+        )  # fallbacks may cross providers
         return resp
 
     async def respond(self, *, system, tools, messages, on_text) -> LLMResponse:
@@ -133,6 +140,7 @@ class FaultInjectingLLM:
     def __init__(self, inner: LLM, rate: float, rng: random.Random | None = None):
         self.inner, self.rate, self.rng = inner, rate, rng or random.Random()
         self.model = getattr(inner, "model", "unknown")
+        self.provider = getattr(inner, "provider", "unknown")
 
     async def respond(self, **kwargs) -> LLMResponse:
         if self.rng.random() < self.rate:

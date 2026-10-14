@@ -46,7 +46,7 @@ async def test_a_turn_is_one_trace_with_genai_attributes(ctx):
         tool_use(("get_order", {"order_id": 1042}), ("search_kb", {"query": "return window"})),
         text("Delivered, and you have 60 days to return it."),
     )
-    llm.model = "claude-haiku-5-5"
+    llm.model, llm.provider = "claude-haiku-5-5", "gemini"
     await agent.run_turn(ctx, llm, "s", [{"role": "user", "content": "hi"}], noop)
     spans = spans_by_name()
     root, chat = spans["invoke_agent relay"], spans["chat claude-haiku-5-5"]
@@ -57,6 +57,8 @@ async def test_a_turn_is_one_trace_with_genai_attributes(ctx):
     assert (
         chat.attributes["gen_ai.operation.name"] == "chat"
         and chat.attributes["gen_ai.usage.input_tokens"] == 100
+        and chat.attributes["gen_ai.provider.name"]
+        == "gcp.gemini"  # OTel's well-known name, not Relay's prefix
     )
     assert tool.attributes["gen_ai.tool.name"] == "get_order" and root.attributes["relay.steps"] == 2
     assert "gen_ai.output.messages" not in chat.attributes  # content is opt-in

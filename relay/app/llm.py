@@ -51,6 +51,7 @@ class AnthropicLLM:
         # ResilientLLM passes max_retries=0 and retries itself, so SDK and app retries never multiply.
         self.client = anthropic.AsyncAnthropic(max_retries=max_retries)  # reads ANTHROPIC_API_KEY
         self.model = model
+        self.provider = "anthropic"
         self.max_tokens = max_tokens
         # Server-side refusal fallback exists for Opus and Sonnet tiers, not Haiku.
         self.refusal_fallback = refusal_fallback and "haiku" not in model
