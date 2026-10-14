@@ -4,7 +4,7 @@ week: 6
 kind: lesson
 title: Evaluation against real-world use cases
 short: Real-world evaluation
-minutes: 40
+minutes: 45
 summary: Move from offline scores to evidence that the system works for real users, through task-based acceptance tests with stakeholders, shadow and A/B testing, outcome metrics, and launch criteria tied to business value.
 ---
 
@@ -19,6 +19,23 @@ flowchart LR
   S --> C[Canary / staged<br/>rollout]
   C --> AB[A/B test on<br/>outcome metrics]
   AB --> M[Ongoing monitoring<br/>+ error analysis]
+```
+
+The ladder above is one pass. After launch it becomes a loop, and the two halves do different jobs.
+
+```viz
+caption: Offline evals decide whether a change ships. Online signals decide what the offline suite should test next. Either half alone drifts.
+<div class="vz-cols">
+  <div class="vz-panel sk c"><h5>Offline: cases you chose</h5>
+    <div class="vz-row"><span class="ch sk c">release suite</span><span class="arr sk c"></span><span class="ch sk c">CI gate</span><span class="arr sk c"></span><span class="ch sk c">ship</span></div>
+    <p>fast, repeatable, cheap; blind to new tasks</p>
+  </div>
+  <div class="vz-panel sk m"><h5>Online: what users do</h5>
+    <div class="vz-row"><span class="ch sk m">traces</span><span class="arr sk m"></span><span class="ch sk m">error analysis</span><span class="arr sk m"></span><span class="ch sk m">new cases</span></div>
+    <p>real, slow, noisy; finds what you missed</p>
+  </div>
+</div>
+<div class="vz-row"><span class="ch sk g">new cases join the release suite</span><span>the loop closes every week</span></div>
 ```
 
 ## Use-case acceptance testing
@@ -79,6 +96,12 @@ Averages hide problems. Break every evaluation (offline and online) down by slic
 
 A system that is 92% good overall but 70% good for non-native English speakers or for exchanges is not ready for those users. Report the worst slices, not just the mean.
 
+```viz
+caption: The example above, drawn: the 92% average looks ready, but two slices sit at 70%. Launch per slice, not on the mean.
+<div class="vz-bars"><span>overall</span><span class="bar sk"><i class="sk g" style="--w:92%"></i></span><b>92%</b><span>exchanges</span><span class="bar sk"><i class="sk b" style="--w:70%"></i></span><b>70%</b><span>non-native English</span><span class="bar sk"><i class="sk b" style="--w:70%"></i></span><b>70%</b></div>
+<p>target: 90% on every slice. Two slices are not ready.</p>
+```
+
 ## Defining "production-grade" for your capstone
 
 Write launch criteria before you run the final evaluation, and hold yourself to them. A template:
@@ -98,7 +121,7 @@ Launch is the start of the most important feedback loop. Weekly:
 2. Read 20 to 50 traces: random, negative feedback, expensive, escalated.
 3. Update error analysis categories and counts.
 4. Add new eval cases; fix the top failure category.
-5. Re-run the release suite on any prompt, model, or KB change.
+5. Re-run the release suite on any prompt, model, provider, or KB change. A model served by a different provider or quantized for self-hosting is a model change, even under the same name.
 
 Teams that keep this loop going improve steadily. Teams that stop after launch watch quality drift as users, content, and models change.
 
@@ -115,6 +138,7 @@ Teams that keep this loop going improve steadily. Teams that stop after launch w
 ## Further reading
 
 - [Your AI Product Needs Evals](https://hamel.dev/blog/posts/evals/), on the full evaluation loop.
+- [Agent Development Kit docs](https://adk.dev/), Google's open-source agent framework, whose evaluation tools include user and environment simulation and custom metrics, for agents on Gemini or other models.
 - [Building A Generative AI Platform](https://huyenchip.com/2024/07/25/genai-platform.html), Chip Huyen, on feedback and user metrics.
 - [AI Engineering book resources](https://github.com/chiphuyen/aie-book), Chip Huyen's free companion repo with notes and links.
 - [Stanford AI Index](https://hai.stanford.edu/ai-index), for context on how AI systems are evaluated across the industry.

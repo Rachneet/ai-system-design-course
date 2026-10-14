@@ -17,6 +17,18 @@ Each drill is a 45-minute system design problem, the kind asked in AI engineerin
 4. **Deep dive** (10 min): the hardest part.
 5. **Trade-offs and failure modes** (5 min).
 
+```viz
+caption: Ten minutes of framing buys twenty of design. Save the deep dive: it is where a strong answer shows depth instead of breadth.
+<div class="vz-bars"><span>clarify</span><span class="bar sk"><i class="sk" style="--w:25%"></i></span><b>5 min</b><span>estimate</span><span class="bar sk"><i class="sk w" style="--w:25%"></i></span><b>5 min</b><span>design</span><span class="bar sk"><i class="sk c" style="--w:100%"></i></span><b>20 min</b><span>deep dive</span><span class="bar sk"><i class="sk c" style="--w:50%"></i></span><b>10 min</b><span>trade-offs</span><span class="bar sk"><i class="sk g" style="--w:25%"></i></span><b>5 min</b></div>
+<div class="vz-cols" style="--k:3">
+  <div class="vz-panel sk"><h5>Out of framing</h5><p>assumptions, users, risk, tokens and cost</p></div>
+  <div class="vz-panel sk c"><h5>Out of design</h5><p>one diagram, one request walked end to end</p></div>
+  <div class="vz-panel sk g"><h5>Out of trade-offs</h5><p>what you rejected, and when to revisit</p></div>
+</div>
+```
+
+Every outline below is provider-neutral on purpose. Where it says "a small model" or "a large model", any tier works: a hosted API (OpenAI, Anthropic, Google Gemini, Mistral), an open-weights model on vLLM or Ollama, or a mix behind a gateway. Naming the deciding factor (quality on your evals, latency, price, data residency) scores better than naming a brand.
+
 Then compare with the outline. The outlines are not the only right answer; they show the considerations a strong answer covers.
 
 ## Drill 1: Internal knowledge assistant for a 5,000-person company
@@ -31,6 +43,7 @@ Then compare with the outline. The outlines are not the only right answer; they 
 - **Access control:** the hardest part. Copying ACLs per chunk for Drive's sharing model is fragile; use coarse pre-filter (tenant, group membership snapshot) plus fine post-filter through a ReBAC service (OpenFGA-style) with over-fetching. Never cache answers across users.
 - **Retrieval:** hybrid BM25 + vector, RRF, rerank top 50 → 8; query rewrite for follow-ups; source routing (Slack vs docs).
 - **Generation:** cite chunk IDs; validate citations against retrieved set; abstain when nothing relevant.
+- **Model hosting:** a hosted API is simplest. If documents may not leave the company, serve an open-weights model (Llama, Qwen, Mistral) with vLLM inside your network, and size the GPUs on measured goodput at the ~3 questions a second peak, not on a guess.
 - **Evals:** retrieval recall@8 per source; permission leak tests (must-never); groundedness judge calibrated on 150 labels.
 - **Failure modes:** stale permissions (revocation lag SLO), Slack noise, outdated docs outranking current ones (freshness boost), prompt injection in shared docs (assistant has no write tools; no external links rendered).
 
@@ -72,7 +85,7 @@ Then compare with the outline. The outlines are not the only right answer; they 
 <details><summary>Solution outline</summary>
 
 - **Workflow, not agent:** the path is known. Steps: classify document type → OCR/vision extraction with structured output schema → code validation (dates, totals, policy number checksum) → cross-document consistency checks → confidence scoring → auto-approve, human review, or reject.
-- **Batch:** use batch APIs for cost; queue with priority lanes for urgent claims.
+- **Batch:** use the provider's batch API for cost (OpenAI, Anthropic and Gemini all offer one), or run an open model offline at high batch size if you self-host; queue with priority lanes for urgent claims.
 - **Human in the loop:** low-confidence fields highlighted in a review UI; corrections stored as labelled data.
 - **Evals:** field-level precision/recall per document type on a labelled set; end-to-end decision accuracy; calibration of confidence scores (are 0.9-confidence fields right 90% of the time?).
 - **Compliance:** PII handling, audit log of every decision with model version, explainability for denials, data residency.

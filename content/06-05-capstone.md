@@ -31,6 +31,8 @@ Your system must have:
 7. **Observability**: end-to-end traces, cost and quality dashboards, online evaluation, alerts with runbooks, and tested kill switches.
 8. **A design doc** with ADRs, a cost model, and a threat model.
 
+Any model provider works. Use a hosted API (OpenAI, Anthropic, Google Gemini, Mistral), an open-weights model (Llama, Qwen, DeepSeek, Mistral) served with vLLM or Ollama, or a router such as OpenRouter, LiteLLM or Hugging Face Inference Providers. Most of these accept the same OpenAI-compatible chat format, so keep every model call behind one small interface: then your fallback model, your eval runs on a second model, and a later switch are each a config change.
+
 ## Project ideas for Track B
 
 All original prompts; pick one or bring your own.
@@ -60,6 +62,13 @@ When choosing, check that your project has: a real user, data you can legally us
 | Day 13 | Readiness review: checklist with evidence |
 | Day 14 | Final presentation and live demo |
 
+```viz
+caption: Evidence work starts on day 3, not day 12. Eval cases grow alongside the features, and the last three days are reviews, not coding.
+<div class="cells" style="--n:7"><i class="sk c">1</i><i class="sk c">2</i><i class="sk m">3</i><i class="sk m">4</i><i class="sk m">5</i><i class="sk c">6</i><i class="sk c">7</i><i class="sk c">8</i><i class="sk c">9</i><i class="sk m">10</i><i class="sk m">11</i><i class="sk g">12</i><i class="sk g">13</i><i class="sk g">14</i></div>
+<div class="vz-row"><span class="ch sk c">build</span><span>proposal, features</span><span class="ch sk m">evidence</span><span>design doc, evals, numbers</span><span class="ch sk g">review</span><span>design, readiness, demo</span></div>
+<p>evals run on days 3 to 11 too: 40 cases by day 5, 150 by day 9</p>
+```
+
 ## The final presentation (15 minutes + 10 minutes questions)
 
 1. **The problem and user** (1 min). Who, what, why it matters.
@@ -68,6 +77,11 @@ When choosing, check that your project has: a real user, data you can legally us
 4. **Evidence** (4 min). Eval results by category with pass^k, judge calibration, red-team results, latency and cost per conversation with your optimization table, the dashboard.
 5. **Failure modes and trade-offs** (2 min). What can still go wrong, how you would know, what you chose not to build.
 6. **What's next** (1 min).
+
+```viz
+caption: Eight of the fifteen minutes are proof: the live demo and the evidence. Architecture gets three.
+<div class="vz-bars"><span>problem, user</span><span class="bar sk"><i class="sk" style="--w:25%"></i></span><b>1 min</b><span>live demo</span><span class="bar sk"><i class="sk g" style="--w:100%"></i></span><b>4 min</b><span>architecture</span><span class="bar sk"><i class="sk" style="--w:75%"></i></span><b>3 min</b><span>evidence</span><span class="bar sk"><i class="sk g" style="--w:100%"></i></span><b>4 min</b><span>failure modes</span><span class="bar sk"><i class="sk" style="--w:50%"></i></span><b>2 min</b><span>what's next</span><span class="bar sk"><i class="sk" style="--w:25%"></i></span><b>1 min</b></div>
+```
 
 Practice the demo with network failure in mind: have a recorded backup.
 
@@ -100,4 +114,5 @@ A total of 28+ out of 36 is a strong portfolio project.
 - Every lesson's "design review questions": they are your checklist.
 - [Production readiness](#w6-readiness) and [architecture review](#w6-review) lessons for templates.
 - [What We Learned from a Year of Building with LLMs](https://applied-llms.org/).
-- [Building effective agents](https://www.anthropic.com/engineering/building-effective-agents).
+- [Building effective agents](https://www.anthropic.com/engineering/building-effective-agents) (Anthropic) and [A practical guide to building agents](https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf) (OpenAI): two vendors' advice that agrees on starting simple.
+- The [reading list](#resources) for provider docs, open-model serving, and other free courses.

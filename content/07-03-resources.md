@@ -7,13 +7,17 @@ short: Reading list
 summary: Every free resource used in the course, grouped by topic, with a note on why each one is worth your time.
 ---
 
-All links are free to read. Starred items (★) are the ones to read if you only have time for a few.
+All links are free to read. Starred items (★) are the ones to read if you only have time for a few. The course is provider-neutral: where one vendor has a good guide, the equivalent from other providers and from the open-model world sits next to it, so you can learn on whichever stack you use.
 
 ## Other free courses worth taking alongside this one
 
 - [LLM Zoomcamp](https://github.com/DataTalksClub/llm-zoomcamp), DataTalks.Club. 10 weeks, video lectures, graded homework in cohorts, strong on RAG, evaluation, and monitoring.
 - [Production Agentic RAG course](https://github.com/jamwithai/production-agentic-rag-course), Jam with AI. A 7-week build of an arXiv research assistant with a tagged code release per week: BM25 first, then hybrid search, Langfuse, caching, and LangGraph agentic RAG. Weekly write-ups on [the Jam with AI Substack](https://jamwithai.substack.com/).
 - [Anthropic Academy](https://anthropic.skilljar.com/) and [Anthropic's course notebooks](https://github.com/anthropics/courses): the Claude API, tool use, MCP, and agent skills.
+- [5-Day AI Agents Intensive](https://www.kaggle.com/learn-guide/5-day-agents) and [5-Day Gen AI Intensive](https://www.kaggle.com/learn-guide/5-day-genai), Google and Kaggle. Self-paced guides that pair Google whitepapers with notebooks; the agents run (November 2025) drew over 1.5 million learners ([Google's recap](https://blog.google/technology/developers/ai-agents-intensive-recap/)).
+- [AI Agents for Beginners](https://github.com/microsoft/ai-agents-for-beginners), Microsoft. 18 open (MIT) lessons from tool use and agentic RAG to memory, protocols, production and security; its samples need an Azure account. The companion [Generative AI for Beginners](https://github.com/microsoft/generative-ai-for-beginners) has 21 lessons on the basics.
+- [Hugging Face Agents Course](https://huggingface.co/learn/agents-course), the best free route to agents on open-weights models, with smolagents, LangGraph and LlamaIndex units.
+- [OpenAI Cookbook](https://developers.openai.com/cookbook), runnable notebooks for tool calling, evals, retrieval and agents.
 - [LLM Twin course](https://github.com/decodingai-magazine/llm-twin-course), Decoding AI, and the companion [LLM Engineer's Handbook code](https://github.com/PacktPublishing/LLM-Engineers-Handbook): end-to-end LLMOps on AWS.
 - [Gaurav Sen's YouTube channel](https://www.youtube.com/@gkcs): short videos on AI system design topics such as multi-agent failures, chatbot latency, long context windows, and speculative decoding. His [AI Engineering course](https://interviewready.io/course-page/ai-engineering) on InterviewReady ($55) covers LLM internals, optimisations, and reasoning.
 - [Krish Naik's Agentic AI roadmap](https://github.com/krishnaik06/Roadmap-To-Learn-Agentic-AI): free YouTube playlists for LangChain, LangGraph, MCP, CrewAI, and AutoGen. Strongest for breadth across frameworks.
@@ -45,7 +49,8 @@ All links are free to read. Starred items (★) are the ones to read if you only
 - [ReAct](https://arxiv.org/abs/2210.03629), [MemGPT](https://arxiv.org/abs/2310.08560), [Generative Agents](https://arxiv.org/abs/2304.03442), [CoALA](https://arxiv.org/abs/2309.02427): foundational papers.
 - [LangGraph memory overview](https://docs.langchain.com/oss/python/langgraph/memory).
 - Open-source memory layers to study: [Mem0](https://github.com/mem0ai/mem0), [Letta](https://github.com/letta-ai/letta), [Graphiti](https://github.com/getzep/graphiti).
-- Free courses: [Hugging Face Agents Course](https://huggingface.co/learn/agents-course), [AI Agents for Beginners](https://github.com/microsoft/ai-agents-for-beginners).
+- ★ [A practical guide to building agents](https://cdn.openai.com/business-guides-and-resources/a-practical-guide-to-building-agents.pdf), OpenAI. 34 pages on when an agent is worth it, single agent before multi-agent, and guardrails as layered defence. Read it next to Anthropic's essay: they agree.
+- [Why Do Multi-Agent LLM Systems Fail?](https://arxiv.org/abs/2503.13657), the MAST taxonomy: 14 failure modes from 1,600+ annotated traces, a ready-made checklist for reading multi-agent traces.
 
 ## Retrieval
 
@@ -84,7 +89,9 @@ All links are free to read. Starred items (★) are the ones to read if you only
 - [Adversarial attacks on LLMs](https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/), Lilian Weng.
 - [Embrace The Red](https://embracethered.com/blog/), real-world AI exploit write-ups.
 - [MITRE ATLAS](https://atlas.mitre.org/), adversarial technique catalogue.
-- Tools: [AgentDojo](https://github.com/ethz-spylab/agentdojo), [garak](https://github.com/NVIDIA/garak), [PyRIT](https://github.com/Azure/PyRIT), [promptfoo red teaming](https://www.promptfoo.dev/docs/red-team/), [Presidio](https://microsoft.github.io/presidio/), [Llama Guard 3](https://huggingface.co/meta-llama/Llama-Guard-3-8B), [NeMo Guardrails](https://github.com/NVIDIA/NeMo-Guardrails), [Guardrails AI](https://github.com/guardrails-ai/guardrails).
+- Tools: [AgentDojo](https://github.com/ethz-spylab/agentdojo), [garak](https://github.com/NVIDIA/garak), [PyRIT](https://github.com/Azure/PyRIT), [promptfoo red teaming](https://www.promptfoo.dev/docs/red-team/), [Presidio](https://microsoft.github.io/presidio/), [NeMo Guardrails](https://github.com/NVIDIA/NeMo-Guardrails), [Guardrails AI](https://github.com/guardrails-ai/guardrails).
+- ★ [Purple Llama](https://github.com/meta-llama/PurpleLlama), Meta's open trust and safety tools, which work in front of any model: [Llama Guard 4](https://huggingface.co/meta-llama/Llama-Guard-4-12B) (a 12B multimodal input and output classifier on the MLCommons hazard taxonomy), [Llama Prompt Guard 2](https://huggingface.co/meta-llama/Llama-Prompt-Guard-2-86M) (86M and 22M injection and jailbreak detectors), and CyberSecEval benchmarks.
+- [OpenAI Model Spec](https://model-spec.openai.com/), how one lab says its models should rank system, developer and user instructions (the chain of command). Useful vocabulary when you design your own instruction hierarchy.
 - [NIST AI Risk Management Framework](https://www.nist.gov/itl/ai-risk-management-framework).
 
 ## Deployment and operations
@@ -108,17 +115,35 @@ All links are free to read. Starred items (★) are the ones to read if you only
 - ★ Google SRE: [Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/), [Service Level Objectives](https://sre.google/sre-book/service-level-objectives/), [Alerting on SLOs](https://sre.google/workbook/alerting-on-slos/), the [full SRE book](https://sre.google/sre-book/table-of-contents/).
 - [Timeouts, retries, and backoff with jitter](https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/), Amazon Builders' Library.
 - [Circuit Breaker](https://martinfowler.com/bliki/CircuitBreaker.html), Martin Fowler.
-- [Prompt caching](https://platform.claude.com/docs/en/build-with-claude/prompt-caching), Claude Platform docs.
-- [LiteLLM](https://docs.litellm.ai/docs/) for multi-provider routing.
+- Prompt caching, three ways: [Anthropic](https://platform.claude.com/docs/en/build-with-claude/prompt-caching) (marked breakpoints), [OpenAI](https://developers.openai.com/api/docs/guides/prompt-caching) (automatic, with explicit breakpoints on newer models), [Gemini](https://ai.google.dev/gemini-api/docs/caching) (implicit by default, explicit cache objects optional). Compare minimum lengths and write prices before you design your prompt order.
 - [Artificial Analysis](https://artificialanalysis.ai/) for model speed and price comparisons.
 - [Prometheus](https://prometheus.io/docs/introduction/overview/), [Grafana](https://grafana.com/docs/grafana/latest/), [Sentry](https://docs.sentry.io/).
 
-## Protocols and SDKs
+## Protocols
 
-- [Model Context Protocol](https://modelcontextprotocol.io/) and [A2A, the agent-to-agent protocol](https://a2a-protocol.org/latest/).
-- [Code execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp), Anthropic.
-- Inference: [Optimizing your LLM in production](https://huggingface.co/blog/optimize-llm), [vLLM](https://docs.vllm.ai/en/latest/), [PagedAttention](https://arxiv.org/abs/2309.06180), [speculative decoding](https://arxiv.org/abs/2211.17192).
-- [Why Do Multi-Agent LLM Systems Fail?](https://arxiv.org/abs/2503.13657)
-- [Claude tool use docs](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview) and [Claude cookbooks](https://github.com/anthropics/claude-cookbooks).
-- Agent frameworks to compare: [Pydantic AI](https://github.com/pydantic/pydantic-ai), [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/), [Google ADK](https://google.github.io/adk-docs/), [LlamaIndex](https://docs.llamaindex.ai/en/stable/).
-- [Ollama](https://ollama.com/) for running open models locally.
+- ★ [MCP specification](https://modelcontextprotocol.io/specification/latest) (current version 2026-07-28), the source of truth for how tools, resources and prompts reach any agent, with its own security principles.
+- [A2A specification](https://a2a-protocol.org/latest/specification/) (v1.0), for agents that delegate to agents another team or vendor runs.
+- [Code execution with MCP](https://www.anthropic.com/engineering/code-execution-with-mcp), Anthropic, on cutting tool-definition tokens by letting the agent call tools from code.
+
+## Provider docs: tool calling and agent SDKs
+
+The same concepts, in each provider's words. Read the one you build on, and skim one other to see what is a standard and what is a vendor choice.
+
+- Tool calling: [OpenAI](https://developers.openai.com/api/docs/guides/function-calling), [Gemini](https://ai.google.dev/gemini-api/docs/function-calling), [Claude](https://platform.claude.com/docs/en/agents-and-tools/tool-use/overview). The JSON schema shapes differ slightly; the loop is the same.
+- [OpenAI Agents SDK](https://openai.github.io/openai-agents-python/): agents, handoffs, guardrails, sessions and tracing in a small API, with adapters (LiteLLM, Any-LLM) for non-OpenAI models.
+- [Google Agent Development Kit (ADK)](https://adk.dev/): open-source, in Python, TypeScript, Go, Java and Kotlin, works with Gemini and other models, with built-in evaluation and user simulation.
+- [Microsoft Foundry Agent Service](https://learn.microsoft.com/en-us/azure/foundry/agents/overview): a managed runtime for prompt agents or your own containerised agent (Agent Framework, LangGraph, OpenAI or Anthropic SDKs), with tracing, evaluation and A2A endpoints. A good map of what "managed agents" means.
+- [Claude cookbooks](https://github.com/anthropics/claude-cookbooks) and the [OpenAI Cookbook](https://developers.openai.com/cookbook): worked notebooks per provider.
+- [Gemini's OpenAI compatibility](https://ai.google.dev/gemini-api/docs/openai): call Gemini with the OpenAI client by changing the base URL, a concrete example of the OpenAI-compatible API.
+- Other frameworks to compare: [Pydantic AI](https://github.com/pydantic/pydantic-ai), [smolagents](https://huggingface.co/docs/smolagents/index) (Hugging Face; code-writing agents, any model through Inference Providers, LiteLLM, Transformers or Ollama), [LlamaIndex](https://docs.llamaindex.ai/en/stable/).
+
+## Open models, serving, and gateways
+
+- ★ [vLLM OpenAI-compatible server](https://docs.vllm.ai/en/latest/serving/online_serving/): `vllm serve <model>` gives Llama, Qwen, DeepSeek or Mistral weights the same chat, Responses and embeddings endpoints your app already calls.
+- [SGLang](https://docs.sglang.io/), high-throughput serving with RadixAttention prefix caching, used for large MoE deployments.
+- [Ollama](https://ollama.com/) and its [OpenAI compatibility](https://docs.ollama.com/api/openai-compatibility) (`http://localhost:11434/v1`): the quickest way to run an open model on a laptop for development and evals.
+- [OGX](https://github.com/ogx-ai/ogx), formerly Meta's Llama Stack: an open-source, OpenAI-compatible server that adds vector stores, files, tool calling and agent orchestration on top of pluggable model providers.
+- [Hugging Face Inference Providers](https://huggingface.co/docs/inference-providers/index): open-weights models on many hosts (Groq, Together, Cerebras, Fireworks and others) behind one token and an OpenAI-compatible router, with `:fastest` and `:cheapest` selection.
+- [OpenRouter](https://openrouter.ai/docs/quickstart): hundreds of hosted and open models through one OpenAI-compatible endpoint, with automatic fallbacks.
+- [LiteLLM](https://docs.litellm.ai/docs/): a self-hosted gateway over 100+ providers in the OpenAI format, with retries, fallbacks, virtual keys, budgets and spend tracking per team.
+- Inference background: [Optimizing your LLM in production](https://huggingface.co/blog/optimize-llm), [PagedAttention](https://arxiv.org/abs/2309.06180), [speculative decoding](https://arxiv.org/abs/2211.17192), and this course's [inference lesson](#w5-inference).
