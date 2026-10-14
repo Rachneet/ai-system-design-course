@@ -4,24 +4,24 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
-/* Layout: an engineering computation pad. Grid paper owns the frame (index rail, outer margin); each lesson is a
-   numbered worksheet on a near-white sheet with a calm 66ch reading column and figures in the margin. */
+/* Layout: a plain neutral frame (index rail, outer margin); each lesson is a numbered worksheet on a white sheet
+   with a calm 66ch reading column and a margin index. High contrast first: no textures behind text. */
 :root {
-  --pad: #e4ece0;          /* computation paper */
-  --pad-line: #c9d8c3;     /* minor grid */
-  --pad-major: #b3c8ad;    /* major grid, every 5 cells */
-  --sheet: #fbfcf9;        /* the reading sheet */
-  --box: #eff4ec;          /* answer and code boxes */
-  --ink: #1d2721;          /* graphite */
-  --ink-2: #4a5a50;        /* secondary graphite (AA on sheet and pad) */
-  --rule: #c2d1bc;         /* hairlines */
+  --pad: #f2f3f5;          /* page frame: plain neutral, no texture */
+  --pad-line: #e3e5e9;
+  --pad-major: #b9bec7;
+  --sheet: #ffffff;        /* the reading sheet */
+  --box: #f4f5f7;          /* answer and code boxes */
+  --ink: #111418;
+  --ink-2: #474e5a;        /* secondary text, AA+ on sheet and frame */
+  --rule: #d9dce2;         /* hairlines */
   --pen: #1f4f9c;          /* blue ballpoint: links and marks */
   --pen-soft: #dbe5f4;
   --red: #b8352a;          /* reserved: you are here, and the single next action */
-  --red-ink: #ffffff;
+
   --code-key: #1f4f9c;
-  --code-str: #2f6b3a;
-  --code-com: #6b7a70;
+  --code-str: #1d6b3a;
+  --code-com: #5f6672;
   --code-num: #8a4b12;
   --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
   --font-read: "Literata", Georgia, "Times New Roman", serif;
@@ -32,16 +32,16 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --pad: #111915; --pad-line: #1b2620; --pad-major: #24332a; --sheet: #161f1a; --box: #1c2720;
-    --ink: #e2ebe4; --ink-2: #a3b4a9; --rule: #2c3b33; --pen: #93b4ef; --pen-soft: #22324c;
-    --red: #f07a6a; --red-ink: #1a0f0d; --code-key: #93b4ef; --code-str: #9fd3a8; --code-com: #7d8f84; --code-num: #e3b07a;
+    --pad: #0d0f12; --pad-line: #1c1f24; --pad-major: #4a505b; --sheet: #16181c; --box: #1e2126;
+    --ink: #eceef1; --ink-2: #b0b6c0; --rule: #2e323a; --pen: #93b4ef; --pen-soft: #22324c;
+    --red: #f07a6a; --code-key: #93b4ef; --code-str: #9fd3a8; --code-com: #8a919c; --code-num: #e3b07a;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --pad: #111915; --pad-line: #1b2620; --pad-major: #24332a; --sheet: #161f1a; --box: #1c2720;
-  --ink: #e2ebe4; --ink-2: #a3b4a9; --rule: #2c3b33; --pen: #93b4ef; --pen-soft: #22324c;
-  --red: #f07a6a; --red-ink: #1a0f0d; --code-key: #93b4ef; --code-str: #9fd3a8; --code-com: #7d8f84; --code-num: #e3b07a;
+  --pad: #0d0f12; --pad-line: #1c1f24; --pad-major: #4a505b; --sheet: #16181c; --box: #1e2126;
+  --ink: #eceef1; --ink-2: #b0b6c0; --rule: #2e323a; --pen: #93b4ef; --pen-soft: #22324c;
+  --red: #f07a6a; --code-key: #93b4ef; --code-str: #9fd3a8; --code-com: #8a919c; --code-num: #e3b07a;
   color-scheme: dark;
 }
 
@@ -56,16 +56,6 @@ button { font: inherit; color: inherit; }
 :focus-visible { outline: 2px solid var(--pen); outline-offset: 2px; border-radius: 2px; }
 * { scrollbar-width: thin; scrollbar-color: var(--pad-major) transparent; }
 
-/* Grid paper: a minor grid with a heavier line every five cells, used only on the frame. */
-.paper {
-  background-color: var(--pad);
-  background-image:
-    linear-gradient(var(--pad-major) 1px, transparent 1px),
-    linear-gradient(90deg, var(--pad-major) 1px, transparent 1px),
-    linear-gradient(var(--pad-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--pad-line) 1px, transparent 1px);
-  background-size: calc(var(--cell) * 5) calc(var(--cell) * 5), calc(var(--cell) * 5) calc(var(--cell) * 5), var(--cell) var(--cell), var(--cell) var(--cell);
-}
 
 .app { display: grid; grid-template-columns: var(--rail) minmax(0, 1fr); min-height: 100vh; }
 
@@ -76,7 +66,7 @@ button { font: inherit; color: inherit; }
   font-family: var(--font-display); font-size: 14px; line-height: 1.35; border-right: 1px solid var(--rule);
   scrollbar-width: thin; scrollbar-color: var(--ink-2) var(--sheet);
 }
-/* A solid track so the scroll position reads against the grid paper. */
+/* A solid track so the scroll position is easy to see. */
 .rail::-webkit-scrollbar { width: 10px; }
 .rail::-webkit-scrollbar-track { background: var(--sheet); border-left: 1px solid var(--rule); }
 .rail::-webkit-scrollbar-thumb { background: var(--ink-2); border: 2px solid var(--sheet); }
@@ -192,8 +182,6 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
 .callout.numbers {
   border-color: var(--ink-2); font-family: var(--font-display); font-size: 16.5px; line-height: 1.6; font-variant-numeric: tabular-nums;
   background-color: var(--sheet);
-  background-image: linear-gradient(var(--pad-line) 1px, transparent 1px), linear-gradient(90deg, var(--pad-line) 1px, transparent 1px);
-  background-size: var(--cell) var(--cell);
 }
 .callout.numbers .label::before { width: 14px; height: 10px; background: transparent; border-top: 2px solid var(--ink); border-bottom: 2px solid var(--ink); }
 .callout.numbers strong { font-family: var(--font-mono); font-size: .95em; border: 1.5px solid var(--ink); padding: 0 5px; background: var(--sheet); white-space: nowrap; }
@@ -279,7 +267,7 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
   :root { --rail: min(88vw, 340px); }
   .app { grid-template-columns: minmax(0, 1fr); }
   .rail { position: fixed; inset: 0 auto 0 0; width: var(--rail); z-index: 20; transform: translateX(-102%); visibility: hidden; transition: transform .22s cubic-bezier(.2,.7,.2,1), visibility 0s .22s; padding-top: calc(20px + env(safe-area-inset-top, 0px)); }
-  .app.open .rail { transform: none; visibility: visible; transition-delay: 0s; box-shadow: 8px 0 30px rgba(15, 25, 20, .25); }
+  .app.open .rail { transform: none; visibility: visible; transition-delay: 0s; border-right: 1.5px solid var(--ink); }
   .scrim { position: fixed; inset: 0; background: rgba(10, 18, 14, .45); z-index: 15; }
   .topbar { display: flex; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; align-items: center; gap: 12px; padding-block: 9px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); background: var(--sheet); color: var(--ink); border-bottom: 1px solid var(--ink); font-family: var(--font-display); }
   .topbar b { font-weight: 800; font-stretch: 85%; }
@@ -313,7 +301,7 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
     <b>AI System Design</b>
     <span id="topTally"></span>
   </header>
-  <nav class="rail paper" id="rail" aria-label="Sheet index">
+  <nav class="rail" id="rail" aria-label="Sheet index">
     <a class="pad-title" href="#home"><b>AI System Design</b><span>A free course, worked one sheet at a time</span></a>
     <label for="q" class="search-label">Search the course</label>
     <input class="search" id="q" type="search" placeholder="Search the course" autocomplete="off">
@@ -326,7 +314,7 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
     </div>
   </nav>
   <div class="scrim" id="scrim" hidden></div>
-  <main class="paper" id="main" tabindex="-1"></main>
+  <main id="main" tabindex="-1"></main>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
