@@ -16,7 +16,10 @@ from .guardrails import redact_cards
 
 tracer = trace.get_tracer("relay")
 EMAIL = re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")
-PHONE = re.compile(r"\+?\d[\d ().-]{8,}\d")
+# Needs separators between digit groups, so order numbers and plain IDs (e.g. 1234567890) are left alone.
+PHONE = re.compile(
+    r"(?<![\w+])(?:\+\d{1,3}[ .-]?)?(?:\(\d{2,4}\)[ .-]?|\d{2,4}[ .-])\d{3,4}[ .-]\d{3,4}(?!\w)"
+)
 TRACE_CONTENT = os.environ.get("RELAY_TRACE_CONTENT") == "1"
 
 

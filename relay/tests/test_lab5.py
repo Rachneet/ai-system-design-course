@@ -260,3 +260,11 @@ async def test_metrics_endpoints(client):  # noqa: F811
     async with httpx.AsyncClient() as c:
         assert "relay_jobs_total" in (await c.get(f"http://127.0.0.1:{port}/metrics")).text
     server.close()
+
+
+def test_trace_redaction_masks_phones_but_not_plain_ids():
+    from app.telemetry import redact
+
+    out = redact("call +44 20 7946 0958 or (555) 123-4567 about order 1042, ref 1234567890, ts 20261014")
+    assert out.count("[PHONE]") == 2
+    assert "1042" in out and "1234567890" in out and "20261014" in out
