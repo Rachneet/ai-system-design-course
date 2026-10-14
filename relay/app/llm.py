@@ -60,3 +60,22 @@ class AnthropicLLM:
                 "cache_creation_input_tokens": u.cache_creation_input_tokens or 0,
             },
         )
+
+
+class EchoLLM:
+    """Offline stand-in for container smoke tests: repeats the last user message. Not for evaluating behaviour."""
+
+    async def respond(self, *, system, tools, messages, on_text) -> LLMResponse:
+        content = messages[-1]["content"]
+        last = (
+            content
+            if isinstance(content, str)
+            else " ".join(b.get("text", "") for b in content if b.get("type") == "text")
+        )
+        reply = f"(echo) {last}"
+        await on_text(reply)
+        return LLMResponse(
+            [{"type": "text", "text": reply}],
+            "end_turn",
+            {"input_tokens": len(last) // 4, "output_tokens": 10},
+        )

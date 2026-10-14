@@ -84,3 +84,10 @@ async def remember(
     facts = [f for f in await extractor.extract(text) if acceptable(f)]
     await store.add_memories(customer_id, session_id, [(f.fact, f.category) for f in facts])
     return len(facts)
+
+
+class NullExtractor:
+    """Used when no model backend is configured (offline smoke tests)."""
+
+    async def extract(self, customer_text: str) -> list[Fact]:
+        return []
