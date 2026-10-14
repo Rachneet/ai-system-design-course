@@ -1,0 +1,87 @@
+name: switchboard
+on:
+  push:
+    paths: ["platform/switchboard/**", ".github/workflows/switchboard.yml"]
+  pull_request:
+    paths: ["platform/switchboard/**", ".github/workflows/switchboard.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: platform/switchboard
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run ruff check . && uv run ruff format --check .
+      - run: uv run pytest -q
+      - name: Static security analysis
+        run: uv run bandit -q -r switchboard -ll
+      - name: Known vulnerabilities in locked dependencies
+        run: |
+          uv export --frozen --no-dev --no-hashes -q > /tmp/requirements.txt
+          uv run pip-audit -r /tmp/requirements.txt --no-deps --disable-pip
+
+  image:
+    needs: test
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: switchboard
+          POSTGRES_DB: switchboard
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+    env:
+      DB: postgresql://postgres:switchboard@localhost:5432/switchboard
+      ADMIN: ci-admin-token-0123456789-abcdefgh
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build
+        run: docker build -t switchboard:ci platform/switchboard
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: switchboard:ci
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+      - name: Software bill of materials
+        uses: anchore/sbom-action@v0
+        with:
+          image: switchboard:ci
+          format: spdx-json
+          output-file: switchboard.spdx.json
+      - name: Migrate and smoke test against a mock provider
+        run: |
+          test "$(docker run --rm switchboard:ci id -u)" = "10001"
+          docker run --rm --network host -e SWITCHBOARD_DATABASE_URL=$DB switchboard:ci alembic upgrade head
+          docker run -d --name mock --network host -v "$PWD/platform/switchboard/tests:/app/tests:ro" \
+            switchboard:ci uvicorn tests.mock_upstream:app --port 18001
+          docker run -d --name sb --network host -e SWITCHBOARD_DATABASE_URL=$DB -e SWITCHBOARD_ADMIN_TOKEN=$ADMIN \
+            -e SWITCHBOARD_ANTHROPIC_API_KEY=mock -e SWITCHBOARD_ANTHROPIC_BASE_URL=http://127.0.0.1:18001 -e PORT=8080 switchboard:ci
+          for i in $(seq 1 30); do curl -fs localhost:8080/readyz && break; sleep 2; done
+          A="Authorization: Bearer $ADMIN"
+          curl -fs -X POST localhost:8080/admin/orgs -H "$A" -H 'content-type: application/json' -d '{"id":"ci","name":"CI"}'
+          curl -fs -X POST localhost:8080/admin/teams -H "$A" -H 'content-type: application/json' -d '{"id":"ci","org_id":"ci","name":"CI"}'
+          curl -fs -X POST localhost:8080/admin/apps -H "$A" -H 'content-type: application/json' -d '{"id":"ci","team_id":"ci","name":"CI"}'
+          KEY=$(curl -fs -X POST localhost:8080/admin/apps/ci/keys -H "$A" -H 'content-type: application/json' -d '{}' | python3 -c 'import json,sys;print(json.load(sys.stdin)["key"])')
+          curl -fs localhost:8080/v1/messages -H "x-api-key: $KEY" -H 'content-type: application/json' \
+            -d '{"model":"claude-haiku-5-5","max_tokens":10,"messages":[{"role":"user","content":"hi"}]}' | grep -q 'echo from claude-haiku-5-5'
+          test "$(curl -s -o /dev/null -w '%{http_code}' localhost:8080/v1/messages -H 'x-api-key: sbk_bad_key' -d '{}')" = "401"
+          docker stop --time 20 sb && test "$(docker inspect sb --format '{{.State.ExitCode}}')" = "0"
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: switchboard-sbom
+          path: switchboard.spdx.json
+      - if: failure()
+        run: docker logs sb; docker logs mock
