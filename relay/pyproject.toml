@@ -9,6 +9,7 @@ dependencies = [
     "fastembed>=0.9.0",
     "psycopg[binary,pool]>=3.3.6",
     "pydantic-settings>=2.15.0",
+    "pyjwt[crypto]>=2.15.1",
     "pyyaml>=6.0.3",
     "uvicorn[standard]>=0.54.0",
 ]
@@ -30,3 +31,6 @@ dev = [
     "pytest-asyncio>=1.4.0",
     "ruff>=0.17.0",
 ]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Header", "fastapi.Query", "fastapi.security.HTTPBearer"]
