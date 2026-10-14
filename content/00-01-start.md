@@ -4,7 +4,7 @@ week: 0
 kind: lesson
 title: Start here
 short: Start here
-minutes: 15
+minutes: 20
 summary: How the course is structured, what you need before you begin, and the one system you will build across all six weeks.
 ---
 
@@ -16,7 +16,7 @@ That gap, between a demo and a system you would put your name on, is what this c
 
 **Prerequisites**
 
-- Comfortable in one programming language. All labs use Python 3.12 and the Anthropic Python SDK, but every idea transfers.
+- Comfortable in one programming language. All labs use Python 3.12. The reference code runs on any model provider (OpenAI, Google Gemini, Anthropic, open-weights models on your own machine, or a router), so you can follow along with whichever account you have. Every idea transfers.
 - You have built at least a basic RAG or tool-calling app. If not, read the [LLM application primer](#primer) first, then build one small thing before Week 1.
 - Basic familiarity with HTTP APIs, SQL, and Git. Docker helps but Week 4 teaches what you need.
 
@@ -78,13 +78,36 @@ You need:
 - Python 3.12+ and [uv](https://docs.astral.sh/uv/) for dependencies.
 - Docker Desktop or Podman (Week 4 onward).
 - PostgreSQL 16 with the [pgvector](https://github.com/pgvector/pgvector) extension. The labs run it in Docker.
-- An LLM API key. The labs use the Anthropic SDK. Set `RELAY_MODEL` to choose the model.
+- A model to call: an API key from any provider, or a free local model. See the table below.
 - A GitHub account for CI/CD in Week 4.
 - A free cloud account for Week 4. Google Cloud Run, Fly.io, and Render all work. The lab shows Cloud Run.
 
-> [!numbers] Model cost for the whole course is small if you are deliberate. A typical lab session sends about 300 agent turns of roughly 6,000 input and 500 output tokens. On Claude Haiku 5.5 ($0.10 input, $0.50 output per million tokens) that is about 300 × (6,000 × 0.10 + 500 × 0.50) / 1,000,000 ≈ **$0.26** per session. On Claude Opus 5.5 ($4 / $20) the same session costs about **$10**. Develop on the small model, then run your eval suite on the model you intend to ship.
+### Pick any model provider
 
-If you cannot pay for any API, the labs note where a local model through [Ollama](https://ollama.com/) can stand in. Tool calling and judging quality will be weaker, which is itself a useful lesson about model choice.
+Relay, the system you build, chooses its model from one setting, `RELAY_MODEL`, written as `provider:model`. Nothing else in the code changes when you switch, and you can mix providers: the agent on one, the cheap background jobs on a local model, the eval judge on a third. The [reference implementation's README](https://github.com/Rachneet/ai-system-design-course/tree/main/relay#choose-any-model-provider) lists every option.
+
+| Where the model runs | Example `RELAY_MODEL` | What you need |
+|---|---|---|
+| OpenAI | `openai:gpt-5` | `OPENAI_API_KEY` |
+| Google Gemini | `gemini:gemini-2.5-flash` | `GEMINI_API_KEY` |
+| Anthropic | `anthropic:claude-haiku-5-5` | `ANTHROPIC_API_KEY` |
+| A router: one key, many vendors' models | `openrouter:qwen/qwen3-235b-a22b` or `huggingface:meta-llama/Llama-3.3-70B-Instruct` | `OPENROUTER_API_KEY` or `HF_TOKEN` |
+| Your laptop (open weights) | `ollama:qwen3:8b` | [Ollama](https://ollama.com/) installed, no key |
+| Your own GPU server | `vllm:Qwen/Qwen3-32B` | a [vLLM](https://docs.vllm.ai/) server |
+| Any OpenAI-compatible gateway (for example a [LiteLLM](https://docs.litellm.ai/docs/) proxy) | `compatible:my-model` | its URL and key |
+
+This works because most providers, local servers and gateways speak the same OpenAI-style Chat Completions format; Relay translates its messages into it, and talks to Anthropic natively. Model IDs change often, so check each provider's model list before you copy one.
+
+> [!numbers] Model cost for the whole course is small if you are deliberate. A typical lab session sends about 300 agent turns of roughly 6,000 input and 500 output tokens: 1.8M input and 150,000 output tokens. Cost = 1.8 × input price + 0.15 × output price, with prices per million tokens. On Claude Haiku 5.5 ($0.10 input, $0.50 output) that is 0.18 + 0.075 ≈ **$0.26** per session. On Claude Opus 5.5 ($4 / $20) the same session costs about **$10**. Develop on a small model, then run your eval suite on the model you intend to ship.
+
+```viz
+caption: The same lab session costs nothing on a local model and about $10 on a frontier model. Develop small; let your evals pick what ships.
+<div class="vz-bars"><span>Ollama, qwen3:8b</span><span class="bar sk"><i class="sk g" style="--w:1%"></i></span><b>$0</b><span>Claude Haiku 5.5</span><span class="bar sk"><i class="sk w" style="--w:2.5%"></i></span><b>$0.26</b><span>GPT-5 mini</span><span class="bar sk"><i class="sk w" style="--w:7.4%"></i></span><b>$0.75</b><span>Gemini 2.5 Flash</span><span class="bar sk"><i class="sk w" style="--w:9%"></i></span><b>$0.92</b><span>GPT-5</span><span class="bar sk"><i class="sk w" style="--w:37%"></i></span><b>$3.75</b><span>Claude Opus 5.5</span><span class="bar sk"><i class="sk w" style="--w:100%"></i></span><b>$10.20</b></div>
+<p>1.8M input + 150K output tokens, list prices, no caching</p>
+<div class="vz-src">Prices per million tokens (input / output), standard tier, October 2026: <a href="https://platform.claude.com/docs/en/about-claude/pricing">Anthropic</a> (Haiku 5.5 $0.10 / $0.50 for prompts up to 100K tokens, Opus 5.5 $4 / $20); <a href="https://developers.openai.com/api/docs/pricing">OpenAI</a> (gpt-5-mini $0.25 / $2, gpt-5 $1.25 / $10); <a href="https://ai.google.dev/gemini-api/docs/pricing">Google</a> (Gemini 2.5 Flash $0.30 / $2.50). Local models cost electricity and your hardware, not tokens.</div>
+```
+
+If you cannot pay for any API, there are two free routes. A local open-weights model through [Ollama](https://ollama.com/) keeps every model call on your own machine, and Gemini 2.5 Flash has a [free tier](https://ai.google.dev/gemini-api/docs/pricing). Small local models handle the narrow jobs (routing, memory extraction) well; tool calling and judging quality will be weaker in the agent loop, which is itself a useful lesson about model choice. Your eval suite will show you exactly where.
 
 ## Conventions in the lessons
 

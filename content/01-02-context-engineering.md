@@ -4,7 +4,7 @@ week: 1
 kind: lesson
 title: Context engineering in agents
 short: Context engineering
-minutes: 45
+minutes: 50
 summary: The context window is a budget you spend on every turn. How to lay it out, what to load up front versus on demand, and how to keep long agent runs from drowning in their own history.
 ---
 
@@ -22,23 +22,23 @@ A useful frame: the context window is working memory with three properties.
 
 ## Anatomy of an agent's context
 
-```mermaid
-flowchart TB
-  subgraph Stable[Stable prefix: cached]
-    S1[System prompt: role, rules, style]
-    S2[Tool definitions]
-    S3[Static knowledge: policies summary, glossary]
-  end
-  subgraph Session[Per-session]
-    M1[Long-term memory: user profile, prior issues]
-    M2[Conversation history or its summary]
-  end
-  subgraph Turn[Per-turn]
-    R1[Retrieved chunks]
-    R2[Tool results]
-    U[Latest user message]
-  end
-  Stable --> Session --> Turn
+```viz
+caption: Lay the context out from most stable to most volatile. The stable prefix can be cached and reused; only the tail changes on every turn.
+<div class="vz-cols" style="--k:3">
+  <div class="vz-panel sk g"><h5>Stable: cached</h5>
+    <div class="vz-row"><span class="ch sk g">system prompt</span><span class="ch sk g">tool definitions</span><span class="ch sk g">policy summary</span></div>
+    <p>changes per deploy</p>
+  </div>
+  <div class="vz-panel sk m"><h5>Per session</h5>
+    <div class="vz-row"><span class="ch sk m">user memory</span><span class="ch sk m">history or summary</span></div>
+    <p>grows as the chat goes on</p>
+  </div>
+  <div class="vz-panel sk c"><h5>Per turn</h5>
+    <div class="vz-row"><span class="ch sk c">retrieved chunks</span><span class="ch sk c">tool results</span><span class="ch sk c">latest message</span></div>
+    <p>new on every call</p>
+  </div>
+</div>
+<div class="vz-row"><b>order in the request:</b><span class="ch sk g">stable</span><span class="arr sk"></span><span class="ch sk m">session</span><span class="arr sk"></span><span class="ch sk c">turn</span></div>
 ```
 
 Order matters for two reasons. First, **prompt caching works on prefixes**: anything that changes invalidates the cache for everything after it. So put stable content first and volatile content last. Second, models tend to weigh the start and end of the context most, so put durable instructions at the start and the immediate task at the end.
@@ -90,7 +90,14 @@ You have two ways to get knowledge into context:
 
 Most good systems mix the two. Load a small, always-relevant core (key policies, the user's profile) and expose the rest through tools. Coding agents are the extreme case: they load almost nothing and explore with `grep` and `ls`, keeping only lightweight references (file paths) in context until they need contents.
 
-> [!numbers] Relay's full policy corpus is 180 documents, about 400,000 tokens. Loading it every turn on Haiku 5.5 costs 400,000 × $0.10 / 1e6 = **$0.04 per call** before output and takes over a second of prefill. A one-page policy summary (2,000 tokens) plus a `search_kb` tool costs $0.0002 per call, and the agent fetches details only on the 20% of turns that need them.
+> [!numbers] Relay's full policy corpus is 180 documents, about 400,000 tokens. Loading it every turn on Claude Haiku 5.5 costs 400,000 × $0.50 / 1e6 = **$0.20 per call** before output: prompts over 100,000 tokens are billed at $0.50 per million instead of $0.10 ([pricing](https://platform.claude.com/docs/en/about-claude/pricing)). On Gemini 2.5 Flash ($0.30 per million, [pricing](https://ai.google.dev/gemini-api/docs/pricing)) it is $0.12. Either way it adds prefill time to every turn. A one-page policy summary (2,000 tokens) plus a `search_kb` tool costs $0.0002 per call on Haiku 5.5, and the agent fetches details only on the 20% of turns that need them.
+
+```viz
+caption: Loading the whole corpus every turn costs about 1,000 times more per call than a summary plus a search tool, partly because a 400K prompt lands in a higher price tier.
+<div class="vz-bars"><span>all 180 docs, 400K tokens</span><span class="bar sk"><i class="sk b" style="--w:100%"></i></span><b>$0.20</b><span>summary + search tool, 2K</span><span class="bar sk"><i class="sk g" style="--w:1%"></i></span><b>$0.0002</b></div>
+<p>input cost per call on Claude Haiku 5.5, before output</p>
+<div class="vz-src">Anthropic <a href="https://platform.claude.com/docs/en/about-claude/pricing">pricing</a>: Haiku 5.5 input $0.10 per million tokens for prompts up to 100K tokens, $0.50 above. Several providers price long prompts higher (Gemini 2.5 Pro above 200K, <a href="https://ai.google.dev/gemini-api/docs/pricing">pricing</a>; OpenAI above 272K on several models, <a href="https://developers.openai.com/api/docs/pricing">pricing</a>).</div>
+```
 
 ## Keeping long runs healthy
 
@@ -129,27 +136,45 @@ For very long tasks, have the agent maintain an explicit scratchpad (a `notes` o
 
 ### Let the platform help
 
-Model providers now ship parts of this as API features, so check before you build your own:
+Hosted APIs now ship parts of this as features, so check before you build your own. Availability differs by provider, and a self-hosted open-weights model on vLLM or Ollama gives you none of them: there you write the few lines yourself, as above.
 
-- **Context editing** clears old tool results (and optionally old thinking) from the request automatically.
-- **Server-side compaction** summarises earlier turns when the context nears a threshold, and returns a compaction block you keep in history.
-- **Memory tools** give the agent a file-like store it reads and writes across sessions.
-- **Tool search** lets you mark most tools as deferred, so only their names sit in context and full definitions load when the agent searches for them. Use it when an agent has dozens of tools.
-- **Code execution with MCP** goes further: tools are presented as code modules, and the agent writes a short program that calls them, filters the results, and returns only what matters. Anthropic's [write-up](https://www.anthropic.com/engineering/code-execution-with-mcp) reports one workflow dropping from 150,000 tokens to 2,000 (a 98.7% saving), because large intermediate results never pass through the model. The price is running model-written code, which needs a sandbox with resource limits and monitoring.
-- **Skills** package instructions, scripts, and reference files in folders that the agent loads only when a task needs them, an example of *progressive disclosure*: a one-line description in context and the full content on demand.
+- **Context editing** clears old tool results (and optionally old thinking) from the request automatically. Anthropic offers it as [context editing](https://platform.claude.com/docs/en/build-with-claude/context-editing).
+- **Server-side compaction** summarises earlier turns when the context nears a threshold. Anthropic ([compaction](https://platform.claude.com/docs/en/build-with-claude/compaction), in beta) and OpenAI's Responses API ([compaction](https://developers.openai.com/api/docs/guides/compaction), via `context_management` or a `/responses/compact` endpoint) both return a compacted item you keep in history.
+- **Memory tools** give the agent a file-like store it reads and writes across sessions. The next lesson shows how to build one over any model.
+- **Tool search** lets you mark most tools as deferred, so only their names sit in context and full definitions load when the agent searches for them. Both [Anthropic](https://platform.claude.com/docs/en/agents-and-tools/tool-use/tool-search-tool) and [OpenAI](https://developers.openai.com/api/docs/guides/tools-tool-search) support it with a `defer_loading` flag. Use it when an agent has dozens of tools.
+- **Code execution with MCP** goes further: tools are presented as code modules, and the agent writes a short program that calls them, filters the results, and returns only what matters. Anthropic's [write-up](https://www.anthropic.com/engineering/code-execution-with-mcp) reports one workflow dropping from 150,000 tokens to 2,000 (a 98.7% saving), because large intermediate results never pass through the model. The pattern works with any model that writes code well. The price is running model-written code, which needs a sandbox with resource limits and monitoring.
+- **Skills** package instructions, scripts, and reference files in folders that the agent loads only when a task needs them, an example of *progressive disclosure*: a one-line description in context and the full content on demand. The format started at Anthropic; the idea works on any model with a file-reading tool.
 
 The trade-off is portability: provider features differ, so wrap them behind your own interface and keep the eval suite as the judge of whether they help.
 
 ## Context and caching are one design
 
-Prompt caching gives a large discount (90 to 95% on current Claude models) on input tokens that match a previously seen prefix. It only works if the prefix is byte-identical. Common ways teams accidentally break it:
+Prompt caching reuses the work done on a prefix the provider has seen recently, and bills those input tokens at a large discount. It only works if the prefix matches exactly. Every major API offers it, with different mechanics:
+
+| Provider | How you get it | Cached input price |
+|---|---|---|
+| Anthropic | mark a breakpoint with `cache_control`, or one top-level setting for automatic caching | 10% of input (5% on Opus 5.5 and Sonnet 5.5); 5-minute writes cost 1.25x |
+| OpenAI | automatic, nothing to mark | GPT-5: $0.125 against $1.25 input, 10% |
+| Google Gemini | implicit caching on 2.5 and newer models (from 2,048 tokens on 2.5 Flash and Pro), or explicit caches | 2.5 Flash: $0.03 against $0.30, 10% |
+| vLLM, self-hosted | automatic prefix caching (`enable_prefix_caching`) | no bill; it saves GPU prefill time instead |
+
+Sources: [Anthropic prompt caching](https://platform.claude.com/docs/en/build-with-claude/prompt-caching) and [pricing](https://platform.claude.com/docs/en/about-claude/pricing); [OpenAI prompt caching](https://developers.openai.com/api/docs/guides/prompt-caching) and [pricing](https://developers.openai.com/api/docs/pricing); [Gemini caching](https://ai.google.dev/gemini-api/docs/caching) and [pricing](https://ai.google.dev/gemini-api/docs/pricing); [vLLM automatic prefix caching](https://docs.vllm.ai/en/latest/features/automatic_prefix_caching.html).
+
+Common ways teams accidentally break it, on any provider:
 
 - Putting a timestamp, request ID, or user name in the system prompt.
 - Serialising tool definitions in a different order each time (unsorted dicts).
 - Adding or removing tools per request.
 - Editing earlier messages (for example re-summarising every turn instead of appending).
 
-Design the context so the first several thousand tokens never change between users, the next block changes per session, and only the tail changes per turn. Week 5 covers caching economics in detail. See the [prompt caching docs](https://platform.claude.com/docs/en/build-with-claude/prompt-caching) for the mechanics.
+```viz
+caption: Caching matches prefixes. One value that changes near the top, such as a timestamp, turns everything after it into a miss.
+<div class="vz-row"><b>Good</b><span class="ch sk g">system</span><span class="ch sk g">tools</span><span class="ch sk g">policies</span><span class="ch sk g">history</span><span class="ch sk c">new message</span></div>
+<div class="vz-row"><b>Broken</b><span class="ch sk b">time: 14:02:07</span><span class="ch sk b">system</span><span class="ch sk b">tools</span><span class="ch sk b">policies</span><span class="ch sk b">history</span><span class="ch sk c">new message</span></div>
+<p>green: read from cache, red: recomputed and billed at full price</p>
+```
+
+Design the context so the first several thousand tokens never change between users, the next block changes per session, and only the tail changes per turn. Week 5 covers caching economics in detail.
 
 ## A context budget for Relay
 
@@ -190,6 +215,6 @@ Write budgets down. They make trade-offs explicit and give you something to aler
   {"q": "Your cache hit rate dropped to zero after a deploy. Which change is the most likely cause?", "options": ["You added a new tool result format", "Someone added the current date and time to the top of the system prompt", "Users started asking longer questions", "You lowered max_tokens"], "answer": 1, "why": "Caching matches exact prefixes. A value that changes every request at the start of the prompt invalidates the cache for everything after it."},
   {"q": "Where should a rule that only applies to the issue_refund tool live?", "options": ["At the top of the system prompt in capitals", "In the issue_refund tool description, with the reason", "In every user message", "In a separate fine-tune"], "answer": 1, "why": "Put tool-specific guidance where the model reads it when deciding to use that tool. It keeps the system prompt short and the rule close to the action."},
   {"q": "What must compaction preserve above all?", "options": ["Greetings and tone", "Raw tool output for auditability", "Decisions, identifiers, promises made, and open questions", "The exact wording of every message"], "answer": 2, "why": "A summary is useful if the next turn can act on it. Identifiers and commitments are the details that cause real failures when lost."},
-  {"q": "Why prefer a compact policy summary plus a search tool over loading all 180 policy documents?", "options": ["Long contexts are not allowed", "It cuts cost and latency by orders of magnitude and keeps attention on relevant text", "Search tools are always more accurate", "Policies cannot be cached"], "answer": 1, "why": "Loading everything costs about 200x more per call and dilutes attention. The agent retrieves details on the minority of turns that need them."}
+  {"q": "Why prefer a compact policy summary plus a search tool over loading all 180 policy documents?", "options": ["Long contexts are not allowed", "It cuts cost and latency by orders of magnitude and keeps attention on relevant text", "Search tools are always more accurate", "Policies cannot be cached"], "answer": 1, "why": "Loading everything costs about 1,000x more per call on Claude Haiku 5.5 (a 400K prompt also crosses into a higher price tier) and dilutes attention. The agent retrieves details on the minority of turns that need them."}
 ]
 ```

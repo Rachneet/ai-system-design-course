@@ -43,12 +43,21 @@ flowchart LR
 
 **State checks are the most underused and the most valuable.** An agent can say "I've issued your refund" without calling the tool, or call it with the wrong amount. Checking the database after the run catches both. This is the approach used in benchmarks like [τ-bench](https://arxiv.org/abs/2406.12045), which compares the final database state against the expected state.
 
+```viz
+caption: The reply can look perfect while the action is wrong. Only the trajectory and state checks see what actually happened.
+<div class="vz-cols" style="--k:3">
+  <div class="vz-panel sk g"><h5>Reply</h5><div class="vz-row"><span class="ch sk g">"Your $45 refund is issued"</span></div><p>a judge would pass it</p></div>
+  <div class="vz-panel sk b"><h5>Trajectory</h5><div class="vz-row"><span class="ch sk b">no issue_refund call</span></div><p>assertion fails</p></div>
+  <div class="vz-panel sk b"><h5>End state</h5><div class="vz-row"><span class="ch sk b">refunds table: empty</span></div><p>state check fails</p></div>
+</div>
+```
+
 > [!warn] Do not over-specify trajectories. If you assert the exact sequence of tool calls, you will fail correct runs that took a different valid path. Assert what must happen (refund issued for the right amount) and what must not (no refund on an ineligible order), and leave the rest flexible.
 
 ## Grader types, cheapest first
 
 1. **Code checks.** Exact match, regex, JSON schema validation, "contains the order number", tool-call assertions, DB state queries. Fast, free, deterministic. Use them wherever possible.
-2. **LLM-as-judge.** A model grades the output against a rubric. Needed for qualities like tone, helpfulness, and groundedness. Costs money and needs calibration against human judgement (Week 3).
+2. **LLM-as-judge.** A model grades the output against a rubric. Needed for qualities like tone, helpfulness, and groundedness. Costs money and needs calibration against human judgement (Week 3). Prefer a judge from a different model family than the agent: LLM judges tend to [score their own generations higher](https://arxiv.org/abs/2404.13076) than humans do. With a provider-neutral setup this is one setting (the course's reference code takes, for example, `RELAY_MODEL=openai:gpt-5` with `RELAY_JUDGE_MODEL=anthropic:claude-opus-5-5`, or the reverse).
 3. **Human review.** The ground truth, slow and expensive. Use it to label a sample and to calibrate judges.
 
 For your first suite, aim for mostly code checks plus one simple judge.
@@ -126,7 +135,16 @@ The same input can produce different trajectories. A case that passes 4 times ou
 
 > [!numbers] An agent with a 90% per-trial success rate on a task has pass^1 = 0.90, but pass^5 = 0.9^5 ≈ **0.59**. If a customer will hit that flow five times a week, they will probably see a failure. Reliability compounds against you.
 
-Running 25 cases × 3 trials = 75 agent runs. On a small model at about 20,000 tokens per run, that is roughly 1.5M tokens, under a dollar. Cheap enough to run on every prompt change.
+```viz
+caption: A 90% agent passes five tries in a row only 59% of the time. Report pass^k, not just the average.
+<div class="vz-bars"><span>pass^1</span><span class="bar sk"><i class="sk g" style="--w:90%"></i></span><b>0.90</b><span>pass^2</span><span class="bar sk"><i class="sk g" style="--w:81%"></i></span><b>0.81</b><span>pass^3</span><span class="bar sk"><i class="sk g" style="--w:73%"></i></span><b>0.73</b><span>pass^4</span><span class="bar sk"><i class="sk g" style="--w:66%"></i></span><b>0.66</b><span>pass^5</span><span class="bar sk"><i class="sk b" style="--w:59%"></i></span><b>0.59</b></div>
+<p>chance that all k independent tries succeed, at 90% per try</p>
+<div class="vz-src">pass^k defined in Yao et al., <a href="https://arxiv.org/abs/2406.12045">τ-bench</a> (2024); values are 0.9 to the power k.</div>
+```
+
+The τ-bench authors found exactly this in practice: function-calling agents built on gpt-4o succeeded on fewer than half of the tasks, and on the retail domain their pass^8 was below 25% ([abstract](https://arxiv.org/abs/2406.12045)).
+
+Running 25 cases × 3 trials = 75 agent runs. On a small model at about 20,000 tokens per run, that is roughly 1.5M tokens, under a dollar on any small hosted tier. The input side costs about $0.15 on Claude Haiku 5.5, $0.38 on GPT-5 mini and $0.45 on Gemini 2.5 Flash at list prices ([Anthropic](https://platform.claude.com/docs/en/about-claude/pricing), [OpenAI](https://developers.openai.com/api/docs/pricing), [Google](https://ai.google.dev/gemini-api/docs/pricing)), and nothing but time on a local model. Cheap enough to run on every prompt change. Run the suite on the model you will ship, though: a pass rate measured on one model says little about another.
 
 ## Read the traces, not just the scores
 
