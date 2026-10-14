@@ -302,6 +302,15 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
 .go:active { transform: translateY(1px); }
 .resume p { margin: 0; color: var(--ink-2); font-size: 15px; }
 .resume p b { color: var(--ink); font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+.map { margin-top: 40px; }
+.map h2 { font-size: 25px; font-weight: 750; font-stretch: 86%; margin: 0 0 4px; }
+.map > p { margin: 0 0 14px; color: var(--ink-2); font-size: 16.5px; max-width: 62ch; }
+.map .viz a { color: inherit; text-decoration: none; }
+.map .viz a:hover h5 { text-decoration: underline; text-decoration-color: var(--pen); }
+.map .lab-col { display: grid; gap: 7px; align-content: start; }
+.map .lab-col h5 { font-size: 16px; margin: 0 0 2px; }
+.map .lab-col .ch { white-space: normal; text-align: left; justify-content: flex-start; width: 100%; }
+@media (max-width: 1100px) and (min-width: 641px) { .map .vz-cols { --k: 3 !important; } }
 .weeks { margin-top: 44px; border-top: 1px solid var(--ink); }
 .wk { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 24px; padding: 22px 0 24px; border-bottom: 1px solid var(--rule); }
 .wk-no { font-family: var(--font-display); }
@@ -686,6 +695,18 @@ function renderHome() {
     <div class="resume">
       <a class="go" href="#${next.id}">${n ? `Continue with lesson ${Number(sheetNo[next.id])}` : "Start the course"}</a>
     </div>
+    <section class="map"><h2>One system, built in five labs</h2>
+      <p>Every lab adds a layer to Relay, a support agent for an online store, until it is a monitored production service. Use any model provider.</p>
+      <div class="viz"><div class="vz-row"><span class="ch sk">customer</span><span class="arr sk"></span><span class="ch sk c">Relay API</span><span class="arr sk"></span><span class="ch sk m">any model: hosted or open</span></div>
+        <div class="vz-cols" style="--k:5">${[
+          ["w1-lab", "Lab 1", "c", ["agent loop", "tools", "memory"]],
+          ["w2-lab", "Lab 2", "m", ["hybrid search", "access control", "guardrails"]],
+          ["w3-lab", "Lab 3", "g", ["eval suite", "LLM judges", "red-team gate"]],
+          ["w4-lab", "Lab 4", "w", ["auth and limits", "workers", "CI/CD to cloud"]],
+          ["w5-lab", "Lab 5", "c", ["tracing", "SLOs and alerts", "cost per turn"]],
+        ].map(([id, n, ink, parts]) => `<a class="vz-panel sk ${ink} lab-col" href="#${id}"><h5>${n}${done.has(id) ? " \u2713" : ""}</h5>${parts.map(t => `<span class="ch sk ${ink}">${t}</span>`).join("")}</a>`).join("")}</div>
+      </div>
+    </section>
     <div class="weeks">${[0, 1, 2, 3, 4, 5, 6].map(week).join("")}</div>
     <section class="library"><h2>Library</h2><ul>${extras}</ul></section>
     <p class="note">An independent, original course. Its weekly topics follow the public outline of paid AI system design cohorts so anyone can study the same ground for free; none of their material is reproduced. Your ticks are saved only in this browser.</p>
@@ -777,6 +798,7 @@ function route() {
   const e = byId[id];
   main.innerHTML = e ? renderEntry(e) : renderHome();
   if (e) enhance(main, e);
+  else drawSketches(main);
   renderNav(e ? e.id : null);
   document.title = e ? `${e.title} · AI System Design` : "AI System Design";
   closeMenu();
