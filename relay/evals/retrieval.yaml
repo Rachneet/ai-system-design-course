@@ -1,0 +1,46 @@
+# Retrieval eval: query -> documents that answer it. who: customer (default) or staff.
+# Paraphrased on purpose: real customers rarely use the documents' wording.
+- {q: "how long do I have to send back a sleeping bag I already slept in", relevant: [POL-RETURNS-2026]}
+- {q: "can I return boots I never wore after 7 weeks", relevant: [POL-RETURNS-2026, FAQ-BOOT-SIZING]}
+- {q: "when will my money show up after a return", relevant: [POL-RETURNS-2026]}
+- {q: "do I pay for the return label", relevant: [POL-RETURNS-2026]}
+- {q: "can I return a gift card", relevant: [POL-RETURNS-2026, POL-GIFTCARDS-2026]}
+- {q: "tent pole snapped after a year, is that covered", relevant: [POL-WARRANTY-2026, FAQ-TENT-CARE]}
+- {q: "zipper broke on my jacket", relevant: [POL-WARRANTY-2026]}
+- {q: "how do I make a warranty claim", relevant: [POL-WARRANTY-2026]}
+- {q: "how much is next day delivery", relevant: [POL-SHIPPING-2026]}
+- {q: "is shipping free", relevant: [POL-SHIPPING-2026, POL-LOYALTY-2026]}
+- {q: "I typed the wrong address, can I fix it", relevant: [POL-SHIPPING-2026, FAQ-ORDER-CHANGES]}
+- {q: "do you deliver to Toronto", relevant: [POL-INTERNATIONAL-2026]}
+- {q: "will I be charged customs fees in Canada", relevant: [POL-INTERNATIONAL-2026]}
+- {q: "do you ship to the UK", relevant: [POL-INTERNATIONAL-2026]}
+- {q: "the tent I bought last week is now on sale", relevant: [POL-PRICE-ADJUST-2026]}
+- {q: "will you match REI's price", relevant: [POL-PRICE-ADJUST-2026]}
+- {q: "do gift cards run out", relevant: [POL-GIFTCARDS-2026]}
+- {q: "delete my account and all my data", relevant: [POL-PRIVACY-2026]}
+- {q: "how long do you keep chat transcripts", relevant: [POL-PRIVACY-2026]}
+- {q: "how many points do I get per purchase", relevant: [POL-LOYALTY-2026]}
+- {q: "can I pay in instalments", relevant: [POL-PAYMENTS-2026]}
+- {q: "do you take Apple Pay", relevant: [POL-PAYMENTS-2026]}
+- {q: "my tent smells musty", relevant: [FAQ-TENT-CARE]}
+- {q: "can I put my down bag in the washing machine", relevant: [FAQ-SLEEPING-BAG-CARE]}
+- {q: "what does the 20 degree rating actually mean", relevant: [FAQ-SLEEPING-BAG-CARE, PROD-ALPINE-20F]}
+- {q: "should I size up for a fleece underneath", relevant: [FAQ-JACKET-SIZING]}
+- {q: "my toes hit the front of my boots going downhill", relevant: [FAQ-BOOT-SIZING]}
+- {q: "is it ok to cook in the vestibule when it rains", relevant: [FAQ-STOVE-SAFETY]}
+- {q: "I can smell gas from my stove", relevant: [FAQ-STOVE-SAFETY]}
+- {q: "my water filter froze overnight", relevant: [FAQ-WATER-FILTER]}
+- {q: "does the filter kill viruses", relevant: [PROD-CLEARFLOW]}
+- {q: "what pack size for a 18 inch torso", relevant: [FAQ-PACK-FITTING]}
+- {q: "cancel my order please", relevant: [FAQ-ORDER-CHANGES]}
+- {q: "how much does the two person tent weigh", relevant: [PROD-RIDGELINE-2P]}
+- {q: "tent for winter camping in strong wind", relevant: [PROD-SUMMIT-4P]}
+- {q: "how fast does the Ember boil water", relevant: [PROD-EMBER-STOVE]}
+- {q: "is the headlamp waterproof", relevant: [PROD-HEADLAMP-200]}
+- {q: "does the shell jacket fit over a climbing helmet", relevant: [PROD-ALPINE-JACKET]}
+- {q: "BOOT-GRN sole", relevant: [PROD-GRANITE-BOOTS]}
+- {q: "TENT-SMT-4P price", relevant: [PROD-SUMMIT-4P]}
+- {q: "customer has had four refunds this quarter, what should I check", relevant: [INT-REFUND-FRAUD], who: staff}
+- {q: "customer says they will sue us", relevant: [INT-ESCALATION], who: staff}
+- {q: "can I give a free replacement outside warranty", relevant: [INT-WARRANTY-OVERRIDE], who: staff}
+- {q: "checkout is broken, what do I tell people", relevant: [INT-OUTAGE-SCRIPT], who: staff}

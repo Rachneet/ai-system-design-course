@@ -27,10 +27,21 @@ from psycopg.rows import dict_row
 from app.agent import run_turn
 from app.config import settings
 from app.db import Store
+from app.embeddings import LocalEmbedder, LocalReranker
+from app.guardrails import check_reply
+from app.ingest import reconcile, run_once
 from app.llm import AnthropicLLM
 from app.prompts import system_prompt
+from app.retrieval import Retriever
 from app.seed import seed
 from app.tools import REGISTRY, Context
+
+KB_SCHEMA = "eval_kb"
+KB_COPY = (
+    f"INSERT INTO documents SELECT * FROM {KB_SCHEMA}.documents; "
+    f"INSERT INTO chunks (chunk_id, doc_id, ord, context, content, embedding, embed_model) "
+    f"SELECT chunk_id, doc_id, ord, context, content, embedding, embed_model FROM {KB_SCHEMA}.chunks"
+)
 
 from .checks import grade
 
@@ -91,7 +102,7 @@ def cost(usage: dict, model: str) -> float:
     ) / 1e6
 
 
-async def run_one(case: dict, trial: int, llm, sem: asyncio.Semaphore) -> dict:
+async def run_one(case: dict, trial: int, llm, sem: asyncio.Semaphore, models: tuple) -> dict:
     async with sem:
         conn = await AsyncConnection.connect(settings.database_url, autocommit=True, row_factory=dict_row)
         schema = f"eval_{uuid4().hex[:12]}"
@@ -100,8 +111,17 @@ async def run_one(case: dict, trial: int, llm, sem: asyncio.Semaphore) -> dict:
             await conn.execute(f"SET search_path TO {schema}, public")
             store = Store(conn)
             await store.apply_schema()
+            await conn.execute(
+                KB_COPY
+            )  # the indexed knowledge base, copied rather than re-embedded per trial
             await seed(store, case["env"], NOW)
-            ctx = Context(store=store, customer_id=case["env"]["customer_id"], session_id=None, now=NOW)
+            ctx = Context(
+                store=store,
+                customer_id=case["env"]["customer_id"],
+                session_id=None,
+                now=NOW,
+                retriever=Retriever(store, *models),
+            )
             chunks: list[str] = []
 
             async def on_text(t):
@@ -109,7 +129,14 @@ async def run_one(case: dict, trial: int, llm, sem: asyncio.Semaphore) -> dict:
 
             t0 = time.perf_counter()
             history = [{"role": "user", "content": [{"type": "text", "text": case["input"]}]}]
-            result = await run_turn(ctx, llm, system_prompt([], NOW), history, on_text)
+            result = await run_turn(
+                ctx,
+                llm,
+                system_prompt([], NOW),
+                history,
+                on_text,
+                guard=lambda d, r: check_reply(d, ctx.retrieved, r.tool_calls),
+            )
             latency = time.perf_counter() - t0
             reply = "".join(chunks)
             fails = grade(case["expect"], reply, result.tool_calls, await snapshot(store), result.steps)
@@ -120,6 +147,7 @@ async def run_one(case: dict, trial: int, llm, sem: asyncio.Semaphore) -> dict:
                 "pass": not fails,
                 "fails": fails,
                 "steps": result.steps,
+                "guard_failures": result.guard_failures,
                 "usage": dict(result.usage),
                 "latency_s": round(latency, 2),
                 "reply": reply,
@@ -180,6 +208,19 @@ def report(results: list[dict], trials: int, model: str, baseline: dict | None) 
     return not must_never
 
 
+async def build_kb(embedder) -> None:
+    """Index kb/ once into a shared schema that every trial copies from."""
+    conn = await AsyncConnection.connect(settings.database_url, autocommit=True, row_factory=dict_row)
+    await conn.execute(f"DROP SCHEMA IF EXISTS {KB_SCHEMA} CASCADE")
+    await conn.execute(f"CREATE SCHEMA {KB_SCHEMA}")
+    await conn.execute(f"SET search_path TO {KB_SCHEMA}, public")
+    store = Store(conn)
+    await store.apply_schema()
+    await reconcile(store)
+    await run_once(store, embedder)
+    await conn.close()
+
+
 async def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--trials", type=int, default=3)
@@ -198,9 +239,13 @@ async def main() -> int:
     if args.only:
         cases = [c for c in cases if args.only in c["id"]]
 
+    models = (LocalEmbedder(), LocalReranker())
+    await build_kb(models[0])
     llm = AnthropicLLM(settings.model, settings.max_tokens, settings.refusal_fallback)
     sem = asyncio.Semaphore(args.concurrency)
-    results = await asyncio.gather(*(run_one(c, t, llm, sem) for c in cases for t in range(args.trials)))
+    results = await asyncio.gather(
+        *(run_one(c, t, llm, sem, models) for c in cases for t in range(args.trials))
+    )
     baseline = json.loads(Path(args.baseline).read_text()) if args.baseline else None
     gate_ok = report(results, args.trials, settings.model, baseline)
     if args.save:
