@@ -21,6 +21,10 @@ def parse(path: Path) -> dict:
     match = FRONT_MATTER.match(text)
     if not match:
         raise SystemExit(f"{path.name}: missing front matter")
+    # House style: "to" for ranges and hyphens for compounds, never en or em dashes.
+    for n, line in enumerate(text.splitlines(), 1):
+        if "\u2013" in line or "\u2014" in line:
+            raise SystemExit(f"{path.name}:{n}: en or em dash found")
     meta = {}
     for line in match.group(1).splitlines():
         key, _, value = line.partition(":")

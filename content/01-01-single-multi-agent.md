@@ -36,8 +36,8 @@ Most production "agents" are really one of these patterns, sometimes nested. Ant
 | Prompt chaining | A → B → C, with code checks between steps | The task splits into fixed subtasks and each step is easier than the whole | Draft reply → check tone and policy → send |
 | Routing | Classify, then send to a specialised handler | Inputs fall into distinct categories that need different prompts, tools, or models | Order status → cheap model with order tools; legal complaint → human queue |
 | Parallelization | Run N calls at once, then combine | Independent subtasks, or you want several opinions (voting) | Check a reply for PII, policy, and tone simultaneously |
-| Orchestrator–workers | One model plans subtasks, workers execute, orchestrator merges | Subtasks are not known in advance | "Compare return policies across our five brands" |
-| Evaluator–optimizer | Generate, critique, revise in a loop | Clear quality criteria and iterating measurably helps | Rewrite a refund denial until it passes the policy rubric |
+| Orchestrator-workers | One model plans subtasks, workers execute, orchestrator merges | Subtasks are not known in advance | "Compare return policies across our five brands" |
+| Evaluator-optimizer | Generate, critique, revise in a loop | Clear quality criteria and iterating measurably helps | Rewrite a refund denial until it passes the policy rubric |
 
 Routing deserves special attention because it is the cheapest big win. A classifier on a small model costs a fraction of a cent and lets you send 70% of traffic (order status, store hours) to a small model with two tools, and only the hard 30% to a large model with the full toolset.
 
@@ -124,7 +124,7 @@ flowchart TB
   end
 ```
 
-- **Orchestrator–workers (supervisor).** The orchestrator plans, spawns workers with narrow instructions, and synthesises. Workers return condensed results, not raw transcripts. Most robust general shape.
+- **Orchestrator-workers (supervisor).** The orchestrator plans, spawns workers with narrow instructions, and synthesises. Workers return condensed results, not raw transcripts. Most robust general shape.
 - **Handoff (swarm).** One agent owns the conversation at a time and transfers control to another, passing a summary. Good for support flows with clear departments. The risk is lost context at each transfer.
 - **Pipeline.** Fixed sequence of specialised agents. This is really a workflow with agentic steps, and it is often the right answer.
 

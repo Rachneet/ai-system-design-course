@@ -29,9 +29,9 @@ Running 400 cases × 3 trials on every commit is slow and costly. Tier your suit
 
 | Tier | When | Size | Time | Purpose |
 |---|---|---|---|---|
-| Smoke | Every push | 20–30 critical cases, 1 trial | 1–3 min | Catch obvious breakage fast |
-| PR gate | Every pull request touching behaviour | 150–300 cases, 3 trials | 10–20 min | Block regressions |
-| Release | Before production deploy, nightly | Full suite incl. held-out, 5 trials | 30–90 min | Release confidence, trends |
+| Smoke | Every push | 20 to 30 critical cases, 1 trial | 1 to 3 min | Catch obvious breakage fast |
+| PR gate | Every pull request touching behaviour | 150 to 300 cases, 3 trials | 10 to 20 min | Block regressions |
+| Release | Before production deploy, nightly | Full suite incl. held-out, 5 trials | 30 to 90 min | Release confidence, trends |
 | Online | Continuously in production | Sampled live traffic, judged | Ongoing | Catch drift the suite misses |
 
 The smoke tier should include your **must-never-happen** cases: refund to the wrong customer, leaking internal documents, obeying a prompt injection. A single failure in these blocks the merge, regardless of the overall score.

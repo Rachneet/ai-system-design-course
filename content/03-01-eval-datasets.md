@@ -78,10 +78,10 @@ Key ideas in this format:
 
 | Source | Strength | Weakness | Share of a mature suite |
 |---|---|---|---|
-| Production traces | Real distribution, real phrasing | Needs labelling; PII to scrub | 40–60% |
+| Production traces | Real distribution, real phrasing | Needs labelling; PII to scrub | 40 to 60% |
 | Bug regressions | Each one is a proven failure | Narrow | Growing over time |
-| Synthetic generation | Covers rare cases and new features before launch | Can be unrealistic or repetitive | 20–40% |
-| Red-team / adversarial | Security and abuse coverage | Skews toward attacks | 10–20% |
+| Synthetic generation | Covers rare cases and new features before launch | Can be unrealistic or repetitive | 20 to 40% |
+| Red-team / adversarial | Security and abuse coverage | Skews toward attacks | 10 to 20% |
 
 ### Turning traces into cases
 

@@ -40,7 +40,7 @@ All original prompts; pick one or bring your own.
 | **Clinic intake assistant** (use synthetic data only) | Structured extraction from free-text symptoms, strict scope limits, safety escalation | Booking or rescheduling appointments |
 | **Lab notebook copilot** for a research group | Retrieval over protocols and past experiment logs with per-project permissions | Ordering reagents within budget |
 | **Open-source maintainer triage bot** | Classifying issues, finding duplicates via hybrid search over thousands of issues, injection via issue text | Labelling, closing duplicates, requesting info |
-| **Landlord–tenant helpdesk** | Policy and lease retrieval per building, multilingual users | Creating maintenance work orders, scheduling contractors |
+| **Landlord-tenant helpdesk** | Policy and lease retrieval per building, multilingual users | Creating maintenance work orders, scheduling contractors |
 | **Course TA agent** for a university class | Retrieval over lecture notes and forum, academic integrity guardrails | Extending deadlines within policy |
 | **Personal finance inbox agent** | Extracting bills from emails (untrusted content), minimising data the model sees | Scheduling payments, with approval |
 | **Field service copilot** for technicians | Manuals with diagrams and tables, offline-tolerant, latency on mobile | Ordering parts, closing jobs |
@@ -52,10 +52,10 @@ When choosing, check that your project has: a real user, data you can legally us
 
 | When | Deliverable |
 |---|---|
-| Day 1–2 | One-page proposal: user, problem, success metrics, scope, data plan, risks |
-| Day 3–5 | Design doc draft; first 40 eval cases; skeleton deployed |
-| Day 6–9 | Core features; retrieval; guardrails; eval suite to 150 cases; judges calibrated |
-| Day 10–11 | Observability, optimizations with before/after numbers; red-team pass |
+| Days 1 to 2 | One-page proposal: user, problem, success metrics, scope, data plan, risks |
+| Days 3 to 5 | Design doc draft; first 40 eval cases; skeleton deployed |
+| Days 6 to 9 | Core features; retrieval; guardrails; eval suite to 150 cases; judges calibrated |
+| Days 10 to 11 | Observability, optimizations with before/after numbers; red-team pass |
 | Day 12 | Design review with peers (use the review lesson's format) |
 | Day 13 | Readiness review: checklist with evidence |
 | Day 14 | Final presentation and live demo |

@@ -96,7 +96,7 @@ What you do after ranking also matters:
 
 - **Deduplicate** near-identical chunks (the same paragraph in three versions of a policy).
 - **Prefer fresh content** when documents conflict, or show dates and let the model reason.
-- **Expand** small matched chunks to their parent section if more context helps (parent–child retrieval).
+- **Expand** small matched chunks to their parent section if more context helps (parent-child retrieval).
 - **Order** the best chunk first or last, not buried in the middle.
 - **Label** each chunk with an ID and source so the model can cite it, and so you can verify citations.
 

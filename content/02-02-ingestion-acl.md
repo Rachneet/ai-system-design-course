@@ -61,7 +61,7 @@ Garbage in, garbage retrieved. The parsing and chunking step decides retrieval q
 | Fixed size with overlap | 300 to 800 tokens, 10 to 20% overlap | Uniform prose | Splits mid-thought, ignores structure |
 | Structure-aware | Split on headings and sections, then size-limit | Docs, policies, wikis | Uneven chunk sizes |
 | Semantic | Split where embedding similarity between sentences drops | Long unstructured text | Slower, more moving parts |
-| Parent–child | Index small chunks, return their larger parent section | Precise matching, rich context | More storage, more logic |
+| Parent-child | Index small chunks, return their larger parent section | Precise matching, rich context | More storage, more logic |
 
 Start with structure-aware chunks of about 400 to 800 tokens. Then measure. A study on [chunking financial reports](https://arxiv.org/abs/2402.05131) found element-based chunking (following document structure) beat fixed-size chunks.
 

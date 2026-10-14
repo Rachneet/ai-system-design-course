@@ -16,9 +16,9 @@ The levers, roughly in order of payoff per unit of effort:
 
 | Lever | Saves | Effort | Risk |
 |---|---|---|---|
-| Prompt caching | Input cost (90–95% off the cached part), TTFT | Low | Low |
-| Trimming context (tool results, history) | Input cost, latency | Low–medium | Medium (quality) |
-| Shorter outputs | Output cost, latency | Low | Low–medium |
+| Prompt caching | Input cost (90 to 95% off the cached part), TTFT | Low | Low |
+| Trimming context (tool results, history) | Input cost, latency | Low to medium | Medium (quality) |
+| Shorter outputs | Output cost, latency | Low | Low to medium |
 | Model routing (small model for easy traffic) | Cost, latency | Medium | Medium (quality) |
 | Exact-match response caching | Everything, for repeats | Low | Low |
 | Semantic caching | Everything, for near-repeats | Medium | High (wrong answers, leaks) |

@@ -28,7 +28,7 @@ Humans define what "good" means. Use them for:
 Make human labels useful:
 
 - **Use a domain expert**, ideally one "benevolent dictator" whose judgement defines quality for the product, rather than averaging many non-experts.
-- **Binary pass/fail with a written reason** beats 1–5 Likert scores. Raters disagree on whether something is a 3 or a 4; they agree far more on pass or fail, and the reason is what you learn from.
+- **Binary pass/fail with a written reason** beats 1 to 5 Likert scores. Raters disagree on whether something is a 3 or a 4; they agree far more on pass or fail, and the reason is what you learn from.
 - **Write a labelling guide** with examples of pass and fail at the boundary.
 - **Measure inter-rater agreement** when you have more than one rater. If two humans agree only 70% of the time, no judge will exceed that, and your criteria need work.
 

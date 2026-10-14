@@ -33,10 +33,10 @@ flowchart LR
 | Check | Catches | Typical implementation | Cost |
 |---|---|---|---|
 | Size and rate limits | Abuse, cost attacks | Code | ~0 ms |
-| PII detection and redaction | Card numbers, SSNs, emails going to the model or logs | Regex + checksums, [Presidio](https://microsoft.github.io/presidio/) | 1–20 ms |
-| Topic / scope classifier | Off-topic use ("write my essay") | Small classifier or small LLM | 50–300 ms |
-| Harmful content | Self-harm, violence, abuse | Moderation model, e.g. [Llama Guard](https://huggingface.co/meta-llama/Llama-Guard-3-8B) | 100–400 ms |
-| Prompt injection detection | Known jailbreak patterns | Classifier | 20–200 ms |
+| PII detection and redaction | Card numbers, SSNs, emails going to the model or logs | Regex + checksums, [Presidio](https://microsoft.github.io/presidio/) | 1 to 20 ms |
+| Topic / scope classifier | Off-topic use ("write my essay") | Small classifier or small LLM | 50 to 300 ms |
+| Harmful content | Self-harm, violence, abuse | Moderation model, e.g. [Llama Guard](https://huggingface.co/meta-llama/Llama-Guard-3-8B) | 100 to 400 ms |
+| Prompt injection detection | Known jailbreak patterns | Classifier | 20 to 200 ms |
 
 ### Output side
 
