@@ -112,8 +112,14 @@ class Store:
             )
             return [{"role": r["role"], "content": r["content"]} for r in await cur.fetchall()]
 
-    async def append_messages(self, session_id: UUID, start_seq: int, messages: list[dict]) -> None:
-        async with self.conn() as c:
+    async def save_turn(
+        self, session_id: UUID, customer_id: str, start_seq: int, messages: list[dict], memory_delay_s: float
+    ) -> None:
+        """Store the turn and schedule memory extraction in one transaction (the outbox pattern): either both
+        happen or neither does, and the job is debounced until the session has been quiet for a while."""
+        from .jobs import enqueue
+
+        async with self.conn() as c, c.transaction():
             async with c.cursor() as cur:
                 await cur.executemany(
                     "INSERT INTO messages (session_id, seq, role, content) VALUES (%s, %s, %s, %s)",
@@ -123,6 +129,13 @@ class Store:
                     ],
                 )
             await c.execute("UPDATE sessions SET updated_at = now() WHERE id = %s", (session_id,))
+            await enqueue(
+                c,
+                "extract_memory",
+                str(session_id),
+                {"session_id": str(session_id), "customer_id": customer_id},
+                delay_s=memory_delay_s,
+            )
 
     # ---- memory -------------------------------------------------------------------------------
     async def memories(self, customer_id: str, limit: int = 8) -> list[str]:

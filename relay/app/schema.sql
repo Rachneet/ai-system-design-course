@@ -116,3 +116,45 @@ CREATE TABLE IF NOT EXISTS reviews (
   created_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE INDEX IF NOT EXISTS reviews_sku ON reviews (sku);
+
+-- ---- Lab 4: limits, idempotency, background jobs --------------------------------------------------
+CREATE TABLE IF NOT EXISTS rate_limits (
+  key        text PRIMARY KEY,          -- e.g. 'chat:c_77'
+  tokens     double precision NOT NULL, -- token bucket level
+  updated_at timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS usage_daily (
+  customer_id text NOT NULL,
+  day         date NOT NULL,
+  tokens      bigint NOT NULL DEFAULT 0,
+  cost_usd    numeric(12, 6) NOT NULL DEFAULT 0,
+  PRIMARY KEY (customer_id, day)
+);
+
+CREATE TABLE IF NOT EXISTS idempotency_keys (
+  key          text NOT NULL,
+  customer_id  text NOT NULL,
+  request_hash text NOT NULL,
+  status_code  int,                     -- null while the first request is still running
+  response     jsonb,
+  created_at   timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (customer_id, key)
+);
+
+CREATE TABLE IF NOT EXISTS jobs (
+  id         bigserial PRIMARY KEY,
+  kind       text NOT NULL,             -- extract_memory | ...
+  dedupe_key text NOT NULL,             -- e.g. the session id: one queued job per session
+  payload    jsonb NOT NULL,
+  status     text NOT NULL DEFAULT 'queued' CHECK (status IN ('queued', 'running', 'done', 'dead')),
+  attempts   int NOT NULL DEFAULT 0,
+  last_error text,
+  run_after  timestamptz NOT NULL DEFAULT now(),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS jobs_one_queued ON jobs (kind, dedupe_key) WHERE status = 'queued';
+CREATE INDEX IF NOT EXISTS jobs_ready ON jobs (run_after) WHERE status = 'queued';
+
+ALTER TABLE approvals ADD COLUMN IF NOT EXISTS decided_by text;
+ALTER TABLE approvals ADD COLUMN IF NOT EXISTS decided_at timestamptz;
