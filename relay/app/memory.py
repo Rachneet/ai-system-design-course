@@ -4,10 +4,10 @@ import re
 from typing import Literal, Protocol
 from uuid import UUID
 
-import anthropic
 from pydantic import BaseModel
 
 from .db import Store
+from .llm import StructuredLLM
 
 EXTRACT_PROMPT = """From the customer's messages below, list durable facts worth remembering for future
 support conversations: preferences, products they own, recurring issues, constraints. Only include facts likely
@@ -35,22 +35,17 @@ class Extractor(Protocol):
     async def extract(self, customer_text: str) -> list[Fact]: ...
 
 
-class AnthropicExtractor:
-    def __init__(self, model: str):
-        self.client = anthropic.AsyncAnthropic()
-        self.model = model
+class ModelExtractor:
+    def __init__(self, llm: StructuredLLM):
+        self.llm = llm
 
     async def extract(self, customer_text: str) -> list[Fact]:
-        resp = await self.client.messages.parse(
-            model=self.model,
-            max_tokens=1024,
+        out = await self.llm.parse(
             system=EXTRACT_PROMPT,
-            messages=[
-                {"role": "user", "content": f"<customer_messages>\n{customer_text}\n</customer_messages>"}
-            ],
-            output_format=Facts,
+            user=f"<customer_messages>\n{customer_text}\n</customer_messages>",
+            schema=Facts,
         )
-        return resp.parsed_output.facts if resp.parsed_output else []
+        return out.facts if out else []
 
 
 def customer_text(messages: list[dict]) -> str:

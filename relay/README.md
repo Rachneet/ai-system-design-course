@@ -75,7 +75,7 @@ schema, and replace the model with a script, so they are free and run offline.
 
 ```bash
 docker compose up -d                 # Postgres with pgvector (or point RELAY_DATABASE_URL at any Postgres 16)
-cp .env.example .env                 # add ANTHROPIC_API_KEY and a random RELAY_DEV_JWT_SECRET
+cp .env.example .env                 # add a provider key (see below) and a random RELAY_DEV_JWT_SECRET
 uv run python -m app.migrate
 uv run python -m scripts.seed_demo
 uv run python -m app.worker &        # indexes kb/ (downloads ~150 MB of local models on first run), runs jobs
@@ -85,6 +85,37 @@ uv run python -m scripts.chat --customer c_77     # in another terminal; mints a
 
 Staff endpoints (`GET /approvals`, `POST /approvals/{id}/decision`) need a token with the staff role:
 `uv run python -m scripts.dev_token s_1 --staff`.
+
+## Choose any model provider
+
+Every model setting takes a spec, `provider:model`, so you can run Relay on any provider and mix them. For example,
+the agent on one vendor, the fallback on another, and the judge on a third family so it does not grade its own habits.
+
+| Provider | Example spec | Key variable |
+|---|---|---|
+| Anthropic (native: prompt caching, refusal fallback) | `anthropic:claude-haiku-5-5` | `ANTHROPIC_API_KEY` |
+| OpenAI | `openai:gpt-5` | `OPENAI_API_KEY` |
+| Google Gemini (OpenAI-compatible endpoint) | `gemini:gemini-2.5-flash` | `GEMINI_API_KEY` |
+| OpenRouter (hundreds of models, one key) | `openrouter:qwen/qwen3-235b-a22b` | `OPENROUTER_API_KEY` |
+| Hugging Face Inference Providers | `huggingface:meta-llama/Llama-3.3-70B-Instruct` | `HF_TOKEN` |
+| Ollama (local open-weights models) | `ollama:qwen3:8b` | none (`OLLAMA_BASE_URL` to move it) |
+| vLLM (your own server) | `vllm:Qwen/Qwen3-32B` | optional `VLLM_API_KEY`, `VLLM_BASE_URL` |
+| Anything OpenAI-compatible (LiteLLM proxy, Groq, Together, a gateway) | `compatible:my-model` | `RELAY_COMPATIBLE_BASE_URL`, `RELAY_COMPATIBLE_API_KEY` |
+
+```bash
+RELAY_MODEL=openai:gpt-5 RELAY_FALLBACK_MODEL=gemini:gemini-2.5-flash \
+RELAY_JUDGE_MODEL=anthropic:claude-opus-5-5 RELAY_MEMORY_MODEL=ollama:qwen3:8b uv run uvicorn app.main:app
+```
+
+Model IDs change often, so check each provider's model list. Small local models handle the narrow structured calls
+(memory, quarantine, routing) well, but run the eval suite before trusting one with the agent loop: tool calling
+quality varies far more across models than chat quality does. Costs for non-Anthropic models come from
+`RELAY_PRICES`, a JSON map such as `{"gpt-5": [in, cache_write, cache_read, out]}` with numbers in USD per
+million tokens, copied from the provider's pricing page.
+
+How it works: `app/llm.py` keeps one message format (text, tool_use and tool_result blocks) for sessions, evals and
+judges. `AnthropicLLM` sends it natively; `OpenAICompatLLM` translates it to Chat Completions and back, including
+streamed tool calls, cached-token usage and JSON-schema structured output. `app/providers.py` holds the presets.
 
 ## Observe
 

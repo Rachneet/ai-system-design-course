@@ -10,7 +10,8 @@ import hashlib
 import json
 
 from app.config import settings
-from app.judges import CRITERIA, AnthropicJudge
+from app.judges import CRITERIA, ModelJudge
+from app.providers import build_model
 
 from .paths import JUDGE_DATA as DATA
 
@@ -52,7 +53,7 @@ async def main() -> None:
     ap.add_argument("--split", choices=["dev", "test"], default="test")
     ap.add_argument("--judge", choices=sorted(CRITERIA))
     args = ap.parse_args()
-    judge = AnthropicJudge(settings.judge_model)
+    judge = ModelJudge(build_model(settings.judge_model))
     for name in [args.judge] if args.judge else sorted(CRITERIA):
         rows = [json.loads(line) for line in (DATA / f"{name}.jsonl").read_text().splitlines()]
         rows = [r for r in rows if split_of(r["id"]) == args.split]

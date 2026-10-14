@@ -2,8 +2,9 @@
 
 from typing import Literal
 
-import anthropic
 from pydantic import BaseModel
+
+from .llm import StructuredLLM
 
 
 class Verdict(BaseModel):
@@ -56,18 +57,18 @@ def render(messages: list[dict]) -> str:
     return "\n".join(lines)
 
 
-class AnthropicJudge:
-    def __init__(self, model: str):
-        self.client = anthropic.AsyncAnthropic()
-        self.model = model  # pin it: a silent judge upgrade changes every score
+class ModelJudge:
+    """Any provider can judge. Pin the spec (RELAY_JUDGE_MODEL): a silent judge upgrade changes every score, and a
+    judge from a different model family than the agent avoids grading its own habits as correct."""
 
-    async def judge(self, name: str, transcript: str) -> Verdict:
-        resp = await self.client.messages.parse(
-            model=self.model,
+    def __init__(self, llm: StructuredLLM):
+        self.llm = llm
+        self.model = getattr(llm, "model", "unknown")
+
+    async def judge(self, name: str, transcript: str) -> Verdict | None:
+        return await self.llm.parse(
+            system="",
+            user=TEMPLATE.format(criterion=CRITERIA[name], transcript=transcript),
+            schema=Verdict,
             max_tokens=600,
-            output_format=Verdict,
-            messages=[
-                {"role": "user", "content": TEMPLATE.format(criterion=CRITERIA[name], transcript=transcript)}
-            ],
         )
-        return resp.parsed_output

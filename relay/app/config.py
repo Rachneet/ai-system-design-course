@@ -5,7 +5,11 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_prefix="RELAY_", env_file=".env", extra="ignore")
 
     database_url: str = "postgresql://postgres:relay@localhost:5432/relay"
-    model: str = "claude-opus-5-5"  # set RELAY_MODEL=claude-haiku-5-5 for cheap development
+    # Models are specs, "provider:model" (see app/providers.py): anthropic, openai, gemini, openrouter, huggingface,
+    # ollama, vllm or compatible. Mix providers freely, e.g. RELAY_MODEL=openai:gpt-5 RELAY_JUDGE_MODEL=anthropic:...
+    model: str = (
+        "claude-opus-5-5"  # set RELAY_MODEL=claude-haiku-5-5 (or ollama:qwen3:8b) for cheap development
+    )
     memory_model: str = "claude-haiku-5-5"  # also used for quarantine and the user simulator
     judge_model: str = "claude-opus-5-5"  # pinned; changing it changes every judged score
     fallback_model: str = (
@@ -20,7 +24,14 @@ class Settings(BaseSettings):
     refund_limit: float = 200.0
 
     # Backends. "echo" and "hash" run without an API key or model downloads (container smoke tests).
-    llm_backend: str = "anthropic"  # anthropic | echo
+    llm_backend: str = "model"  # model (use the specs above) | echo
+    default_provider: str = "anthropic"  # for specs without a provider prefix
+    compatible_base_url: str = (
+        ""  # for "compatible:" specs, e.g. http://localhost:4000/v1 for a LiteLLM proxy
+    )
+    prices: dict[
+        str, tuple[float, float, float, float]
+    ] = {}  # model id: (input, cache write, cache read, output) per M
     embeddings: str = "local"  # local | hash
 
     # Authentication (Lab 4). jwt: RS256 tokens from your identity provider, verified against its JWKS.

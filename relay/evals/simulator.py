@@ -2,7 +2,7 @@
 
 from typing import Protocol
 
-import anthropic
+from app.llm import StructuredLLM
 
 DONE = "###DONE###"
 
@@ -19,10 +19,9 @@ class Simulator(Protocol):
     async def next_message(self, spec: dict, transcript: list[tuple[str, str]]) -> str: ...
 
 
-class AnthropicSimulator:
-    def __init__(self, model: str):
-        self.client = anthropic.AsyncAnthropic()
-        self.model = model
+class ModelSimulator:
+    def __init__(self, llm: StructuredLLM):
+        self.llm = llm
 
     async def next_message(self, spec: dict, transcript: list[tuple[str, str]]) -> str:
         # Roles are swapped: the simulator is the "assistant" and Relay's replies arrive as "user" turns.
@@ -32,8 +31,7 @@ class AnthropicSimulator:
                 {"role": "assistant", "content": customer},
                 {"role": "user", "content": relay or "(no reply)"},
             ]
-        resp = await self.client.messages.create(
-            model=self.model,
+        return await self.llm.complete(
             max_tokens=300,
             messages=messages,
             system=PROMPT.format(
@@ -43,4 +41,3 @@ class AnthropicSimulator:
                 done=DONE,
             ),
         )
-        return "".join(b.text for b in resp.content if b.type == "text").strip()

@@ -33,17 +33,17 @@ from app.db import Store
 from app.embeddings import LocalEmbedder, LocalReranker
 from app.guardrails import check_reply, sanitize_output
 from app.ingest import Doc, reconcile, run_once, sha, sync_document
-from app.judges import CRITERIA, AnthropicJudge, render
-from app.llm import AnthropicLLM
+from app.judges import CRITERIA, ModelJudge, render
 from app.pricing import cost_usd
 from app.prompts import system_prompt
-from app.quarantine import AnthropicQuarantine
+from app.providers import build_model
+from app.quarantine import ModelQuarantine
 from app.retrieval import Retriever
 from app.seed import seed
 from app.tools import REGISTRY, Context
 
 from .checks import grade
-from .simulator import DONE, AnthropicSimulator
+from .simulator import DONE, ModelSimulator
 
 NOW = datetime(2026, 10, 1, 10, 0, tzinfo=UTC)
 CASES = Path(__file__).parent / "cases"
@@ -374,11 +374,11 @@ async def main() -> int:
     models = (LocalEmbedder(), LocalReranker())
     await build_kb(models[0])
     deps = Deps(
-        llm=AnthropicLLM(settings.model, settings.max_tokens, settings.refusal_fallback),
+        llm=build_model(settings.model, refusal_fallback=settings.refusal_fallback),
         models=models,
-        quarantine=AnthropicQuarantine(settings.memory_model),
-        simulator=AnthropicSimulator(settings.memory_model),
-        judge=None if args.no_judges else AnthropicJudge(settings.judge_model),
+        quarantine=ModelQuarantine(build_model(settings.memory_model)),
+        simulator=ModelSimulator(build_model(settings.memory_model)),
+        judge=None if args.no_judges else ModelJudge(build_model(settings.judge_model)),
     )
     sem = asyncio.Semaphore(args.concurrency)
     results = await asyncio.gather(*(run_one(c, t, deps, sem) for c in cases for t in range(trials)))

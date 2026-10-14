@@ -8,15 +8,14 @@ def build_llm():
         from .llm import EchoLLM
 
         return EchoLLM()
-    from .llm import AnthropicLLM
+    from .providers import build_model
     from .resilience import FaultInjectingLLM, ResilientLLM
 
-    primary = AnthropicLLM(settings.model, settings.max_tokens, settings.refusal_fallback, max_retries=0)
+    # The fallback may be another provider entirely: an outage at one vendor is the case it exists for.
+    primary = build_model(settings.model, max_retries=0, refusal_fallback=settings.refusal_fallback)
     if settings.fault_rate > 0:
         primary = FaultInjectingLLM(primary, settings.fault_rate)
-    fallback = AnthropicLLM(
-        settings.fallback_model, settings.max_tokens, settings.refusal_fallback, max_retries=1
-    )
+    fallback = build_model(settings.fallback_model, max_retries=1, refusal_fallback=settings.refusal_fallback)
     return ResilientLLM(primary, fallback)
 
 
@@ -25,25 +24,27 @@ def build_small_llm():
         from .llm import EchoLLM
 
         return EchoLLM()
-    from .llm import AnthropicLLM
+    from .providers import build_model
 
-    return AnthropicLLM(settings.router_model, settings.max_tokens, settings.refusal_fallback)
+    return build_model(settings.router_model, refusal_fallback=settings.refusal_fallback)
 
 
 def build_router():
     if settings.llm_backend == "echo":
         return None
-    from .router import AnthropicRouter
+    from .providers import build_model
+    from .router import ModelRouter
 
-    return AnthropicRouter(settings.router_model)
+    return ModelRouter(build_model(settings.router_model))
 
 
 def build_judge():
     if settings.llm_backend == "echo":
         return None
-    from .judges import AnthropicJudge
+    from .judges import ModelJudge
+    from .providers import build_model
 
-    return AnthropicJudge(settings.judge_model)
+    return ModelJudge(build_model(settings.judge_model))
 
 
 def build_shipping():
@@ -59,15 +60,17 @@ def build_extractor():
         from .memory import NullExtractor
 
         return NullExtractor()
-    from .memory import AnthropicExtractor
+    from .memory import ModelExtractor
+    from .providers import build_model
 
-    return AnthropicExtractor(settings.memory_model)
+    return ModelExtractor(build_model(settings.memory_model))
 
 
 def build_quarantine():
-    from .quarantine import AnthropicQuarantine
+    from .providers import build_model
+    from .quarantine import ModelQuarantine
 
-    return AnthropicQuarantine(settings.memory_model)
+    return ModelQuarantine(build_model(settings.memory_model))
 
 
 def build_embedder():

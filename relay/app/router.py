@@ -3,8 +3,9 @@ suite shows every category holds its pass rate on the routed system (flag routin
 
 from typing import Literal, Protocol
 
-import anthropic
 from pydantic import BaseModel
+
+from .llm import StructuredLLM
 
 Intent = Literal[
     "order_status", "policy_question", "product_question", "refund", "return", "complaint", "safety", "other"
@@ -21,19 +22,18 @@ class Router(Protocol):
     async def classify(self, message: str) -> Intent: ...
 
 
-class AnthropicRouter:
-    def __init__(self, model: str):
-        self.client, self.model = anthropic.AsyncAnthropic(), model
+class ModelRouter:
+    def __init__(self, llm: StructuredLLM):
+        self.llm = llm
 
     async def classify(self, message: str) -> Intent:
-        resp = await self.client.messages.parse(
-            model=self.model,
-            max_tokens=64,
-            output_format=Classified,
+        out = await self.llm.parse(
             system="Classify the customer's latest message for an outdoor gear store's support assistant.",
-            messages=[{"role": "user", "content": message[:2000]}],
+            user=message[:2000],
+            schema=Classified,
+            max_tokens=64,
         )
-        return resp.parsed_output.intent if resp.parsed_output else "other"
+        return out.intent if out else "other"
 
 
 def is_simple(intent: Intent) -> bool:

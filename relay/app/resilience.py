@@ -5,6 +5,7 @@ import random
 import time
 
 import anthropic
+import openai
 
 from . import metrics
 from .llm import LLM, LLMResponse
@@ -14,10 +15,13 @@ class InjectedFault(Exception):
     """Raised on purpose by FaultInjectingLLM (RELAY_FAULT_RATE) to rehearse an outage."""
 
 
-RETRYABLE = (
+RETRYABLE = (  # the same failures from every SDK: rate limits, provider 5xx, network
     anthropic.RateLimitError,
     anthropic.InternalServerError,
     anthropic.APIConnectionError,
+    openai.RateLimitError,
+    openai.InternalServerError,
+    openai.APIConnectionError,
     InjectedFault,
 )
 
