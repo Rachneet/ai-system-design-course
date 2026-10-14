@@ -1,0 +1,25 @@
+name: relay
+on:
+  push:
+    paths: ["relay/**", ".github/workflows/relay.yml"]
+  pull_request:
+    paths: ["relay/**", ".github/workflows/relay.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: relay
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run ruff check . && uv run ruff format --check .
+      - run: uv run pytest -q
+      - run: uv run python -m evals.run --validate
