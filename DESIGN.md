@@ -28,6 +28,16 @@ colors:
   code-str-dark: "#9fd3a8"
   code-com-dark: "#8a919c"
   code-num-dark: "#e3b07a"
+  vz-compute: "#2a5db0"
+  vz-memory: "#6c4aa6"
+  vz-good: "#23784a"
+  vz-warn: "#a8650f"
+  vz-bad: "#b3362b"
+  vz-compute-dark: "#8db2f2"
+  vz-memory-dark: "#c0a6f0"
+  vz-good-dark: "#7fcf9f"
+  vz-warn-dark: "#e8b464"
+  vz-bad-dark: "#f08a7e"
 typography:
   display:
     fontFamily: "Archivo, Helvetica Neue, Arial, sans-serif"
@@ -130,6 +140,20 @@ typography:
     fontSize: "13.5px"
     fontWeight: 400
     lineHeight: 1.6
+  hand:
+    fontFamily: "Kalam, Comic Neue, Segoe Print, cursive"
+    fontSize: "16px"
+    fontWeight: 400
+    lineHeight: 1.3
+  hand-title:
+    fontFamily: "Kalam, Comic Neue, Segoe Print, cursive"
+    fontSize: "17px"
+    fontWeight: 700
+  hand-big:
+    fontFamily: "Kalam, Comic Neue, Segoe Print, cursive"
+    fontSize: "30px"
+    fontWeight: 700
+    lineHeight: 1.1
 rounded:
   none: "0px"
   focus: "2px"
@@ -321,6 +345,13 @@ Every container is square: zero radius on sheets, buttons, inputs, callouts, cod
 **The Mark Shape Rule.** State and type are told apart by shape, never colour alone: a drawn tick for done, a struck cross and strikethrough for a wrong answer, and a distinct drawn shape (solid square, triangle, hollow circle, short dash, double bar) before each callout label.
 
 ## Components
+
+### Sketch figures and calculators
+- **Sketch figure** (`viz` block): HTML lays out panels, chips, bars, cell grids and arrows so the figure reflows on phones; rough.js then draws hand-drawn outlines and hatched fills over it, seeded so the drawing is identical on every load. Labels are Kalam (hand). Lesson text never uses the hand font.
+- **Diagram inks:** one meaning each, in every figure: compute or prefill (vz-compute, blue), memory or decode (vz-memory, violet), a win (vz-good, green), a cost (vz-warn, amber), waste or failure (vz-bad, red, cross-hatched when it is pure waste). Chips with text get a solid 15% tint, never hatching behind words.
+- **Mermaid flowcharts** use Mermaid's hand-drawn look in the same font and inks, rendered after the font loads so labels are measured correctly.
+- **Calculators** (`widget` block): a bordered box with an Answer Box header, numeric inputs in mono, results as bordered cells (green when a target is met, red when not), one meter, and a one-paragraph explanation of the formula.
+- Every figure carries a numbered caption, and every number in it links to its source under the drawing.
 
 ### Buttons
 - **Shape:** square (0px), Ink border.

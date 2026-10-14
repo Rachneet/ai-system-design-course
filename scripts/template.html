@@ -2,7 +2,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=JetBrains+Mono:wght@400;600&family=Kalam:wght@400;700&display=swap">
 <style>
 /* Layout: a plain neutral frame (index rail, outer margin); each lesson is a numbered worksheet on a white sheet
    with a calm 66ch reading column and a margin index. High contrast first: no textures behind text. */
@@ -23,6 +23,13 @@
   --code-str: #1d6b3a;
   --code-com: #5f6672;
   --code-num: #8a4b12;
+  /* Diagram inks: one meaning each, the same in every figure. */
+  --vz-compute: #2a5db0;   /* compute, prefill, the work */
+  --vz-memory: #6c4aa6;    /* memory, decode, storage */
+  --vz-good: #23784a;      /* a win: met the target, cache hit */
+  --vz-warn: #a8650f;      /* a cost: KV cache, network, attention */
+  --vz-bad: #b3362b;       /* waste, failure, a miss */
+  --font-hand: "Kalam", "Comic Neue", "Segoe Print", cursive;
   --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
   --font-read: "Literata", Georgia, "Times New Roman", serif;
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -34,14 +41,14 @@
   :root:not([data-theme="light"]) {
     --pad: #0d0f12; --pad-line: #1c1f24; --pad-major: #4a505b; --sheet: #16181c; --box: #1e2126;
     --ink: #eceef1; --ink-2: #b0b6c0; --rule: #2e323a; --pen: #93b4ef; --pen-soft: #22324c;
-    --red: #f07a6a; --code-key: #93b4ef; --code-str: #9fd3a8; --code-com: #8a919c; --code-num: #e3b07a;
+    --red: #f07a6a; --code-key: #93b4ef; --code-str: #9fd3a8; --code-com: #8a919c; --code-num: #e3b07a; --vz-compute: #8db2f2; --vz-memory: #c0a6f0; --vz-good: #7fcf9f; --vz-warn: #e8b464; --vz-bad: #f08a7e;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
   --pad: #0d0f12; --pad-line: #1c1f24; --pad-major: #4a505b; --sheet: #16181c; --box: #1e2126;
   --ink: #eceef1; --ink-2: #b0b6c0; --rule: #2e323a; --pen: #93b4ef; --pen-soft: #22324c;
-  --red: #f07a6a; --code-key: #93b4ef; --code-str: #9fd3a8; --code-com: #8a919c; --code-num: #e3b07a;
+  --red: #f07a6a; --code-key: #93b4ef; --code-str: #9fd3a8; --code-com: #8a919c; --code-num: #e3b07a; --vz-compute: #8db2f2; --vz-memory: #c0a6f0; --vz-good: #7fcf9f; --vz-warn: #e8b464; --vz-bad: #f08a7e;
   color-scheme: dark;
 }
 
@@ -167,6 +174,59 @@ figure.fig { margin: 1.8em 0; }
 figcaption { margin-top: 6px; font-family: var(--font-display); font-size: 13px; color: var(--ink-2); }
 figcaption b { color: var(--ink); font-variant-numeric: tabular-nums; }
 figure.scrolls figcaption::after { content: " Scroll sideways for the full figure."; }
+
+/* Sketch figures: HTML lays them out (so they reflow on phones), rough.js draws the hand-drawn strokes on top. */
+.viz { position: relative; padding: 18px; border: 1px solid var(--ink); background: var(--sheet); font-family: var(--font-hand); font-size: 16px; line-height: 1.3; color: var(--ink); overflow-x: auto; }
+.viz.roughed { border-color: transparent; }
+.viz > svg.rough { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: visible; }
+.viz * { position: relative; z-index: 1; }
+.viz h5 { margin: 0 0 8px; font: 700 17px var(--font-hand); }
+.viz p, .viz .note { margin: 4px 0 0; font-size: 14.5px; color: var(--ink-2); }
+.viz b { font-weight: 700; }
+.vz-cols { display: grid; grid-template-columns: repeat(var(--k, 2), minmax(0, 1fr)); gap: 14px; }
+.vz-panel { padding: 12px 14px; min-width: 0; }
+.vz-row { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 6px 0; }
+.ch { display: inline-flex; align-items: center; justify-content: center; min-width: 30px; padding: 3px 9px; font-size: 15px; white-space: nowrap; }
+.ch.wide { flex: 1 1 auto; }
+.big { font: 700 30px/1.1 var(--font-hand); }
+.big.c { color: var(--vz-compute); } .big.m { color: var(--vz-memory); } .big.g { color: var(--vz-good); } .big.w { color: var(--vz-warn); } .big.b { color: var(--vz-bad); }
+.arr { display: inline-block; width: 36px; height: 16px; flex: none; }
+.arr.long { width: 64px; }
+.arr.d { width: 16px; height: 26px; display: block; margin: 2px auto; }
+.vz-bars { display: grid; grid-template-columns: auto minmax(60px, 1fr) auto; gap: 8px 10px; align-items: center; }
+.bar { height: 16px; display: block; }
+.bar > i { display: block; height: 100%; width: var(--w, 50%); }
+.cells { display: grid; grid-template-columns: repeat(var(--n, 8), minmax(16px, 1fr)); gap: 4px; max-width: calc(var(--n, 8) * 34px); }
+.cells > i { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 13px; }
+.vz-src { margin-top: 10px; font: 13px var(--font-display); color: var(--ink-2); }
+.vz-src a { color: inherit; }
+/* Without rough.js (or before it draws), the same marks as plain CSS. */
+.viz:not(.roughed) .sk { border: 1.5px solid var(--ink-2); }
+.viz:not(.roughed) .sk.c { border-color: var(--vz-compute); } .viz:not(.roughed) .sk.m { border-color: var(--vz-memory); }
+.viz:not(.roughed) .sk.g { border-color: var(--vz-good); } .viz:not(.roughed) .sk.w { border-color: var(--vz-warn); } .viz:not(.roughed) .sk.b { border-color: var(--vz-bad); }
+.viz:not(.roughed) .bar > i.sk { background: var(--vz-compute); border: 0; } .viz:not(.roughed) .bar > i.sk.m { background: var(--vz-memory); }
+.viz:not(.roughed) .bar > i.sk.g { background: var(--vz-good); } .viz:not(.roughed) .bar > i.sk.w { background: var(--vz-warn); } .viz:not(.roughed) .bar > i.sk.b { background: var(--vz-bad); }
+.viz:not(.roughed) .arr::after { content: "\2192"; font-size: 20px; line-height: 16px; } .viz:not(.roughed) .arr.d::after { content: "\2193"; }
+@media (max-width: 640px) { .vz-cols { grid-template-columns: minmax(0, 1fr); } .viz { padding: 14px; font-size: 15px; } }
+
+/* Calculators: change the numbers, watch the consequence. */
+.widget { margin: 1.8em 0; border: 1px solid var(--ink); font-family: var(--font-display); }
+.widget-head { padding: 9px 16px; border-bottom: 1px solid var(--ink); background: var(--box); font-weight: 700; font-size: 15px; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.widget-head small { font: 600 12.5px var(--font-mono); color: var(--ink-2); }
+.widget-body { padding: 14px 16px 16px; display: grid; gap: 14px; }
+.w-inputs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 14px; }
+.w-inputs label { display: grid; gap: 4px; font-size: 13px; color: var(--ink-2); font-weight: 600; }
+.w-inputs input, .w-inputs select { font: 15px var(--font-mono); color: var(--ink); background: var(--sheet); border: 1px solid var(--ink-2); border-radius: 0; padding: 6px 8px; width: 100%; }
+.w-inputs input[type="range"] { padding: 0; border: 0; accent-color: var(--pen); }
+.w-out { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.w-out div { border: 1px solid var(--rule); padding: 10px 12px; }
+.w-out small { display: block; font-size: 12px; color: var(--ink-2); font-weight: 600; }
+.w-out b { display: block; font: 700 22px var(--font-mono); font-variant-numeric: tabular-nums; margin-top: 2px; }
+.w-out b.ok { color: var(--vz-good); } .w-out b.bad { color: var(--vz-bad); }
+.w-note { margin: 0; font-size: 14px; color: var(--ink-2); line-height: 1.5; }
+.w-meter { height: 12px; border: 1px solid var(--ink-2); position: relative; }
+.w-meter i { position: absolute; inset: 0 auto 0 0; background: var(--vz-memory); }
+.w-meter i.c { background: var(--vz-compute); }
 
 /* Callouts: each type is told apart by its mark shape, set before the label. */
 .callout { margin: 1.6em 0; padding: 14px 18px 14px 18px; border: 1px solid var(--ink); background: var(--sheet); max-width: calc(var(--measure) + 40px); }
@@ -322,7 +382,8 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/dockerfile.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/roughjs@4.6.6/bundled/rough.js"></script>
 <script>
 const COURSE = /*__COURSE_DATA__*/[];
 
@@ -360,6 +421,16 @@ renderer.code = (code, lang) => {
     figCount++;
     return `<figure class="fig" id="fig-${figPrefix}${figCount}"><div class="mmd" data-src="${esc(code)}">${esc(code)}</div><figcaption><b>Fig. ${figPrefix}${figCount}</b></figcaption></figure>`;
   }
+  if (lang === "viz") {
+    figCount++;
+    const lines = code.split("\n");
+    const cap = /^caption:/i.test(lines[0]) ? lines.shift().replace(/^caption:\s*/i, "") : "";
+    return `<figure class="fig" id="fig-${figPrefix}${figCount}"><div class="viz">${lines.join("\n")}</div><figcaption><b>Fig. ${figPrefix}${figCount}</b>${cap ? " " + marked.parseInline(cap) : ""}</figcaption></figure>`;
+  }
+  if (lang === "widget") {
+    let spec; try { spec = JSON.parse(code); } catch { return `<pre>${esc(code)}</pre>`; }
+    return `<div class="widget" data-spec="${esc(JSON.stringify(spec))}"></div>`;
+  }
   if (lang === "quiz") {
     let items; try { items = JSON.parse(code); } catch { return `<pre>${esc(code)}</pre>`; }
     const id = "quiz" + (quizCount++);
@@ -386,6 +457,140 @@ renderer.blockquote = quote => {
 };
 marked.setOptions({ renderer, gfm: true });
 
+/* ---------- Sketch figures: rough.js strokes over an HTML layout ---------- */
+const INK = { c: "--vz-compute", m: "--vz-memory", g: "--vz-good", w: "--vz-warn", b: "--vz-bad" };
+const tone = el => Object.keys(INK).find(k => el.classList.contains(k));
+function sketch(fig) {
+  if (!window.rough) return;
+  const box = fig.getBoundingClientRect();
+  if (!box.width) return;
+  fig.querySelector(":scope > svg.rough")?.remove();
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", "rough"); svg.setAttribute("aria-hidden", "true");
+  fig.prepend(svg);
+  const rc = rough.svg(svg), ink = css("--ink"), ink2 = css("--ink-2"), sheet = css("--sheet");
+  let seed = 11;
+  const at = el => { const b = el.getBoundingClientRect(); return { x: b.left - box.left + fig.scrollLeft, y: b.top - box.top, w: b.width, h: b.height }; };
+  const o = (extra = {}) => ({ seed: seed++, roughness: 1.1, bowing: 0.8, strokeWidth: 1.4, ...extra });
+  const frame = at(fig);
+  svg.appendChild(rc.rectangle(3, 3, frame.w - 6, frame.h - 6, o({ stroke: ink, roughness: 0.9 })));
+  fig.querySelectorAll(".sk").forEach(el => {
+    const r = at(el), t = tone(el), col = t ? css(INK[t]) : ink2;
+    if (el.classList.contains("arr")) {
+      const vert = el.classList.contains("d");
+      const [x1, y1, x2, y2] = vert ? [r.x + r.w / 2, r.y + 1, r.x + r.w / 2, r.y + r.h - 1] : [r.x + 1, r.y + r.h / 2, r.x + r.w - 1, r.y + r.h / 2];
+      svg.appendChild(rc.line(x1, y1, x2, y2, o({ stroke: col })));
+      const head = vert ? [[x2 - 5, y2 - 7], [x2, y2], [x2 + 5, y2 - 7]] : [[x2 - 7, y2 - 5], [x2, y2], [x2 - 7, y2 + 5]];
+      svg.appendChild(rc.linearPath(head, o({ stroke: col })));
+      return;
+    }
+    const isFill = el.parentElement?.classList.contains("bar") || el.classList.contains("fill");
+    const opts = { stroke: col };
+    if (isFill) Object.assign(opts, { fill: col, fillStyle: "hachure", hachureGap: 4, fillWeight: 1.6 });
+    else if (el.classList.contains("x")) Object.assign(opts, { fill: css("--vz-bad"), fillStyle: "cross-hatch", hachureGap: 6, fillWeight: 0.8 });
+    else if (t && !el.classList.contains("vz-panel")) Object.assign(opts, { fill: col + "26", fillStyle: "solid" });
+    if (el.classList.contains("ghost")) opts.strokeLineDash = [5, 4];
+    if (el.classList.contains("vz-panel")) Object.assign(opts, { roughness: 0.8, strokeWidth: 1.2 });
+    if (r.w > 0 && r.h > 0) svg.appendChild(rc.rectangle(r.x + 1, r.y + 1, Math.max(2, r.w - 2), Math.max(2, r.h - 2), o(opts)));
+  });
+  fig.classList.add("roughed");
+  void sheet;
+}
+const sketchObserver = window.ResizeObserver ? new ResizeObserver(es => es.forEach(e => sketch(e.target))) : null;
+function drawSketches(root) {
+  root.querySelectorAll(".viz").forEach(f => { sketch(f); sketchObserver?.observe(f); });
+  document.fonts?.ready.then(() => root.querySelectorAll(".viz").forEach(sketch)); // hand font changes the layout
+}
+
+/* ---------- Calculators ---------- */
+const fmt = (n, d = 0) => Number.isFinite(n) ? n.toLocaleString("en-US", { maximumFractionDigits: d, minimumFractionDigits: d }) : "n/a";
+const WIDGETS = {
+  kv: {
+    title: "KV cache calculator",
+    presets: {
+      "Llama 3 70B, BF16, 2 x 80 GB": { layers: 80, kvheads: 8, dim: 128, bytes: 2, ctx: 8192, gpu: 160, weights: 141 },
+      "Same model without GQA (64 KV heads)": { layers: 80, kvheads: 64, dim: 128, bytes: 2, ctx: 8192, gpu: 160, weights: 141 },
+      "Llama 3 8B, BF16, 1 x 80 GB": { layers: 32, kvheads: 8, dim: 128, bytes: 2, ctx: 8192, gpu: 80, weights: 16 },
+      "Llama 3 8B, FP8 KV cache": { layers: 32, kvheads: 8, dim: 128, bytes: 1, ctx: 8192, gpu: 80, weights: 16 },
+    },
+    fields: [["layers", "Layers"], ["kvheads", "KV heads"], ["dim", "Head dimension"], ["bytes", "Bytes per value"], ["ctx", "Tokens per conversation"], ["gpu", "GPU memory, GB"], ["weights", "Weights, GB"]],
+    calc(v) {
+      const perTok = 2 * v.layers * v.kvheads * v.dim * v.bytes; // keys and values
+      const perConv = perTok * v.ctx / 1e9;
+      const free = v.gpu * 0.9 - v.weights; // keep about 10% for activations and the runtime
+      const fit = Math.max(0, Math.floor(free / perConv));
+      return {
+        out: [["Per token", `${fmt(perTok / 1024)} KB`], ["Per conversation", `${fmt(perConv, 2)} GB`], ["Memory left for KV", `${fmt(Math.max(0, free))} GB`], ["Conversations at once", fmt(fit), fit > 0 ? "ok" : "bad"]],
+        meter: Math.min(1, v.weights / (v.gpu * 0.9)),
+        note: `2 (keys and values) x ${v.layers} layers x ${v.kvheads} KV heads x ${v.dim} dims x ${v.bytes} bytes = ${fmt(perTok)} bytes per token. The bar shows weights as a share of usable memory; the rest holds KV cache, so every long conversation pushes out others.`,
+      };
+    },
+  },
+  cost: {
+    title: "Cost per million tokens",
+    presets: {
+      "DeepSeek decode node (8 x H800 at $2/h, 14.8k tok/s)": { price: 2, gpus: 8, tps: 14800, util: 100 },
+      "Same node at a realistic 40% utilisation": { price: 2, gpus: 8, tps: 14800, util: 40 },
+      "One rented GPU, small model, light traffic": { price: 2.5, gpus: 1, tps: 1500, util: 25 },
+    },
+    fields: [["price", "Price per GPU-hour, $"], ["gpus", "GPUs"], ["tps", "Output tokens/s when busy"], ["util", "Busy share of the hour, %"]],
+    calc(v) {
+      const perHour = v.price * v.gpus, tokens = v.tps * 3600 * (v.util / 100);
+      const per1m = perHour / (tokens / 1e6);
+      return {
+        out: [["Cost per hour", `$${fmt(perHour, 2)}`], ["Tokens per hour", `${fmt(tokens / 1e6, 1)} M`], ["Per 1M output tokens", `$${fmt(per1m, 2)}`]],
+        meter: Math.min(1, v.util / 100), meterClass: "c",
+        note: "Divide what the GPUs cost per hour by the millions of tokens they produce in that hour. Idle time is the hidden multiplier: the same hardware at 40% busy costs 2.5 times as much per token. Prefill capacity, redundancy and people are extra.",
+      };
+    },
+  },
+  batch: {
+    title: "Batch size against wait per user",
+    presets: { "8B model, BF16, one H100-class GPU (3.35 TB/s)": { batch: 16, weights: 16, kvgb: 1, bw: 3.35, slo: 30 } },
+    fields: [["batch", "Users per step", "range", 1, 256], ["weights", "Weights, GB"], ["kvgb", "KV cache per user, GB"], ["bw", "Memory bandwidth, TB/s"], ["slo", "Target tokens/s per user"]],
+    calc(v) {
+      const step = (v.weights + v.batch * v.kvgb) / (v.bw * 1000); // seconds: each decode step reads weights + every user's cache
+      const perUser = 1 / step, total = v.batch / step;
+      const ok = perUser >= v.slo;
+      let best = 1;
+      for (let b = 1; b <= 512; b++) if (1 / ((v.weights + b * v.kvgb) / (v.bw * 1000)) >= v.slo) best = b;
+      return {
+        out: [["Step time", `${fmt(step * 1000, 1)} ms`], ["Tokens/s per user", fmt(perUser), ok ? "ok" : "bad"], ["Tokens/s, whole GPU", fmt(total)], ["Goodput", ok ? `${fmt(total)} tok/s` : "0: all too slow", ok ? "ok" : "bad"], ["Largest batch on target", fmt(best)]],
+        meter: Math.min(1, v.batch / 256),
+        note: "A bandwidth-only model of decode: every step reads all weights once plus each user's KV cache. More users per step multiply total throughput but slow every user. Goodput counts only tokens served within the per-user target, so the best batch is the largest one that still meets it.",
+      };
+    },
+  },
+};
+function mountWidgets(root) {
+  root.querySelectorAll(".widget[data-spec]").forEach(el => {
+    const spec = JSON.parse(el.dataset.spec), W = WIDGETS[spec.type];
+    if (!W) return;
+    const names = Object.keys(W.presets);
+    const v = { ...W.presets[spec.preset] || W.presets[names[0]] };
+    el.innerHTML = `<div class="widget-head"><span>${W.title}</span><small>try your own numbers</small></div><div class="widget-body">
+      <div class="w-inputs">${names.length > 1 ? `<label>Preset<select data-preset>${names.map(n => `<option${v === W.presets[n] ? " selected" : ""}>${esc(n)}</option>`).join("")}</select></label>` : ""}
+      ${W.fields.map(([k, label, type, min, max]) => `<label>${label}${type === "range" ? ` <span data-show="${k}"></span>` : ""}<input data-k="${k}" type="${type || "number"}" ${min ? `min="${min}" max="${max}"` : 'min="0" step="any"'} value="${v[k]}"></label>`).join("")}</div>
+      <div class="w-out"></div><div class="w-meter"><i></i></div><p class="w-note"></p></div>`;
+    const draw = () => {
+      el.querySelectorAll("[data-k]").forEach(i => { v[i.dataset.k] = Number(i.value); });
+      el.querySelectorAll("[data-show]").forEach(s => { s.textContent = v[s.dataset.show]; });
+      const r = W.calc(v);
+      el.querySelector(".w-out").innerHTML = r.out.map(([k, val, cls]) => `<div><small>${k}</small><b${cls ? ` class="${cls}"` : ""}>${val}</b></div>`).join("");
+      const m = el.querySelector(".w-meter i"); m.style.width = `${Math.round(r.meter * 100)}%`; m.className = r.meterClass || "";
+      el.querySelector(".w-note").textContent = r.note;
+    };
+    el.addEventListener("input", ev => {
+      if (ev.target.matches("[data-preset]")) {
+        Object.assign(v, W.presets[ev.target.value]);
+        el.querySelectorAll("[data-k]").forEach(i => { i.value = v[i.dataset.k]; });
+      }
+      draw();
+    });
+    draw();
+  });
+}
+
 /* ---------- Mermaid, drawn in the pad's inks ---------- */
 const isDark = () => {
   const t = document.documentElement.dataset.theme;
@@ -396,11 +601,14 @@ async function drawDiagrams(root) {
   if (!window.mermaid) return;
   const nodes = [...root.querySelectorAll(".mmd")];
   if (!nodes.length) return;
+  // Mermaid sizes boxes from text measured now, so the hand font must be loaded first or labels get clipped.
+  try { await Promise.all([document.fonts.load("16px Kalam"), document.fonts.load("bold 16px Kalam")]); } catch {}
   mermaid.initialize({
     startOnLoad: false, securityLevel: "strict", theme: "base",
-    fontFamily: "Archivo, Helvetica Neue, Arial, sans-serif",
+    look: "handDrawn", handDrawnSeed: 7, // the same sketch every load
+    fontFamily: "Kalam, Comic Neue, Segoe Print, cursive",
     themeVariables: {
-      darkMode: isDark(), background: css("--sheet"), fontSize: "14px",
+      darkMode: isDark(), background: css("--sheet"), fontSize: "16px",
       primaryColor: css("--sheet"), primaryTextColor: css("--ink"), primaryBorderColor: css("--ink"),
       secondaryColor: css("--box"), tertiaryColor: css("--box"), lineColor: css("--ink-2"),
       clusterBkg: css("--box"), clusterBorder: css("--ink-2"), edgeLabelBackground: css("--sheet"),
@@ -415,7 +623,7 @@ async function drawDiagrams(root) {
       const { svg } = await mermaid.render(`m${Date.now()}${i}`, n.dataset.src);
       n.innerHTML = svg; n.dataset.done = "1";
       const el = n.querySelector("svg"), w = el?.viewBox?.baseVal?.width;
-      if (w) el.style.minWidth = `${Math.round(w * 0.8)}px`; // wide diagrams scroll rather than shrink past legibility
+      if (w) el.style.minWidth = `${Math.round(w * 0.7)}px`; // wide diagrams scroll rather than shrink past legibility
     } catch (e) { n.textContent = n.dataset.src; }
   }
   const mark = () => nodes.forEach(n => n.closest("figure")?.classList.toggle("scrolls", n.scrollWidth > n.clientWidth + 2));
@@ -516,7 +724,7 @@ function enhance(root, e) {
   heads.forEach(h => h.id = slug(h.textContent));
   const margin = root.querySelector("#margin");
   const figs = [...root.querySelectorAll("figure.fig")].map(f => {
-    let h = f.previousElementSibling; while (h && h.tagName !== "H2") h = h.previousElementSibling;
+    let h = f.previousElementSibling; while (h && h.tagName !== "H2" && h.tagName !== "H3") h = h.previousElementSibling;
     return { id: f.id, no: f.querySelector("figcaption b").textContent.replace("Fig. ", ""), near: h ? h.textContent : e.title };
   });
   if (margin && (heads.length > 2 || figs.length)) {
@@ -559,6 +767,8 @@ function enhance(root, e) {
     justTicked = null;
   });
   drawDiagrams(root);
+  drawSketches(root);
+  mountWidgets(root);
 }
 
 function route() {
