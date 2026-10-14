@@ -64,6 +64,28 @@ with sourced figures).
 | MCP trace propagation "via headers, `_meta` for stdio" (W5, Lab 5) | OTel MCP convention: `traceparent` in `params._meta` on every transport | **FIXED** |
 | MCP transports (W5) | [MCP 2026-07-28 transports](https://modelcontextprotocol.io/specification/2026-07-28/basic/transports): stdio and Streamable HTTP | OK |
 
+## Inference lesson rebuild (2026-10-14)
+
+Checked while rebuilding the inference lesson, including claims from a popular illustrated inference series that
+a reader shared.
+
+| Claim | Source | Status |
+|---|---|---|
+| Llama 3 70B KV cache 320 KB per token in BF16 | 2 x 80 layers x 8 KV heads x 128 dims x 2 bytes = 327,680 bytes | OK |
+| Existing servers used 20 to 38% of KV memory; vLLM wastes under 4%; 2 to 4x throughput | [vLLM paper](https://arxiv.org/abs/2309.06180) | OK |
+| Goodput definition; 7.4x more requests or 12.6x tighter SLO | [DistServe, OSDI 2024](https://www.usenix.org/conference/osdi24/presentation/zhong-yinmin) | OK |
+| Character.AI 95% cache rate | Original research post now redirects; quoted consistently by [secondary sources](https://buttondown.com/ainews/archive/ainews-shazeer-et-al-2024); 33x cost reduction confirmed on [Character.AI's blog](https://blog.character.ai/optimizing-ai-inference-at-character-ai/) | ADDED as "reported" |
+| GQA 8x smaller cache for Llama 3 70B | 64 query heads, 8 KV heads | OK (only for 70B; 8B is 4x) |
+| MLA: KV cache -93.3%, 5.76x max throughput | [DeepSeek-V2](https://arxiv.org/abs/2405.04434), against DeepSeek 67B | OK |
+| EAGLE-3 "up to 6.5x faster" | [EAGLE-3](https://arxiv.org/abs/2503.01840): peak single-request speedup; 1.38x throughput at batch 64 in SGLang | **QUALIFIED**: the series presented the peak as the general gain |
+| NVFP4 "1% or less loss vs FP8" | [NVIDIA](https://developer.nvidia.com/blog/introducing-nvfp4-for-efficient-and-accurate-low-precision-inference): DeepSeek-R1-0528 on NVIDIA's evals | **QUALIFIED** as one model, vendor benchmark |
+| FlashAttention-4: 1,605 TFLOPs/s, 71% on B200 | [arXiv 2603.05451](https://arxiv.org/abs/2603.05451) says 1,613; [Together's blog](https://together.ai/blog/flashattention-4) says 1,605 | USED the paper's figure |
+| DeepSeek fleet: 278 peak / 226.75 average nodes; 73.7k input and 14.8k output tok/s per node; 56.3% cache hits; $87,072 cost; $562,027 theoretical revenue | [DeepSeek inference system overview](https://github.com/deepseek-ai/open-infra-index/blob/main/202502OpenSourceWeek/day_6_one_more_thing_deepseekV3R1_inference_system_overview.md) | OK, with DeepSeek's caveats that revenue is theoretical |
+| "$0.30 per 1M output tokens" | $16/h / 53.3M tokens/h for a decode node | **QUALIFIED**: decode GPUs only |
+| DeepSeek-V3: 671B total, 37B active, 8 of 256 routed experts + 1 shared; decode EP144 over 18 nodes, 2 routed + 1 shared per GPU | [DeepSeek-V3 report](https://arxiv.org/abs/2412.19437) and the overview above | OK |
+| H100 SXM 989 TFLOPS dense BF16, 3.35 TB/s | [NVIDIA H100](https://www.nvidia.com/en-us/data-center/h100/) | OK |
+| "Distilled 8B over 10x cheaper with similar quality" | No source given | **NOT USED**; the lesson states the principle and DeepSeek's released distilled sizes |
+
 ## Not yet verified (pass 2)
 
 - Lab code has not been executed. The reference implementation (in progress) will replace snippets with tested code.
