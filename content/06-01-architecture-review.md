@@ -26,7 +26,7 @@ A good AI system design doc is 5 to 10 pages. Template:
    - Security and compliance: data classes handled, residency, retention, audit.
 3. **Architecture.** One diagram showing components, data stores, trust boundaries, and external dependencies. Then a request walk-through: a real user request traced through every component.
 4. **Key design decisions.** For each: options considered, the choice, why, and what would make you revisit it.
-5. **Agent design.** Workflow vs agent and why; tool list with tiers; context budget; memory design; model choices per role.
+5. **Agent design.** Workflow vs agent and why; tool list with tiers; context budget; memory design; model and provider choices per role (agent, router, judge, background jobs), and which fallback runs on a different provider.
 6. **Data and retrieval.** Sources, ingestion, freshness, chunking, retrieval pipeline, access control.
 7. **Evaluation.** Dataset sources and size, graders, judge calibration, gates, online evaluation.
 8. **Security.** Threat model (lethal trifecta per workflow), mitigations, red-team results.
@@ -77,6 +77,27 @@ Invite two or three reviewers, ideally including someone who did not build it. S
 
 ### The questions that find the most problems
 
+```viz
+caption: Draw the system, then walk it with six questions. Each question belongs to a kind of part, so nothing on the diagram goes unasked.
+<div class="vz-panel sk"><h5>Relay, drawn for review</h5>
+  <div class="vz-row"><span class="ch sk">user</span><span class="arr sk"></span><span class="ch sk c">relay-api</span><span class="arr sk"></span><span class="ch sk c">agent</span><span class="arr sk"></span><span class="ch sk c">provider A</span><span class="ch sk c ghost">fallback: provider B</span></div>
+  <div class="vz-row"><span class="ch sk c">agent</span><span class="arr sk"></span><span class="ch sk c">tools</span><span class="ch sk c">retrieval + ACL</span><span class="ch sk c">MCP server</span></div>
+  <div class="vz-row"><span class="ch sk c">relay-api</span><span class="arr sk"></span><span class="ch sk m">queue</span><span class="arr sk"></span><span class="ch sk c">worker</span><span class="ch sk m">Postgres</span></div>
+</div>
+<div class="vz-cols">
+  <div class="vz-panel sk w"><h5>Ask of every...</h5>
+    <div class="vz-row"><span class="ch sk w">arrow</span><span>slow or down: then what?</span></div>
+    <div class="vz-row"><span class="ch sk w">identity, amount</span><span>who sets this value?</span></div>
+    <div class="vz-row"><span class="ch sk w">claim</span><span>how do you know?</span></div>
+  </div>
+  <div class="vz-panel sk w"><h5>...and of every</h5>
+    <div class="vz-row"><span class="ch sk w">store, queue, limit</span><span>what happens at 10x?</span></div>
+    <div class="vz-row"><span class="ch sk w">tool</span><span>worst case if compromised?</span></div>
+    <div class="vz-row"><span class="ch sk w">decision</span><span>how costly to reverse?</span></div>
+  </div>
+</div>
+```
+
 - *"What happens when this dependency is slow or down?"* Ask it of every arrow in the diagram.
 - *"Where does this value come from, and can the user or the model influence it?"* Ask it of every identity, permission, and amount.
 - *"How do you know?"* Ask it of every claim about quality, cost, and latency.
@@ -96,7 +117,8 @@ Patterns that come up again and again:
 | Judges never calibrated | Label 100 examples, measure kappa |
 | No cost per conversation metric | Instrument usage and price table |
 | Cache hit rate unknown, prompt has a timestamp at the top | Stable prefix, measure hit rate |
-| Single model, no fallback, no circuit breaker | Tested fallback path, breaker, degradation plan |
+| Single model, no fallback, no circuit breaker | Tested fallback path on a different provider, breaker, degradation plan |
+| Model names and prices hard-coded in many places | One `provider:model` setting per role, a versioned price table with the date checked, evals run per model |
 | Retrieval ACL filter applied after LLM call or in the prompt | Filter in SQL before generation |
 | Long tasks run inside HTTP requests | Jobs + workers + checkpoints |
 | Traces contain raw PII indefinitely | Redaction processor, retention policy, access control |
@@ -105,13 +127,29 @@ Patterns that come up again and again:
 
 Reviewers trust you more when you show what you gave up. For each major decision, a short trade-off table:
 
-| | Single agent, Sonnet, all tools | Router + Haiku for simple intents |
+| | Single agent, large model, all tools | Router + small model for simple intents |
 |---|---|---|
 | Eval pass rate (PR suite) | 93.1% | 92.8% |
 | Cost / conversation p50 | $0.017 | $0.008 |
 | TTFT p95 | 2.1 s | 1.4 s |
 | Complexity | Lower | Router + two prompts to maintain |
 | Decision | | **Chosen**: 2x cheaper, quality equal within noise; router errors monitored |
+
+```viz
+caption: The router halves the cost and cuts the wait for a 0.3-point eval drop. Showing the drop is what makes reviewers trust the win.
+<div class="vz-cols" style="--k:3">
+  <div class="vz-panel sk"><h5>Cost per conversation, p50</h5>
+    <div class="vz-bars"><span>single</span><span class="bar sk"><i class="sk w" style="--w:100%"></i></span><b>$0.017</b><span>router</span><span class="bar sk"><i class="sk g" style="--w:47%"></i></span><b>$0.008</b></div>
+  </div>
+  <div class="vz-panel sk"><h5>TTFT p95</h5>
+    <div class="vz-bars"><span>single</span><span class="bar sk"><i class="sk w" style="--w:100%"></i></span><b>2.1 s</b><span>router</span><span class="bar sk"><i class="sk g" style="--w:67%"></i></span><b>1.4 s</b></div>
+  </div>
+  <div class="vz-panel sk"><h5>Eval pass rate</h5>
+    <div class="vz-bars"><span>single</span><span class="bar sk"><i class="sk g" style="--w:93%"></i></span><b>93.1%</b><span>router</span><span class="bar sk"><i class="sk b" style="--w:92.8%"></i></span><b>92.8%</b></div>
+  </div>
+</div>
+<div class="vz-src">Illustrative numbers from the Lab 5 example results table, not a benchmark. Measure your own.</div>
+```
 
 ## Design review questions
 

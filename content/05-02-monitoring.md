@@ -16,6 +16,15 @@ summary: The metrics that tell you whether an AI system is healthy, affordable, 
 
 Traditional services stop at the first. AI systems fail quietly on the second and third: a prompt change that makes answers 30% longer doubles the bill without a single error; a retrieval regression makes answers worse with every request returning 200 OK.
 
+```viz
+caption: Every one of these requests returned 200 OK. Only the cost and quality rows of the dashboard can tell them apart.
+<div class="vz-cols" style="--k:3">
+  <div class="vz-panel sk g"><h5>Is it working?</h5><div class="vz-row"><span class="ch sk g">200 OK</span><span class="ch sk g">TTFT 0.9 s</span></div><p>errors, latency, saturation</p></div>
+  <div class="vz-panel sk w"><h5>What does it cost?</h5><div class="vz-row"><span class="ch sk g">200 OK</span><span class="ch sk w">14 steps, $0.85</span></div><p>a loop: no error, big bill</p></div>
+  <div class="vz-panel sk b"><h5>Is it any good?</h5><div class="vz-row"><span class="ch sk g">200 OK</span><span class="ch sk b">wrong refund amount</span></div><p>judges, feedback, outcomes</p></div>
+</div>
+```
+
 ## Golden signals, adapted
 
 The classic four (latency, traffic, errors, saturation, from Google's [SRE book](https://sre.google/sre-book/monitoring-distributed-systems/)) still apply, with AI-specific detail:
@@ -25,29 +34,43 @@ The classic four (latency, traffic, errors, saturation, from Google's [SRE book]
 | Latency | TTFT p50/p95, total turn time p50/p95, per-stage (retrieval, model, tools) | Users feel TTFT; total time affects abandonment |
 | Traffic | Conversations, turns, model calls per turn, by route and model | Calls-per-turn growth is often a looping or prompt bug |
 | Errors | HTTP 5xx; provider errors by type (429, 5xx, overloaded, timeouts); tool errors by tool; refusals; step-limit hits; guardrail blocks | Many AI failures are not exceptions |
-| Saturation | Provider rate-limit headroom (tokens/min used vs limit), worker queue depth and age, DB connections | Rate limits are the usual bottleneck |
+| Saturation | Provider rate-limit headroom (tokens/min used vs limit, read from response headers such as `anthropic-ratelimit-*` or `x-ratelimit-*`), worker queue depth and age, DB connections; GPU KV cache use and queue length if you self-host | Rate limits (or your own GPUs) are the usual bottleneck |
 
 ## Token and cost monitoring
 
-Record usage on every model call (you already have it in spans): model, input tokens, cached input tokens, output tokens, and the feature, user, and tenant it served. Compute cost from a price table versioned in your repo.
+Record usage on every model call (you already have it in spans): provider, model, input tokens, cached input tokens, output tokens, and the feature, user, and tenant it served. Compute cost from a price table versioned in your repo. Providers count tokens differently, so first turn each provider's usage object into the same four disjoint numbers, then price them:
 
 ```python
-PRICES = {  # USD per million tokens, from the provider's pricing page (checked 2026-10-14)
-    "claude-opus-5-5":   {"in": 4.00, "cache_write": 5.00,  "cache_read": 0.20, "out": 20.00},
-    "claude-sonnet-5-5": {"in": 2.00, "cache_write": 2.50,  "cache_read": 0.10, "out": 10.00},
-    "claude-haiku-5-5":  {"in": 0.10, "cache_write": 0.125, "cache_read": 0.01, "out": 0.50},  # prompts ≤100k tokens
+PRICES = {  # USD per million tokens: uncached input, cache write, cache read, output (checked 2026-10-14)
+    "claude-opus-5-5":   {"in": 4.00, "cache_write": 5.00,  "cache_read": 0.20,  "out": 20.00},
+    "claude-sonnet-5-5": {"in": 2.00, "cache_write": 2.50,  "cache_read": 0.10,  "out": 10.00},
+    "claude-haiku-5-5":  {"in": 0.10, "cache_write": 0.125, "cache_read": 0.01,  "out": 0.50},  # prompts ≤100k tokens
+    "gpt-5":             {"in": 1.25, "cache_write": 1.25,  "cache_read": 0.125, "out": 10.00}, # no write premium
+    "gemini-2.5-flash":  {"in": 0.30, "cache_write": 0.30,  "cache_read": 0.03,  "out": 2.50},  # text; explicit caches add storage
+    "qwen3:8b":          {"in": 0.0,  "cache_write": 0.0,   "cache_read": 0.0,   "out": 0.0},   # self-hosted: price the GPU-hours instead
 }
 
-def cost_usd(model, usage) -> float:
+def normalise(provider, u) -> tuple[int, int, int, int]:
+    """Return (uncached input, cache write, cache read, output) as disjoint counts."""
+    if provider == "anthropic":   # three separate input counts that add up to the total
+        return u.input_tokens, u.cache_creation_input_tokens or 0, u.cache_read_input_tokens or 0, u.output_tokens
+    if provider == "openai":      # input_tokens already includes cached tokens
+        d = u.input_tokens_details
+        write = getattr(d, "cache_write_tokens", 0) or 0
+        return u.input_tokens - d.cached_tokens - write, write, d.cached_tokens, u.output_tokens
+    if provider == "gcp.gemini":  # prompt_token_count already includes cached tokens; thinking is billed as output
+        cached = u.cached_content_token_count or 0
+        return u.prompt_token_count - cached, 0, cached, u.candidates_token_count + (u.thoughts_token_count or 0)
+    raise ValueError(provider)
+
+def cost_usd(model, uncached, write, read, out) -> float:
     p = PRICES[model]
-    # The three input counts are disjoint: input_tokens is only the uncached part.
-    return (usage.input_tokens * p["in"]
-            + (usage.cache_creation_input_tokens or 0) * p["cache_write"]   # 5-minute writes
-            + (usage.cache_read_input_tokens or 0) * p["cache_read"]
-            + usage.output_tokens * p["out"]) / 1e6
+    return (uncached * p["in"] + write * p["cache_write"] + read * p["cache_read"] + out * p["out"]) / 1e6
 ```
 
-> [!warn] Check exactly how your provider reports cached tokens and cache writes. On the Claude API, `input_tokens`, `cache_creation_input_tokens`, and `cache_read_input_tokens` are separate counts that add up to the total input. Cache writes cost more than normal input (1.25x for 5-minute, 2x for 1-hour caches), and Haiku 5.5 charges higher rates when a prompt exceeds 100,000 tokens. Getting this wrong makes your cost dashboards disagree with the invoice, and nobody trusts a dashboard that disagrees with the invoice. Reconcile against the provider's usage report monthly.
+> [!warn] Check exactly how each provider reports cached tokens and cache writes, because they disagree. On the Claude API, `input_tokens`, `cache_creation_input_tokens`, and `cache_read_input_tokens` are separate counts that add up to the total input, and cache writes cost more than normal input (1.25x for 5-minute, 2x for 1-hour caches); Haiku 5.5 also charges higher rates when a prompt exceeds 100,000 tokens. On OpenAI, `input_tokens` already includes `cached_tokens`; GPT-5.6 and later also bill cache writes at 1.25x, reported as `cache_write_tokens`. On Gemini, `prompt_token_count` already includes `cached_content_token_count`, and explicit caches add an hourly storage charge. Getting this wrong makes your cost dashboards disagree with the invoice, and nobody trusts a dashboard that disagrees with the invoice. Reconcile against each provider's usage report monthly.
+
+Prices: [Anthropic](https://platform.claude.com/docs/en/about-claude/pricing), [OpenAI](https://developers.openai.com/api/docs/pricing), [Gemini](https://ai.google.dev/gemini-api/docs/pricing), all checked 2026-10-14. Usage fields: [Anthropic](https://platform.claude.com/docs/en/api/rate-limits#cache-aware-itpm), [OpenAI](https://developers.openai.com/api/docs/guides/prompt-caching), [Gemini](https://ai.google.dev/api/generate-content). For self-hosted models (vLLM, Ollama) there is no token bill: cost is GPU-hours divided by tokens served, as in the [inference lesson](#w5-inference).
 
 Dashboards to build:
 
@@ -58,6 +81,21 @@ Dashboards to build:
 - **Top 20 most expensive conversations** this week, linked to their traces. Read them. They are usually loops, huge tool results, or abuse.
 
 > [!numbers] Relay's p50 conversation costs $0.012 but p99 costs $0.85. The top 1% of conversations is about 0.01 × 0.85 / (0.99 × 0.012 + 0.01 × 0.85) ≈ **42% of total spend** (using p99 as a rough stand-in for the tail). Fixing the tail (step limits, result truncation, compaction) often saves more than optimising the median.
+
+```viz
+caption: The top 1% of conversations spends 42% of the budget. Read the expensive ones first.
+<div class="vz-cols">
+  <div class="vz-panel sk"><h5>Cost of one conversation</h5>
+    <div class="vz-bars"><span>p50</span><span class="bar sk"><i class="sk g" style="--w:2%"></i></span><b>$0.012</b><span>p99</span><span class="bar sk"><i class="sk w" style="--w:100%"></i></span><b>$0.85</b></div>
+    <p>71 times the median</p>
+  </div>
+  <div class="vz-panel sk"><h5>Share of total spend</h5>
+    <div class="vz-bars"><span>99% of chats</span><span class="bar sk"><i class="sk g" style="--w:58%"></i></span><b>58%</b><span>top 1%</span><span class="bar sk"><i class="sk w" style="--w:42%"></i></span><b>42%</b></div>
+    <p>loops, huge tool results, abuse</p>
+  </div>
+</div>
+<div class="vz-src">Illustrative Relay numbers from the worked example above; 0.85 / 0.012 ≈ 71.</div>
+```
 
 ## Quality monitoring
 
@@ -116,7 +154,7 @@ Watch **cardinality**: do not put user IDs or session IDs as metric labels (mill
 | Row | Panels |
 |---|---|
 | Health | Requests/min, 5xx rate, provider error rate by type, TTFT p95, turn p95 |
-| Cost | $/hour, $/conversation p50/p95/p99, cache hit rate, tokens/turn split, spend by tenant |
+| Cost | $/hour, $/conversation p50/p95/p99, cache hit rate, tokens/turn split, spend by tenant and by provider and model |
 | Agent behaviour | Steps per turn histogram, step-limit hits, tool calls by tool, tool error rate, guardrail fires by guardrail |
 | Quality | Online judge pass rate by category, resolution rate, escalation rate, thumbs-down rate, review queue size |
 | Capacity | Rate-limit headroom per model, queue depth and age, DB connections, instance count |

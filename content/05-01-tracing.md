@@ -4,7 +4,7 @@ week: 5
 kind: lesson
 title: Tracing requests across agent actions and MCP
 short: Tracing agents + MCP
-minutes: 45
+minutes: 50
 summary: Instrument an agent so every conversation becomes a navigable trace of model calls, tool calls, retrieval, and remote MCP servers, using OpenTelemetry and its GenAI conventions, with context propagated across process boundaries.
 ---
 
@@ -17,8 +17,8 @@ An agent turn might involve a router call, three model calls, five tool calls (t
 ```mermaid
 flowchart TB
   T["trace: POST /chat (session 8fa2, user c_77) 7.9 s"]
-  T --> R["router.classify · haiku · 210 ms · 640 tok"]
-  T --> A["agent.run · 7.4 s · 3 steps"]
+  T --> R["chat gemini-2.5-flash · router · 210 ms · 640 tok"]
+  T --> A["invoke_agent relay · 7.4 s · 3 steps"]
   A --> M1["chat claude-sonnet-5-5 · step 1 · 1.9 s · in 9,120 / out 85"]
   A --> P["tools (parallel)"]
   P --> T1["execute_tool get_order · 40 ms"]
@@ -26,9 +26,27 @@ flowchart TB
   T2 --> S1["retrieval.hybrid · 70 ms"]
   T2 --> S2["rerank · 230 ms"]
   A --> M2["chat claude-sonnet-5-5 · step 2 · 1.2 s"]
-  M2 --> X["mcp tools/call shipping.track · 880 ms (remote server)"]
+  A --> X["execute_tool shipping.track · 880 ms (remote MCP server)"]
   A --> M3["chat claude-sonnet-5-5 · step 3 · 2.6 s · out 240"]
   T --> G["guardrails.output · 35 ms"]
+```
+
+The same trace drawn against time, as tracing tools show it, makes the bottleneck obvious:
+
+```viz
+caption: Four model calls take 5.9 of the 7.9 seconds, and they run one after another. Faster tools would barely help; fewer steps would.
+<div class="vz-bars">
+<span>router (model)</span><span class="bar sk"><i class="sk c" style="--w:3%"></i></span><b>0.2 s</b>
+<span>agent step 1</span><span class="bar sk"><i class="sk c" style="--w:24%;margin-left:3%"></i></span><b>1.9 s</b>
+<span>get_order</span><span class="bar sk"><i class="sk m" style="--w:1%;margin-left:27%"></i></span><b>0.04 s</b>
+<span>search_kb</span><span class="bar sk"><i class="sk m" style="--w:8%;margin-left:27%"></i></span><b>0.6 s</b>
+<span>agent step 2</span><span class="bar sk"><i class="sk c" style="--w:15%;margin-left:35%"></i></span><b>1.2 s</b>
+<span>MCP shipping</span><span class="bar sk"><i class="sk m" style="--w:11%;margin-left:50%"></i></span><b>0.9 s</b>
+<span>agent step 3</span><span class="bar sk"><i class="sk c" style="--w:33%;margin-left:62%"></i></span><b>2.6 s</b>
+<span>guardrail</span><span class="bar sk"><i class="sk g" style="--w:1%;margin-left:96%"></i></span><b>0.04 s</b>
+</div>
+<div class="vz-row"><span class="ch sk c">model call</span><span class="ch sk m">tool or MCP</span><span class="ch sk g">guardrail</span><b>time runs left to right, 0 to 7.9 s</b></div>
+<div class="vz-src">Illustrative timings from the example trace above, not a benchmark. The two tools run in parallel, so their bars overlap.</div>
 ```
 
 ## OpenTelemetry and the GenAI conventions
@@ -39,15 +57,26 @@ OTel defines [semantic conventions for generative AI](https://github.com/open-te
 
 | Attribute | Example |
 |---|---|
-| `gen_ai.operation.name` | `chat`, `execute_tool`, `invoke_agent`, `embeddings` |
-| `gen_ai.provider.name` | `anthropic` |
-| `gen_ai.request.model` / `gen_ai.response.model` | `claude-sonnet-5-5` |
-| `gen_ai.usage.input_tokens` / `gen_ai.usage.output_tokens` | `9120` / `85` |
-| `gen_ai.response.finish_reasons` | `["tool_use"]` |
+| `gen_ai.operation.name` | `chat`, `generate_content`, `execute_tool`, `invoke_agent`, `embeddings` |
+| `gen_ai.provider.name` | `anthropic`, `openai`, `gcp.gemini`, `aws.bedrock`; a custom value such as `vllm` or `ollama` when none applies |
+| `gen_ai.request.model` / `gen_ai.response.model` | `claude-sonnet-5-5`, `gpt-5`, `gemini-2.5-flash`, `qwen3:8b` |
+| `gen_ai.usage.input_tokens` / `gen_ai.usage.output_tokens` | `9120` / `85` (input includes cached tokens) |
+| `gen_ai.response.finish_reasons` | `["tool_use"]` (Anthropic), `["tool_calls"]` (OpenAI) |
 | `gen_ai.tool.name` / `gen_ai.tool.call.id` | `get_order` / `toolu_01A…` |
 | `gen_ai.conversation.id` | session ID |
 
-The conventions are marked **Development** (not yet stable) and moved to their own repository in 2026, so pin the version you follow and expect renames. Cached tokens, for example, are `gen_ai.usage.cache_read.input_tokens` and `gen_ai.usage.cache_write.input_tokens`. Libraries like [OpenLLMetry](https://github.com/traceloop/openllmetry) and the OTel contrib instrumentations can auto-instrument popular SDKs.
+This is what makes traces **provider-neutral**. Relay can run its agent on one provider, its router on another and its judge on a third, and every model call still lands in the same trace with the same attribute names, so one dashboard compares them. `gen_ai.provider.name` has a list of well-known values (`anthropic`, `openai`, `gcp.gemini`, `aws.bedrock`, `groq`, `mistral_ai` and others); for anything not listed, such as your own vLLM or Ollama server, the spec allows a custom value.
+
+The conventions are marked **Development** (not yet stable) and moved to their own repository in 2026, so pin the version you follow and expect renames. Cached tokens, for example, are `gen_ai.usage.cache_read.input_tokens` and `gen_ai.usage.cache_write.input_tokens`, and the spec says `gen_ai.usage.input_tokens` **should include** cached tokens. Providers report usage differently, so map each one carefully:
+
+| Provider | What its usage fields mean | `gen_ai.usage.input_tokens` |
+|---|---|---|
+| Anthropic | `input_tokens`, `cache_creation_input_tokens` and `cache_read_input_tokens` are separate counts ([docs](https://platform.claude.com/docs/en/api/rate-limits#cache-aware-itpm)) | sum all three |
+| OpenAI | `input_tokens` already includes `input_tokens_details.cached_tokens` ([docs](https://developers.openai.com/api/docs/guides/prompt-caching)) | `input_tokens` |
+| Gemini | `prompt_token_count` already includes `cached_content_token_count` ([docs](https://ai.google.dev/api/generate-content)) | `prompt_token_count` |
+| OpenAI-compatible servers (vLLM, Ollama, gateways) | Chat Completions `usage`; cached counts only if the server reports them | `prompt_tokens` |
+
+Libraries like [OpenLLMetry](https://github.com/traceloop/openllmetry) and the OTel contrib instrumentations can auto-instrument popular SDKs.
 
 ## Instrumenting the agent loop
 
@@ -66,13 +95,15 @@ async def run_turn(ctx, messages, on_text):
         for step in range(MAX_STEPS):
             with tracer.start_as_current_span(f"chat {MODEL}") as llm:
                 llm.set_attribute("gen_ai.operation.name", "chat")
+                llm.set_attribute("gen_ai.provider.name", PROVIDER)     # "anthropic", "openai", "gcp.gemini", ...
                 llm.set_attribute("gen_ai.request.model", MODEL)
                 llm.set_attribute("relay.step", step)
                 resp = await call_model(ctx, messages, on_text)
-                llm.set_attribute("gen_ai.usage.input_tokens", resp.usage.input_tokens)
-                llm.set_attribute("gen_ai.usage.output_tokens", resp.usage.output_tokens)
-                llm.set_attribute("gen_ai.usage.cache_read.input_tokens", resp.usage.cache_read_input_tokens or 0)
-                llm.set_attribute("gen_ai.usage.cache_write.input_tokens", resp.usage.cache_creation_input_tokens or 0)
+                u = resp.usage   # normalised by the client: uncached, cache_read, cache_write, output
+                llm.set_attribute("gen_ai.usage.input_tokens", u.uncached + u.cache_read + u.cache_write)  # total, per the spec
+                llm.set_attribute("gen_ai.usage.output_tokens", u.output)
+                llm.set_attribute("gen_ai.usage.cache_read.input_tokens", u.cache_read)
+                llm.set_attribute("gen_ai.usage.cache_write.input_tokens", u.cache_write)
                 llm.set_attribute("gen_ai.response.finish_reasons", [resp.stop_reason])
             ...
 
@@ -98,6 +129,15 @@ A trace is only useful if it crosses process boundaries. When the API enqueues a
 - **HTTP**: OTel's W3C `traceparent` header. Auto-instrumented HTTP clients and servers (httpx, FastAPI) inject and extract it.
 - **Queues**: put the `traceparent` in the job payload when enqueuing; extract it in the worker and start the job span as a child (or as a linked span for long-delayed jobs).
 - **MCP**: the [Model Context Protocol](https://modelcontextprotocol.io/) sends JSON-RPC messages over stdio or Streamable HTTP. The OpenTelemetry MCP convention puts the W3C `traceparent` (and `tracestate`, `baggage`) inside each request's `params._meta` field, unprefixed, on every transport, and the server uses it as the remote parent for its spans. Because it travels in the message body, it works on stdio too. Support varies by SDK version, so verify it end to end: make an MCP tool call and check that the server's spans appear under your agent's trace.
+
+```viz
+caption: One trace ID crosses three boundaries. Each boundary needs its own carrier for the traceparent, or the trace breaks into pieces.
+<div class="vz-row"><span class="ch sk c">API</span><span class="arr sk"></span><span class="ch sk">HTTP header</span><span class="arr sk"></span><span class="ch sk c">retrieval</span></div>
+<div class="vz-row"><span class="ch sk c">API</span><span class="arr sk"></span><span class="ch sk">job payload</span><span class="arr sk"></span><span class="ch sk c">worker</span></div>
+<div class="vz-row"><span class="ch sk c">agent</span><span class="arr sk"></span><span class="ch sk">params._meta</span><span class="arr sk"></span><span class="ch sk c">MCP server</span></div>
+<div class="vz-row"><span class="ch sk g">one trace ID: 4bf92f35...</span><b>every span joins the same tree</b></div>
+<div class="vz-src">Carriers from the W3C <a href="https://www.w3.org/TR/trace-context/">Trace Context</a> spec and the OpenTelemetry <a href="https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/mcp.md">MCP semantic conventions</a>.</div>
+```
 
 ```python
 from opentelemetry.propagate import inject, extract
@@ -160,7 +200,7 @@ Tools like Langfuse and Phoenix have dataset features for exactly this loop. You
 
 ## Further reading
 
-- [OpenTelemetry semantic conventions for GenAI](https://github.com/open-telemetry/semantic-conventions-genai/tree/main/docs/gen-ai).
+- [OpenTelemetry semantic conventions for GenAI](https://github.com/open-telemetry/semantic-conventions-genai/tree/main/docs/gen-ai), including the [span attributes](https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/gen-ai-spans.md) and the [MCP conventions](https://github.com/open-telemetry/semantic-conventions-genai/blob/main/docs/gen-ai/mcp.md).
 - [OpenTelemetry Python](https://opentelemetry.io/docs/languages/python/) and [contrib instrumentations](https://github.com/open-telemetry/opentelemetry-python-contrib).
 - [OpenLLMetry](https://github.com/traceloop/openllmetry), OTel-based auto-instrumentation for LLM SDKs.
 - [Langfuse docs](https://langfuse.com/docs) and [Arize Phoenix](https://github.com/Arize-ai/phoenix), open-source LLM observability.
@@ -171,6 +211,7 @@ Tools like Langfuse and Phoenix have dataset features for exactly this loop. You
   {"q": "What links all spans belonging to one user request?", "options": ["The session ID", "A shared trace ID, with parent-child relationships between spans", "Timestamps", "The model name"], "answer": 1, "why": "Spans share a trace ID and point to their parent, which builds the tree you navigate."},
   {"q": "How do spans in a background worker join the trace of the API request that enqueued the job?", "options": ["Automatically, always", "The producer injects trace context (traceparent) into the job payload and the worker extracts it", "By matching timestamps", "They cannot"], "answer": 1, "why": "Context propagation must cross every boundary, including queues, explicitly."},
   {"q": "Which sampling policy best fits AI systems?", "options": ["Keep 1% randomly", "Tail sampling that keeps all errors, guardrail firings, expensive, slow, or negatively rated traces plus a random sample", "Keep nothing", "Head sampling at 100%"], "answer": 1, "why": "The traces you need for debugging and eval building are rare. Tail sampling keeps them."},
+  {"q": "Relay's router runs on Gemini and its agent on Claude. How do both model calls show up comparably in one trace?", "options": ["They cannot", "Both spans use the OTel GenAI attributes, with gen_ai.provider.name telling them apart", "Only by using one provider", "By logging each SDK's raw response"], "answer": 1, "why": "The GenAI semantic conventions are provider-neutral: the same attribute names for every provider, with the provider recorded as an attribute."},
   {"q": "A third-party MCP server you do not control is slow. How do you see it in your traces?", "options": ["You cannot", "Record a client-side span around each MCP call with server, tool, duration, and errors", "Ask the vendor for logs", "Use print statements"], "answer": 1, "why": "Even without their spans, your client span shows their latency and failure rate inside your trace."}
 ]
 ```

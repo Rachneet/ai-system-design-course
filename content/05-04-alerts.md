@@ -29,7 +29,22 @@ An SLO of 99.5% gives an **error budget** of 0.5%: about 3.6 hours of full outag
 
 Alerting on "error rate > 1% for 5 minutes" is noisy for short spikes and slow for gradual problems. The SRE workbook's [Alerting on SLOs](https://sre.google/workbook/alerting-on-slos/) recommends **multi-window burn-rate alerts**: page when you are consuming the error budget much faster than sustainable, confirmed over a short window so it resets quickly once fixed.
 
-> [!numbers] With a 99.5% SLO over 30 days, burning at 14.4× the sustainable rate exhausts 2% of the monthly budget in one hour. A common setup: **page** if the burn rate is above 14.4 over the last hour *and* the last 5 minutes; **page** if above 6 over 6 hours *and* 30 minutes; **ticket** if above 1 over 3 days. A 14.4× burn on a 0.5% budget means an error rate of 7.2%.
+> [!numbers] With a 99.5% SLO over 30 days, burning at 14.4× the sustainable rate exhausts 2% of the monthly budget in one hour. A common setup: **page** if the burn rate is above 14.4 over the last hour *and* the last 5 minutes; **page** if above 6 over 6 hours *and* 30 minutes; **ticket** if above 1 over 3 days *and* 6 hours. A 14.4× burn on a 0.5% budget means an error rate of 7.2%.
+
+```viz
+caption: Three windows, three speeds of trouble. A fast burn pages within the hour; a slow leak becomes a ticket before it eats the month.
+<div class="vz-bars">
+<span>page: 1 h, check 5 min</span><span class="bar sk"><i class="sk b" style="--w:20%"></i></span><b>14.4x: 2% of budget</b>
+<span>page: 6 h, check 30 min</span><span class="bar sk"><i class="sk b" style="--w:50%"></i></span><b>6x: 5%</b>
+<span>ticket: 3 days, check 6 h</span><span class="bar sk"><i class="sk w" style="--w:100%"></i></span><b>1x: 10%</b>
+</div>
+<div class="vz-cols" style="--k:3">
+  <div class="vz-panel sk"><h5>Budget at 99.5%</h5><p class="big g">3.6 h</p><p>of full outage per 30 days</p></div>
+  <div class="vz-panel sk"><h5>Fast burn means</h5><p class="big b">7.2%</p><p>errors: 14.4 x 0.5%</p></div>
+  <div class="vz-panel sk"><h5>Short window</h5><p class="big w">1/12</p><p>of the long one, so the alert clears soon after a fix</p></div>
+</div>
+<div class="vz-src">Windows, burn rates and budget shares from Google's SRE workbook, <a href="https://sre.google/workbook/alerting-on-slos/">Alerting on SLOs</a> (table 5-8). Bars show the share of the 30-day budget each alert has spent when it fires. 0.5% x 720 h = 3.6 h.</div>
+```
 
 ```yaml
 # Prometheus-style rule sketch
@@ -49,7 +64,7 @@ Several important failure modes produce no errors at all. Cover them explicitly:
 
 | Condition | Signal | Severity |
 |---|---|---|
-| Provider outage or overload | Provider error rate, 429 rate, latency from provider spans | Page (with automatic fallback) |
+| Provider outage or overload | Provider error rate (429, 5xx, Anthropic's 529, OpenAI's 503), latency from provider spans, split by `gen_ai.provider.name` | Page (with automatic fallback) |
 | Cost spike | $/hour above 2× the same hour last week; any single conversation over $5 | Page for spikes, ticket for drift |
 | Looping agents | Step-limit hits per hour; calls per turn p95 | Ticket, page if spiking |
 | Quality regression | Online judge pass rate drops X points vs 7-day baseline | Ticket; page if after a deploy |
@@ -65,10 +80,20 @@ Quality alerts need statistical care: with 5% sampling, a drop over 30 minutes m
 
 Your system depends on a model API you do not control. Plan for it:
 
-- **Detect** fast with error-rate and latency alerts scoped to provider spans, and subscribe to the provider's status page.
-- **Fail over automatically** where you have a tested fallback (another model or region), with a circuit breaker so users do not wait on timeouts.
+- **Detect** fast with error-rate and latency alerts scoped to provider spans, and subscribe to each provider's status page.
+- **Fail over automatically** where you have a tested fallback (another model, region or provider), with a circuit breaker so users do not wait on timeouts. A fallback on a different provider survives that provider's outage; a fallback on the same provider often does not. A self-hosted open model (vLLM, Ollama) is a last-resort fallback that no outside outage can take away, if your evals say it is good enough.
 - **Degrade gracefully**: disable optional features, serve canned answers for top FAQs, route to humans, show an honest banner.
 - **Protect your budget during recovery**: a backlog of retries can blow through rate limits and cost when the provider comes back. Cap retry queues.
+
+```viz
+caption: When the primary provider fails, each step down the chain trades a little quality for staying up. Every step must be tested before the outage, not during it.
+<div class="vz-row"><span class="ch sk b">1. primary fails</span><span class="arr sk"></span><span class="ch sk">breaker opens</span></div>
+<div class="vz-row"><span class="ch sk g">2. fallback provider</span><span class="arr sk"></span><span class="ch sk">cache starts cold</span></div>
+<div class="vz-row"><span class="ch sk w">3. degrade</span><span class="arr sk"></span><span class="ch sk">no rerank, canned FAQs</span></div>
+<div class="vz-row"><span class="ch sk w">4. human handoff</span><span class="arr sk"></span><span class="ch sk">honest banner</span></div>
+<div class="vz-row"><b>Relay:</b><span class="ch sk">RELAY_MODEL=openai:gpt-5</span></div>
+<div class="vz-row"><b>fallback:</b><span class="ch sk">gemini:gemini-2.5-flash</span></div>
+```
 
 ## Kill switches
 
@@ -115,6 +140,8 @@ AI incidents are frequently not outages: a prompt change that made refunds too g
 > [!interview] What are your SLOs, and how much error budget is left this month?
 
 > [!interview] How would you find out, within an hour, that the agent started promising refunds it cannot give?
+
+> [!interview] Your primary and fallback models: are they on different providers, and when did you last fail over for real?
 
 > [!interview] The model provider is down for 40 minutes. Walk me through what users see minute by minute.
 
