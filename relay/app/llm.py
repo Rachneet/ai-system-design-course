@@ -25,11 +25,13 @@ class LLM(Protocol):
 
 
 class AnthropicLLM:
-    def __init__(self, model: str, max_tokens: int, refusal_fallback: bool = True):
-        self.client = anthropic.AsyncAnthropic()  # reads ANTHROPIC_API_KEY
+    def __init__(self, model: str, max_tokens: int, refusal_fallback: bool = True, max_retries: int = 2):
+        # ResilientLLM passes max_retries=0 and retries itself, so SDK and app retries never multiply.
+        self.client = anthropic.AsyncAnthropic(max_retries=max_retries)  # reads ANTHROPIC_API_KEY
         self.model = model
         self.max_tokens = max_tokens
-        self.refusal_fallback = refusal_fallback
+        # Server-side refusal fallback exists for Opus and Sonnet tiers, not Haiku.
+        self.refusal_fallback = refusal_fallback and "haiku" not in model
 
     async def respond(self, *, system, tools, messages, on_text) -> LLMResponse:
         params = {

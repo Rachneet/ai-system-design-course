@@ -8,6 +8,11 @@ class Settings(BaseSettings):
     model: str = "claude-opus-5-5"  # set RELAY_MODEL=claude-haiku-5-5 for cheap development
     memory_model: str = "claude-haiku-5-5"  # also used for quarantine and the user simulator
     judge_model: str = "claude-opus-5-5"  # pinned; changing it changes every judged score
+    fallback_model: str = (
+        "claude-haiku-5-5"  # used when the primary fails or the breaker is open; keep it in evals
+    )
+    router_model: str = "claude-haiku-5-5"
+    fault_rate: float = 0.0  # game days only: fraction of primary model calls that fail on purpose
     refusal_fallback: bool = True  # server-side fallback model when the main model declines
     max_steps: int = 8
     max_tokens: int = 4096
@@ -32,6 +37,10 @@ class Settings(BaseSettings):
     message_burst: int = 20
     daily_token_budget: int = 300_000
     memory_idle_s: int = 120  # extract memories once a session has been quiet this long
+
+    # Observability (Lab 5)
+    online_judge_rate: float = 0.05  # share of sessions judged online, plus every thumbs-down
+    shipping_mcp_url: str = ""  # Streamable HTTP URL of the carrier MCP server; empty disables live tracking
 
 
 settings = Settings()

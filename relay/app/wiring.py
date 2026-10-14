@@ -9,8 +9,49 @@ def build_llm():
 
         return EchoLLM()
     from .llm import AnthropicLLM
+    from .resilience import FaultInjectingLLM, ResilientLLM
 
-    return AnthropicLLM(settings.model, settings.max_tokens, settings.refusal_fallback)
+    primary = AnthropicLLM(settings.model, settings.max_tokens, settings.refusal_fallback, max_retries=0)
+    if settings.fault_rate > 0:
+        primary = FaultInjectingLLM(primary, settings.fault_rate)
+    fallback = AnthropicLLM(
+        settings.fallback_model, settings.max_tokens, settings.refusal_fallback, max_retries=1
+    )
+    return ResilientLLM(primary, fallback)
+
+
+def build_small_llm():
+    if settings.llm_backend == "echo":
+        from .llm import EchoLLM
+
+        return EchoLLM()
+    from .llm import AnthropicLLM
+
+    return AnthropicLLM(settings.router_model, settings.max_tokens, settings.refusal_fallback)
+
+
+def build_router():
+    if settings.llm_backend == "echo":
+        return None
+    from .router import AnthropicRouter
+
+    return AnthropicRouter(settings.router_model)
+
+
+def build_judge():
+    if settings.llm_backend == "echo":
+        return None
+    from .judges import AnthropicJudge
+
+    return AnthropicJudge(settings.judge_model)
+
+
+def build_shipping():
+    if not settings.shipping_mcp_url:
+        return None
+    from .shipping import ShippingClient
+
+    return ShippingClient(settings.shipping_mcp_url)
 
 
 def build_extractor():
