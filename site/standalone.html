@@ -9,7 +9,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=JetBrains+Mono:wght@400;600&family=Kalam:wght@400;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=Source+Code+Pro:wght@400;600&family=Kalam:wght@400;700&display=swap">
 <style>
 /* Layout: a plain neutral frame (index rail, outer margin); each lesson is a numbered worksheet on a white sheet
    with text, figures, tables and code all using the full lesson width. The lesson outline lives in the index
@@ -38,9 +38,9 @@
   --vz-warn: #a8650f;      /* a cost: KV cache, network, attention */
   --vz-bad: #b3362b;       /* waste, failure, a miss */
   --font-hand: "Kalam", "Comic Neue", "Segoe Print", cursive;
-  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
-  --font-read: "Literata", Georgia, "Times New Roman", serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --font-display: "Source Sans 3", "Source Sans Pro", "Helvetica Neue", Arial, sans-serif; /* Coursera's typeface */
+  --font-read: "Source Sans 3", "Source Sans Pro", "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "Source Code Pro", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --cell: 18px;
   --rail: 304px;
   --measure: none; /* text runs the full lesson width (owner preference) */
@@ -62,7 +62,7 @@
 
 * { box-sizing: border-box; }
 html, body { background: var(--pad); color: var(--ink); }
-body { margin: 0; font-family: var(--font-read); font-size: 18px; line-height: 1.68; -webkit-font-smoothing: antialiased; font-optical-sizing: auto; }
+body { margin: 0; font-family: var(--font-read); font-size: 18px; line-height: 1.6; -webkit-font-smoothing: antialiased; font-optical-sizing: auto; }
 ::selection { background: var(--pen-soft); color: var(--ink); }
 input, textarea { caret-color: var(--red); }
 a { color: var(--pen); text-decoration-thickness: 1px; text-underline-offset: 3px; }
@@ -88,8 +88,8 @@ button { font: inherit; color: inherit; }
 .rail::-webkit-scrollbar-thumb { background: var(--ink-2); border: 2px solid var(--sheet); }
 .rail::-webkit-scrollbar-thumb:hover { background: var(--ink); }
 .pad-title { display: block; text-decoration: none; color: var(--ink); background: var(--sheet); border: 1px solid var(--ink); padding: 10px 12px 9px; }
-.pad-title b { display: block; font-weight: 800; font-size: 21px; letter-spacing: -0.01em; font-stretch: 85%; line-height: 1.05; }
-.pad-title span { display: block; margin-top: 3px; font-size: 12.5px; color: var(--ink-2); font-stretch: 100%; }
+.pad-title b { display: block; font-weight: 700; font-size: 21px; letter-spacing: -0.01em; line-height: 1.05; }
+.pad-title span { display: block; margin-top: 3px; font-size: 12.5px; color: var(--ink-2); }
 .search-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 .search { width: 100%; margin-top: 14px; padding: 9px 11px; border: 1px solid var(--ink); border-radius: 0; background: var(--sheet); color: var(--ink); font: 15px var(--font-display); }
 .search::placeholder { color: var(--ink-2); }
@@ -97,7 +97,7 @@ button { font: inherit; color: inherit; }
 .tally b { font-family: var(--font-mono); font-size: 13px; color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
 .group { margin-top: 20px; }
 .group-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 4px 0; border-bottom: 1px solid var(--ink); background: var(--pad); }
-.group-head b { font-weight: 700; font-size: 14px; font-stretch: 90%; }
+.group-head b { font-weight: 700; font-size: 14px; }
 .group-head small { font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .nav { list-style: none; margin: 4px 0 0; padding: 0; }
 .nav a { display: grid; grid-template-columns: 16px 28px 1fr; gap: 8px; align-items: start; padding: 6px 6px 6px 2px; color: var(--ink); text-decoration: none; }
@@ -144,10 +144,10 @@ main { min-width: 0; padding-block: 28px 80px; padding-left: max(28px, env(safe-
 article { min-width: 0; max-width: 980px; }
 
 h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.12; text-wrap: balance; color: var(--ink); }
-h1 { font-size: clamp(34px, 4.4vw, 52px); font-weight: 800; font-stretch: 82%; letter-spacing: -0.02em; margin: 0 0 16px; }
+h1 { font-size: clamp(34px, 4.4vw, 52px); font-weight: 700; letter-spacing: -0.02em; margin: 0 0 16px; }
 .lede { font-size: 20.5px; line-height: 1.55; color: var(--ink-2); margin: 0 0 8px; max-width: var(--measure); }
-.body h2 { font-size: 28px; font-weight: 750; font-stretch: 88%; letter-spacing: -0.01em; margin: 2.3em 0 .55em; padding-top: 14px; border-top: 1px solid var(--ink); }
-.body h3 { font-size: 21px; font-weight: 700; font-stretch: 92%; margin: 1.9em 0 .4em; }
+.body h2 { font-size: 28px; font-weight: 700; letter-spacing: -0.01em; margin: 2.3em 0 .55em; padding-top: 14px; border-top: 1px solid var(--ink); }
+.body h3 { font-size: 21px; font-weight: 700; margin: 1.9em 0 .4em; }
 .body h4 { font-size: 17px; margin: 1.5em 0 .3em; }
 .body p, .body li, .body h2, .body h3, .body h4, .body blockquote { max-width: var(--measure); }
 .body h2 { max-width: none; }
@@ -299,7 +299,7 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
 .header-strip.pad-strip { grid-template-columns: auto minmax(0, 1fr) auto auto; }
 .pad-strip a { color: var(--ink); text-decoration: underline; text-decoration-color: var(--red); text-decoration-thickness: 2px; text-underline-offset: 3px; }
 .pad-strip .mono span { font-family: var(--font-mono); }
-.cover h1 { font-size: clamp(36px, 4.4vw, 60px); font-stretch: 72%; line-height: 1; margin-bottom: 16px; max-width: 24ch; text-wrap: balance; }
+.cover h1 { font-size: clamp(36px, 4.4vw, 60px); line-height: 1; margin-bottom: 16px; max-width: 24ch; text-wrap: balance; }
 .cover .lede { font-size: 21px; max-width: 54ch; }
 .resume { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 20px; margin: 26px 0 8px; font-family: var(--font-display); }
 .go { display: inline-flex; align-items: center; gap: 10px; background: var(--sheet); color: var(--ink); border: 1.5px solid var(--ink); box-shadow: inset 0 -3px 0 var(--red); padding: 12px 18px; font: 700 16px var(--font-display); text-decoration: none; }
@@ -308,7 +308,7 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
 .resume p { margin: 0; color: var(--ink-2); font-size: 15px; }
 .resume p b { color: var(--ink); font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
 .map { margin-top: 40px; }
-.map h2 { font-size: 25px; font-weight: 750; font-stretch: 86%; margin: 0 0 4px; }
+.map h2 { font-size: 25px; font-weight: 700; margin: 0 0 4px; }
 .map > p { margin: 0 0 14px; color: var(--ink-2); font-size: 16.5px; max-width: 62ch; }
 .map .viz a { color: inherit; text-decoration: none; }
 .map .viz a:hover h5 { text-decoration: underline; text-decoration-color: var(--pen); }
@@ -319,10 +319,10 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
 .weeks { margin-top: 44px; border-top: 1px solid var(--ink); }
 .wk { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 24px; padding: 22px 0 24px; border-bottom: 1px solid var(--rule); }
 .wk-no { font-family: var(--font-display); }
-.wk-no b { display: block; font-size: 40px; font-weight: 800; font-stretch: 70%; line-height: 1; }
+.wk-no b { display: block; font-size: 40px; font-weight: 700; line-height: 1; }
 .wk-no small + small { margin-top: 2px; }
 .wk-no small { display: block; margin-top: 6px; white-space: nowrap; font: 600 12.5px var(--font-mono); color: var(--ink-2); font-variant-numeric: tabular-nums; }
-.wk h2 { margin: 0 0 4px; font-size: 25px; font-weight: 750; font-stretch: 86%; }
+.wk h2 { margin: 0 0 4px; font-size: 25px; font-weight: 700; }
 .wk p { margin: 0 0 14px; color: var(--ink-2); font-size: 16.5px; max-width: 62ch; }
 .sheets { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 0 22px; }
 .sheets a { display: grid; grid-template-columns: 16px 30px 1fr; gap: 8px; align-items: start; padding: 6px 0; color: var(--ink); text-decoration: none; font-family: var(--font-display); font-size: 15px; line-height: 1.3; border-top: 1px dotted var(--rule); }
@@ -330,7 +330,7 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
 .sheets .no { font-family: var(--font-mono); font-size: 12px; color: var(--ink-2); padding-top: 1px; }
 .sheets a.next-up .no { color: var(--red); font-weight: 600; }
 .library { margin-top: 44px; display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 24px; }
-.library h2 { margin: 0; font-size: 25px; font-weight: 750; font-stretch: 86%; }
+.library h2 { margin: 0; font-size: 25px; font-weight: 700; }
 .library ul { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--ink); }
 .library a { display: grid; grid-template-columns: minmax(0, 220px) 1fr; gap: 18px; padding: 12px 0; border-bottom: 1px solid var(--rule); text-decoration: none; color: var(--ink); }
 .library a b { font-family: var(--font-display); font-size: 17px; }
@@ -345,7 +345,7 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
   .app.open .rail { transform: none; visibility: visible; transition-delay: 0s; border-right: 1.5px solid var(--ink); }
   .scrim { position: fixed; inset: 0; background: rgba(12, 14, 18, .45); z-index: 15; }
   .topbar { display: flex; position: sticky; top: env(safe-area-inset-top, 0px); z-index: 10; align-items: center; gap: 12px; padding-block: 9px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); background: var(--sheet); color: var(--ink); border-bottom: 1px solid var(--ink); font-family: var(--font-display); }
-  .topbar b { font-weight: 800; font-stretch: 85%; }
+  .topbar b { font-weight: 700; }
   .topbar span { margin-left: auto; font: 600 12.5px var(--font-mono); color: var(--ink-2); }
   main { padding-block: 0 48px; padding-left: max(0px, env(safe-area-inset-left, 0px)); padding-right: max(0px, env(safe-area-inset-right, 0px)); }
   .sheet { border-left: 0; border-right: 0; border-top: 0; }

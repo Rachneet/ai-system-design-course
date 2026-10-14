@@ -40,103 +40,96 @@ colors:
   vz-bad-dark: "#f08a7e"
 typography:
   display:
-    fontFamily: "Archivo, Helvetica Neue, Arial, sans-serif"
+    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
     fontSize: "clamp(36px, 4.4vw, 60px)"
-    fontWeight: 800
+    fontWeight: 700
     lineHeight: 1
     letterSpacing: "-0.02em"
-    fontVariation: "'wdth' 72"
   headline:
-    fontFamily: "Archivo, Helvetica Neue, Arial, sans-serif"
+    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
     fontSize: "clamp(34px, 4.4vw, 52px)"
-    fontWeight: 800
+    fontWeight: 700
     lineHeight: 1.12
     letterSpacing: "-0.02em"
-    fontVariation: "'wdth' 82"
   numeral:
-    fontFamily: "Archivo, Helvetica Neue, Arial, sans-serif"
+    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
     fontSize: "40px"
-    fontWeight: 800
+    fontWeight: 700
     lineHeight: 1
-    fontVariation: "'wdth' 70"
   numeral-compact:
-    fontFamily: "Archivo, Helvetica Neue, Arial, sans-serif"
+    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
     fontSize: "30px"
-    fontWeight: 800
+    fontWeight: 700
     lineHeight: 1
-    fontVariation: "'wdth' 70"
   title:
-    fontFamily: "Archivo, Helvetica Neue, Arial, sans-serif"
+    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
     fontSize: "28px"
-    fontWeight: 750
+    fontWeight: 700
     lineHeight: 1.12
     letterSpacing: "-0.01em"
-    fontVariation: "'wdth' 88"
   title-week:
-    fontFamily: "Archivo, Helvetica Neue, Arial, sans-serif"
+    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
     fontSize: "25px"
-    fontWeight: 750
+    fontWeight: 700
     lineHeight: 1.12
-    fontVariation: "'wdth' 86"
   title-sm:
-    fontFamily: "Archivo, Helvetica Neue, Arial, sans-serif"
+    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
     fontSize: "21px"
     fontWeight: 700
     lineHeight: 1.12
-    fontVariation: "'wdth' 92"
   lede:
-    fontFamily: "Literata, Georgia, Times New Roman, serif"
+    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
     fontSize: "20.5px"
     fontWeight: 400
     lineHeight: 1.55
   body:
-    fontFamily: "Literata, Georgia, Times New Roman, serif"
+    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
     fontSize: "18px"
     fontWeight: 400
     lineHeight: 1.68
   body-compact:
-    fontFamily: "Literata, Georgia, Times New Roman, serif"
+    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
     fontSize: "17px"
     fontWeight: 400
     lineHeight: 1.68
   blurb:
-    fontFamily: "Literata, Georgia, Times New Roman, serif"
+    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
     fontSize: "16.5px"
     fontWeight: 400
     lineHeight: 1.68
   worked:
-    fontFamily: "Archivo, Helvetica Neue, Arial, sans-serif"
+    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
     fontSize: "16.5px"
     fontWeight: 400
     lineHeight: 1.6
     fontFeature: "tnum"
   option:
-    fontFamily: "Literata, Georgia, Times New Roman, serif"
+    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
     fontSize: "16px"
     fontWeight: 400
     lineHeight: 1.45
   ui:
-    fontFamily: "Archivo, Helvetica Neue, Arial, sans-serif"
+    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
     fontSize: "15px"
     fontWeight: 600
     lineHeight: 1.35
   label:
-    fontFamily: "Archivo, Helvetica Neue, Arial, sans-serif"
+    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
     fontSize: "13px"
     fontWeight: 700
     lineHeight: 1.35
   field-label:
-    fontFamily: "Archivo, Helvetica Neue, Arial, sans-serif"
+    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
     fontSize: "11px"
     fontWeight: 400
     letterSpacing: "0.02em"
   number:
-    fontFamily: "JetBrains Mono, ui-monospace, SF Mono, Menlo, Consolas, monospace"
+    fontFamily: "Source Code Pro, ui-monospace, SF Mono, Menlo, Consolas, monospace"
     fontSize: "12px"
     fontWeight: 600
     fontFeature: "tnum"
   code:
-    fontFamily: "JetBrains Mono, ui-monospace, SF Mono, Menlo, Consolas, monospace"
+    fontFamily: "Source Code Pro, ui-monospace, SF Mono, Menlo, Consolas, monospace"
     fontSize: "13.5px"
     fontWeight: 400
     lineHeight: 1.6
@@ -254,7 +247,7 @@ Density is moderate and steady. The reading column is fixed, the furniture aroun
 - A plain neutral frame and a white sheet; no textures anywhere.
 - Near-black ink, blue ballpoint for links and marks, one reserved red.
 - Square corners and 1px rules everywhere; state shown by mark shape.
-- Archivo condensed for structure, Literata for reading, JetBrains Mono for numbers.
+- Source Sans 3 (Coursera's typeface) for structure and reading, Source Code Pro for numbers and code, Kalam only inside diagrams.
 - Numbered sheets and numbered figures; the lesson outline in the index rail.
 
 ## Colors
@@ -290,9 +283,9 @@ Dark mode swaps every token in place for neutral grays (the `*-dark` tokens): a 
 
 ## Typography
 
-**Display Font:** Archivo variable (with Helvetica Neue, Arial)
-**Body Font:** Literata with optical sizing (with Georgia, Times New Roman)
-**Label/Mono Font:** JetBrains Mono (with ui-monospace, SF Mono, Menlo, Consolas)
+**Display Font:** Source Sans 3, the open successor of Source Sans Pro, Coursera's brand typeface (with Helvetica Neue, Arial)
+**Body Font:** Source Sans 3 at 18px, 1.6 line height
+**Label/Mono Font:** Source Code Pro (with ui-monospace, SF Mono, Menlo, Consolas)
 
 **Character:** A condensed, heavy engineering grotesque does the labelling and structure, the way a worksheet's printed furniture would; a warm book serif carries the long reading. Mono is reserved for anything counted.
 
@@ -307,9 +300,9 @@ Dark mode swaps every token in place for neutral grays (the `*-dark` tokens): a 
 - **Lede** (400, 20.5px, 1.55): the summary under a title, in Secondary Ink; 21px at 54ch on home.
 - **Body** (400, 18px, 1.68): reading text across the full lesson width (up to 980px).
 - **Body Compact** (17px): body at phone width; also the size of minor headings (h4) and Library entry titles.
-- **Blurb** (Literata 400, 16.5px): the week blurb under each home week title, at 62ch in Secondary Ink.
-- **Worked** (Archivo 400, 16.5px, 1.6, tabular): the text of the worked-numbers callout.
-- **Option** (Literata 400, 16px, 1.45): quiz answer options. The primary action's label uses 16px Archivo 700.
+- **Blurb** (Source Sans 3 400, 16.5px): the week blurb under each home week title, at 62ch in Secondary Ink.
+- **Worked** (Source Sans 3 400, 16.5px, 1.6, tabular): the text of the worked-numbers callout.
+- **Option** (Source Sans 3 400, 16px, 1.45): quiz answer options. The primary action's label uses 16px Source Sans 3 700.
 - **UI** (600, 15px): header strip values, buttons, tables, sign-off text.
 - **Label** (700, 13px): callout labels, table headers, figure captions.
 - **Field Label** (400, 11px, 0.02em): the small name above each header strip value, in sentence case.
@@ -319,7 +312,7 @@ Dark mode swaps every token in place for neutral grays (the `*-dark` tokens): a 
 ### Named Rules
 **The Counted Things Rule.** Anything counted (sheet numbers, tallies, scores, worked numbers, figure numbers) is set in mono or with tabular figures, zero padded to two digits where it is a sheet number.
 
-**The Two Voices Rule.** Archivo for the worksheet furniture, Literata for the reading. Body prose is never set in Archivo, and structure is never set in Literata. The worked-numbers callout is furniture and stays in Archivo.
+**The One Family Rule.** Source Sans 3 carries headings, interface and reading text; weight and size make the hierarchy, not a second family. Mono is for code and counted numbers; the hand font is for diagrams only.
 
 ## Layout
 
@@ -354,7 +347,7 @@ Every container is square: zero radius on sheets, buttons, inputs, callouts, cod
 
 ### Buttons
 - **Shape:** square (0px), Ink border.
-- **Primary (the next action):** ink on sheet with a 1.5px Ink border and a 3px Margin Red rule along its underside, 16px/700 Archivo, 12px 18px padding. One per screen, on home only. Hover fills with Pale Ballpoint Wash; active presses down 1px.
+- **Primary (the next action):** ink on sheet with a 1.5px Ink border and a 3px Margin Red rule along its underside, 16px/700 Source Sans 3, 12px 18px padding. One per screen, on home only. Hover fills with Pale Ballpoint Wash; active presses down 1px.
 - **Check this sheet:** the same ink-on-sheet form without the red rule, carrying a tick box before its label; pressed state is announced with aria-pressed and the tick draws in over 420ms.
 - **Tool:** compact 1px bordered sheet buttons (Theme, Clear ticks, Index, Copy) at 12 to 12.5px/600; hover fills with Answer Box. Destructive tools arm on first click and confirm on the second.
 
@@ -368,7 +361,7 @@ Every container is square: zero radius on sheets, buttons, inputs, callouts, cod
 - **Pager:** two Ink-ruled cells; the Next title is underlined in Margin Red.
 
 ### Inputs / Fields
-- **Search:** square, 1px Ink border on White Sheet, 15px Archivo, red caret; focus draws the 2px Ballpoint Blue outline at a 2px offset. "/" focuses it from anywhere.
+- **Search:** square, 1px Ink border on White Sheet, 15px Source Sans 3, red caret; focus draws the 2px Ballpoint Blue outline at a 2px offset. "/" focuses it from anywhere.
 
 ### Navigation
 - **Index rail:** grouped by week under an Ink-ruled group head with a mono count. Each row is a tick box, a mono sheet number, and the title. Hover lays a 70% sheet wash; the current sheet sits on White Sheet with its number in Margin Red and its title underlined in red. The rail scrollbar has a solid sheet track and a Secondary Ink thumb so position is easy to read.
@@ -398,6 +391,6 @@ Every container is square: zero radius on sheets, buttons, inputs, callouts, cod
 - **Don't** use Margin Red for anything other than the current position and the single next action.
 - **Don't** use blur shadows, gradients, or translucent content surfaces.
 - **Don't** round containers; circles belong to marks only.
-- **Don't** set reading prose in Archivo, or narrow prose into a column that no longer lines up with the figures.
+- **Don't** set reading prose in Source Sans 3, or narrow prose into a column that no longer lines up with the figures.
 - **Don't** put small uppercase labels above headings; the only small labels are the field names inside header strip cells.
 - **Don't** turn the home into a card grid; sheets are listed as numbered rows.
