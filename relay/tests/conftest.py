@@ -8,7 +8,11 @@ from psycopg import AsyncConnection
 from psycopg.rows import dict_row
 
 from app.db import Store
+from app.embeddings import HashEmbedder
+from app.ingest import reconcile, run_once
+from app.retrieval import Retriever
 from app.seed import seed
+from app.tools import Context
 
 NOW = datetime(2026, 10, 1, 10, 0, tzinfo=UTC)
 
@@ -53,6 +57,7 @@ DATA = {
 @pytest.fixture(scope="session")
 def pg_url():
     srv = pgserver.get_server(tempfile.mkdtemp(), cleanup_mode="stop")
+    srv.psql("CREATE EXTENSION IF NOT EXISTS vector SCHEMA public;")
     yield srv.get_uri()
     srv.cleanup()
 
@@ -73,7 +78,13 @@ async def store(pg_url):
 
 
 @pytest.fixture
-def ctx(store):
-    from app.tools import Context
+async def retriever(store):
+    """The real kb/ folder indexed with the hashing embedder (no model download) and no reranker."""
+    await reconcile(store)
+    await run_once(store, HashEmbedder())
+    return Retriever(store, HashEmbedder())
 
-    return Context(store=store, customer_id="c_77", session_id=None, now=NOW)
+
+@pytest.fixture
+def ctx(store, retriever):
+    return Context(store=store, customer_id="c_77", session_id=None, now=NOW, retriever=retriever)
