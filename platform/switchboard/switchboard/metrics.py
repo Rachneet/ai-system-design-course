@@ -14,3 +14,10 @@ cost = Counter("switchboard_cost_usd_total", "Spend in USD", ["model", "team"])
 fallbacks = Counter("switchboard_fallbacks_total", "Requests served by a fallback model", ["requested", "served"])
 upstream_errors = Counter("switchboard_upstream_errors_total", "Provider errors", ["model", "kind"])
 pii = Counter("switchboard_pii_findings_total", "Personal data found in requests", ["mode"])
+ledger_batch = Histogram(
+    "switchboard_ledger_batch_size", "Events per ledger flush", buckets=(1, 5, 10, 50, 100, 500, 1000, 5000)
+)
+ledger_flush_failures = Counter(
+    "switchboard_ledger_flush_failures_total", "Ledger flushes that failed and were retried"
+)
+ledger_dropped = Counter("switchboard_ledger_dropped_total", "Usage events dropped because the queue was full")

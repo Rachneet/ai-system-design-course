@@ -39,8 +39,9 @@ def create_app(cfg: Settings = settings, transport=None) -> FastAPI:
             transport=transport,
         )
         app.state.gateway = Gateway(cfg, app.state.pool, upstream)
+        await app.state.gateway.start()
         yield
-        await app.state.gateway.drain()  # finish ledger writes before shutting down
+        await app.state.gateway.stop()  # finish requests' bookkeeping and flush the ledger before exiting
         await upstream.close()
         await app.state.pool.close()
 

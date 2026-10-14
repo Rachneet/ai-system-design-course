@@ -62,6 +62,7 @@ async def gw(pg_uri, schema, upstream):
         anthropic_base_url="http://upstream",
         allowed_beta_headers=["prompt-caching-2024-07-31"],
         breaker_threshold=3,
+        budget_cache_s=0.0,
     )
     app = create_app(cfg, transport=httpx.ASGITransport(app=upstream))
     transport = httpx.ASGITransport(app=app)

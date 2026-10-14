@@ -11,10 +11,12 @@ from fastapi import Request
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 from opentelemetry import trace
 
-from . import budgets, limits, metrics, pricing
+from . import metrics, pricing
+from .budgets import Budgets
 from .config import Settings
 from .keys import Caller, KeyStore
-from .ledger import record
+from .ledger import LedgerWriter
+from .limits import Limiter
 from .pii import scrub_request
 from .upstream import RETRYABLE_STATUS, Breaker, Upstream, UsageParser
 
@@ -34,6 +36,9 @@ class Gateway:
     def __init__(self, cfg: Settings, pool, upstream: Upstream):
         self.cfg, self.pool, self.upstream = cfg, pool, upstream
         self.keys = KeyStore(pool, cfg.key_cache_ttl_s)
+        self.limiter = Limiter(pool, cfg.heartbeat_s)
+        self.budgets = Budgets(pool, cfg.budget_cache_s)
+        self.ledger = LedgerWriter(pool, cfg.ledger_flush_s)
         self.breakers: dict[str, Breaker] = {}
         self.background: set[asyncio.Task] = set()
 
@@ -49,6 +54,17 @@ class Gateway:
     async def drain(self) -> None:
         if self.background:
             await asyncio.gather(*self.background, return_exceptions=True)
+        await self.ledger.flush()
+
+    async def start(self) -> None:
+        await self.limiter.start()
+        await self.ledger.start()
+
+    async def stop(self) -> None:
+        if self.background:
+            await asyncio.gather(*self.background, return_exceptions=True)
+        await self.ledger.stop()  # final flush: graceful shutdown loses nothing
+        await self.limiter.stop()
 
     async def handle(self, request: Request) -> Response:
         started = time.perf_counter()
@@ -86,7 +102,7 @@ class Gateway:
             metrics.rejections.labels(reason="model_policy").inc()
             return error(403, "permission_error", f"This app may not use {model}.")
 
-        wait = await limits.take(self.pool, f"rpm:{caller.app_id}", caller.rpm)
+        wait = self.limiter.take(f"rpm:{caller.app_id}", caller.rpm)
         if wait:
             metrics.rejections.labels(reason="rpm").inc()
             return error(
@@ -96,13 +112,13 @@ class Gateway:
                 **{"retry-after": str(int(wait) + 1)},
             )
         estimate = len(raw) // 4 + int(body.get("max_tokens") or 1024)
-        wait = await limits.take(self.pool, f"tpm:{caller.app_id}", caller.tpm, estimate)
+        wait = self.limiter.take(f"tpm:{caller.app_id}", caller.tpm, estimate)
         if wait:
             metrics.rejections.labels(reason="tpm").inc()
             return error(
                 429, "rate_limit_error", "Token rate limit reached for this app.", **{"retry-after": str(int(wait) + 1)}
             )
-        scope = await budgets.exhausted(self.pool, caller.org_id, caller.team_id, caller.app_id)
+        scope = await self.budgets.exhausted(caller.org_id, caller.team_id, caller.app_id)
         if scope:
             metrics.rejections.labels(reason=f"budget_{scope}").inc()
             return error(
@@ -268,21 +284,14 @@ class Gateway:
         model = event.get("served_model") or event["requested_model"]
         usage = event.get("usage", {})
         spent = pricing.cost_usd(model, usage)
-        try:
-            await record(
-                self.pool,
-                caller,
-                event,
-                spent,
-                (audit_body, response_text) if caller.log_bodies and audit_body is not None else None,
-            )
-            actual = sum(
-                usage.get(k, 0)
-                for k in ("input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
-            )
-            await limits.refund(self.pool, f"tpm:{caller.app_id}", caller.tpm, estimate - actual)
-        except Exception:
-            log.exception("ledger_write_failed", request_id=event["request_id"])
+        self.ledger.add(
+            caller, event, spent, (audit_body, response_text) if caller.log_bodies and audit_body is not None else None
+        )
+        actual = sum(
+            usage.get(k, 0)
+            for k in ("input_tokens", "output_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
+        )
+        self.limiter.refund(f"tpm:{caller.app_id}", caller.tpm, estimate - actual)
         status_class = f"{event['status'] // 100}xx"
         metrics.requests.labels(model=model, status_class=status_class).inc()
         metrics.duration.labels(model=model).observe(event["latency_ms"] / 1000)

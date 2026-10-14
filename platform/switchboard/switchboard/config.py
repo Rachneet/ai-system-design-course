@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     connect_timeout_s: float = 5.0
     read_timeout_s: float = 600.0
     key_cache_ttl_s: float = 30.0  # revocation reaches other instances within this window
+    budget_cache_s: float = 2.0  # budget checks may lag spend by this long (bounded overshoot)
+    ledger_flush_s: float = 0.5  # usage is batched; a hard crash can lose at most this window
+    heartbeat_s: float = 5.0  # instance heartbeats used to split rate limits across instances
     breaker_threshold: int = 5
     breaker_reset_s: float = 30.0
 

@@ -100,12 +100,28 @@ async def test_token_rate_limit_uses_max_tokens(gw):
     assert r.status_code == 429 and "Token rate" in r.json()["error"]["message"]
 
 
-async def test_budgets_stop_spend_at_every_level(gw):
-    key = await provision(gw, budget_usd_month="0.0000001")
+async def test_budget_stops_spend_once_used_up(gw):
+    key = await provision(gw, budget_usd_month="0.01")
     assert (await gw.post("/v1/messages", json=msg(), headers={"x-api-key": key})).status_code == 200
     await settle(gw)
+    async with gw.app.state.pool.connection() as c:  # simulate the rest of the month's traffic
+        await c.execute("UPDATE spend_monthly SET cost_usd = 0.02 WHERE scope = 'app'")
     r = await gw.post("/v1/messages", json=msg(), headers={"x-api-key": key})
     assert r.status_code == 429 and r.headers["x-switchboard-limit"] == "budget:app"
+
+
+async def test_zero_budget_blocks_the_first_request(gw):
+    """Regression: a zero team budget used to allow requests until the first spend row existed."""
+    await provision(gw)
+    await gw.post(
+        "/admin/teams",
+        json={"id": "frozen", "org_id": "acme", "name": "Frozen", "budget_usd_month": "0"},
+        headers=ADMIN,
+    )
+    await gw.post("/admin/apps", json={"id": "frozen-app", "team_id": "frozen", "name": "x"}, headers=ADMIN)
+    key = (await gw.post("/admin/apps/frozen-app/keys", json={}, headers=ADMIN)).json()["key"]
+    r = await gw.post("/v1/messages", json=msg(), headers={"x-api-key": key})
+    assert r.status_code == 429 and r.headers["x-switchboard-limit"] == "budget:team"
 
 
 async def test_fallback_before_first_byte(gw, upstream):

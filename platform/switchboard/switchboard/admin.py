@@ -8,6 +8,7 @@ from decimal import Decimal
 from typing import Literal
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from psycopg import sql
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
@@ -80,11 +81,14 @@ class KeyIn(Strict):
 
 
 async def insert(request: Request, actor: str, table: str, values: dict) -> dict:
-    cols = ", ".join(values)
-    marks = ", ".join(["%s"] * len(values))
+    query = sql.SQL("INSERT INTO {} ({}) VALUES ({})").format(
+        sql.Identifier(table),
+        sql.SQL(", ").join(map(sql.Identifier, values)),
+        sql.SQL(", ").join(sql.Placeholder() * len(values)),
+    )
     try:
         async with request.app.state.pool.connection() as c:
-            await c.execute(f"INSERT INTO {table} ({cols}) VALUES ({marks})", list(values.values()))
+            await c.execute(query, list(values.values()))
     except Exception as e:  # unique or foreign-key violation
         raise HTTPException(409, f"Could not create {table[:-1]}: {type(e).__name__}") from e
     await audit(request, actor, f"create_{table[:-1]}", values["id"], {k: str(v) for k, v in values.items()})
@@ -109,14 +113,14 @@ async def create_app(body: AppIn, request: Request, actor: str = Depends(admin))
 @router.put("/apps/{app_id}/policy")
 async def set_policy(app_id: str, body: AppPolicy, request: Request, actor: str = Depends(admin)):
     values = body.model_dump()
-    sets = ", ".join(f"{k} = %s" for k in values)
+    sets = sql.SQL(", ").join(sql.SQL("{} = %s").format(sql.Identifier(k)) for k in values)
+    query = sql.SQL("UPDATE apps SET {} WHERE id = %s RETURNING id").format(sets)
     async with request.app.state.pool.connection() as c:
-        row = await (
-            await c.execute(f"UPDATE apps SET {sets} WHERE id = %s RETURNING id", [*values.values(), app_id])
-        ).fetchone()
+        row = await (await c.execute(query, [*values.values(), app_id])).fetchone()
     if row is None:
         raise HTTPException(404, "App not found")
     request.app.state.gateway.keys.forget()  # this instance applies the change now; others within the cache TTL
+    request.app.state.gateway.budgets.forget()
     await audit(request, actor, "set_policy", app_id, {k: str(v) for k, v in values.items()})
     return {"id": app_id, **values}
 
@@ -158,18 +162,23 @@ async def usage(
     """Chargeback: cost, requests, tokens and fallbacks per group for one calendar month (YYYY-MM)."""
     if not re.fullmatch(r"\d{4}-\d{2}", month):
         raise HTTPException(422, "month must be YYYY-MM")
-    column = {"org": "org_id", "team": "team_id", "app": "app_id", "model": "coalesce(served_model, requested_model)"}[
-        group_by
-    ]
+    column = {
+        "org": sql.Identifier("org_id"),
+        "team": sql.Identifier("team_id"),
+        "app": sql.Identifier("app_id"),
+        "model": sql.SQL("coalesce(served_model, requested_model)"),
+    }[group_by]
     async with request.app.state.pool.connection() as c:
         rows = await (
             await c.execute(
-                f"SELECT {column} AS id, count(*) AS requests, sum(cost_usd) AS cost_usd, "
-                "sum(input_tokens) AS input_tokens, sum(output_tokens) AS output_tokens, "
-                "sum(cache_read_tokens) AS cache_read_tokens, count(*) FILTER (WHERE fallback) AS fallbacks, "
-                "count(*) FILTER (WHERE status >= 400) AS errors "
-                "FROM usage_events WHERE ts >= to_date(%s, 'YYYY-MM') AND ts < to_date(%s, 'YYYY-MM') + interval '1 month' "
-                "GROUP BY 1 ORDER BY sum(cost_usd) DESC",
+                sql.SQL(
+                    "SELECT {} AS id, count(*) AS requests, sum(cost_usd) AS cost_usd, "
+                    "sum(input_tokens) AS input_tokens, sum(output_tokens) AS output_tokens, "
+                    "sum(cache_read_tokens) AS cache_read_tokens, count(*) FILTER (WHERE fallback) AS fallbacks, "
+                    "count(*) FILTER (WHERE status >= 400) AS errors "
+                    "FROM usage_events WHERE ts >= to_date(%s, 'YYYY-MM') AND ts < to_date(%s, 'YYYY-MM') + interval '1 month' "
+                    "GROUP BY 1 ORDER BY sum(cost_usd) DESC"
+                ).format(column),
                 (month, month),
             )
         ).fetchall()
