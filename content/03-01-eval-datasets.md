@@ -18,7 +18,7 @@ This lesson is about building that dataset systematically.
 
 The most effective teams do not begin by brainstorming metrics. They read traces. The workflow popularised by Hamel Husain and Shreya Shankar ([FAQ](https://hamel.dev/blog/posts/evals-faq/)) goes:
 
-1. **Sample** 100 or so real (or realistic) conversations.
+1. **Sample** at least 100 real (or realistic) conversations. The FAQ recommends reviewing at least 100 traces and annotating at least the first 30 yourself.
 2. **Open-code** them: read each one and write a short note on the first thing that went wrong, if anything. "Called `issue_refund` before checking the delivery date." "Answered from an outdated policy." "Asked for the order number twice."
 3. **Axial-code**: group the notes into failure categories and count them.
 4. **Prioritise** by frequency and severity. Build evals for the top categories first.
@@ -118,7 +118,7 @@ Reply in one or two short sentences, as a real customer would. When your goal is
 met or clearly impossible, end your message with ###DONE###."""
 ```
 
-Simulators introduce their own variance, so run multi-turn cases several times and look at pass^k.
+Simulators introduce their own variance, so run multi-turn cases several times and look at pass^k. In the τ-bench paper, even strong function-calling agents solved fewer than 50% of tasks, and pass^8 in the retail domain was below 25%.
 
 ## Environments: sandboxes for write tools
 

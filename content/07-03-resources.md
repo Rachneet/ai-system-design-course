@@ -9,6 +9,14 @@ summary: Every free resource used in the course, grouped by topic, with a note o
 
 All links are free to read. Starred items (★) are the ones to read if you only have time for a few.
 
+## Other free courses worth taking alongside this one
+
+- [LLM Zoomcamp](https://github.com/DataTalksClub/llm-zoomcamp), DataTalks.Club. 10 weeks, video lectures, graded homework in cohorts, strong on RAG, evaluation, and monitoring.
+- [Production Agentic RAG course](https://github.com/jamwithai/production-agentic-rag-course), Jam with AI. A 7-week build of an arXiv research assistant with a tagged code release per week: BM25 first, then hybrid search, Langfuse, caching, and LangGraph agentic RAG. Weekly write-ups on [the Jam with AI Substack](https://jamwithai.substack.com/).
+- [Anthropic Academy](https://anthropic.skilljar.com/) and [Anthropic's course notebooks](https://github.com/anthropics/courses): the Claude API, tool use, MCP, and agent skills.
+- [LLM Twin course](https://github.com/decodingai-magazine/llm-twin-course), Decoding AI, and the companion [LLM Engineer's Handbook code](https://github.com/PacktPublishing/LLM-Engineers-Handbook): end-to-end LLMOps on AWS.
+- [LangChain Academy](https://academy.langchain.com/) for LangGraph, and [DeepLearning.AI short courses](https://www.deeplearning.ai/short-courses/) for one-to-two-hour introductions to specific tools.
+
 ## Foundations
 
 - ★ [Intro to Large Language Models](https://www.youtube.com/watch?v=zjkBMFhNj_g), Andrej Karpathy. One hour, the best mental model of what an LLM is.
@@ -29,7 +37,7 @@ All links are free to read. Starred items (★) are the ones to read if you only
 - [Writing effective tools for agents](https://www.anthropic.com/engineering/writing-tools-for-agents), Anthropic.
 - [Context Engineering for Agents](https://rlancemartin.github.io/2025/06/23/context_engineering/), Lance Martin.
 - [The New Skill in AI is Context Engineering](https://www.philschmid.de/context-engineering), Philipp Schmid.
-- [Context Rot](https://research.trychroma.com/context-rot), Chroma research.
+- [Context Rot](https://www.trychroma.com/research/context-rot), Chroma research.
 - [12-factor agents](https://github.com/humanlayer/12-factor-agents), HumanLayer.
 - [LLM Powered Autonomous Agents](https://lilianweng.github.io/posts/2023-06-23-agent/), Lilian Weng.
 - [ReAct](https://arxiv.org/abs/2210.03629), [MemGPT](https://arxiv.org/abs/2310.08560), [Generative Agents](https://arxiv.org/abs/2304.03442), [CoALA](https://arxiv.org/abs/2309.02427): foundational papers.
@@ -70,7 +78,7 @@ All links are free to read. Starred items (★) are the ones to read if you only
 - [Defeating Prompt Injections by Design (CaMeL)](https://arxiv.org/abs/2503.18813).
 - [Indirect prompt injection](https://arxiv.org/abs/2302.12173), Greshake et al.
 - [OWASP Top 10 for LLM Applications](https://genai.owasp.org/llm-top-10/) and [OWASP API Security Top 10](https://owasp.org/API-Security/).
-- [MCP security best practices](https://modelcontextprotocol.io/specification/2025-06-18/basic/security_best_practices).
+- [MCP security best practices](https://modelcontextprotocol.io/specification/2026-07-28/basic/security_best_practices).
 - [Adversarial attacks on LLMs](https://lilianweng.github.io/posts/2023-10-25-adv-attack-llm/), Lilian Weng.
 - [Embrace The Red](https://embracethered.com/blog/), real-world AI exploit write-ups.
 - [MITRE ATLAS](https://atlas.mitre.org/), adversarial technique catalogue.
@@ -93,7 +101,7 @@ All links are free to read. Starred items (★) are the ones to read if you only
 
 ## Observability and scaling
 
-- ★ [OpenTelemetry GenAI semantic conventions](https://opentelemetry.io/docs/specs/semconv/gen-ai/) and [OTel Python](https://opentelemetry.io/docs/languages/python/).
+- ★ [OpenTelemetry GenAI semantic conventions](https://github.com/open-telemetry/semantic-conventions-genai/tree/main/docs/gen-ai) and [OTel Python](https://opentelemetry.io/docs/languages/python/).
 - [OpenLLMetry](https://github.com/traceloop/openllmetry), [Langfuse](https://langfuse.com/docs), [Arize Phoenix](https://github.com/Arize-ai/phoenix).
 - ★ Google SRE: [Monitoring Distributed Systems](https://sre.google/sre-book/monitoring-distributed-systems/), [Service Level Objectives](https://sre.google/sre-book/service-level-objectives/), [Alerting on SLOs](https://sre.google/workbook/alerting-on-slos/), the [full SRE book](https://sre.google/sre-book/table-of-contents/).
 - [Timeouts, retries, and backoff with jitter](https://aws.amazon.com/builders-library/timeouts-retries-and-backoff-with-jitter/), Amazon Builders' Library.

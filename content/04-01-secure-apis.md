@@ -140,13 +140,16 @@ Containers make "works on my machine" into "works everywhere". Good AI service i
 ```dockerfile
 # syntax=docker/dockerfile:1
 FROM python:3.12-slim AS build
-COPY --from=ghcr.io/astral-sh/uv:0.8.4 /uv /bin/uv
+COPY --from=ghcr.io/astral-sh/uv:0.12.21 /uv /uvx /bin/
 WORKDIR /app
 ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
-COPY pyproject.toml uv.lock ./
-RUN uv sync --frozen --no-dev --no-install-project
-COPY app ./app
-RUN uv sync --frozen --no-dev
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-dev --no-install-project
+COPY . .
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-dev
 
 FROM python:3.12-slim
 RUN useradd --create-home --uid 10001 relay
@@ -163,7 +166,7 @@ Why each choice:
 
 - **Multi-stage**: build tools and caches stay out of the final image.
 - **Dependencies before code**: the `uv sync --no-install-project` layer is cached until `uv.lock` changes, so code edits rebuild in seconds.
-- **`--frozen`**: install exactly what the lockfile says. Reproducible builds.
+- **`--frozen`, then `--locked`**: the first sync installs exactly what the lockfile says without checking it; the final sync, with the full project present, also fails if the lockfile is out of date. The cache mount speeds up rebuilds without bloating the image.
 - **Non-root user**: limits damage if the process is compromised.
 - **Pinned base and tool versions**: rebuilds next month produce the same image. Pin the base image by digest for full reproducibility.
 

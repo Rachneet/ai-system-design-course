@@ -81,7 +81,7 @@ def regression_check(main: dict, pr: dict, alpha=0.05):
     return ("regression" if p < alpha else "ok"), p
 ```
 
-> [!numbers] Your suite has 200 cases at a 92% pass rate. How big a drop can you detect? The standard error of a proportion is √(0.92 × 0.08 / 200) ≈ 0.019, so a single-run difference smaller than about 4 points is within noise. Running 3 trials per case and using paired comparison sharpens this considerably. If you need to detect 1-point changes, you need much larger suites, which is why must-never cases use zero-tolerance gates instead.
+> [!numbers] Your suite has 200 cases at a 92% pass rate. How big a drop can you detect? The standard error of one run's pass rate is √(0.92 × 0.08 / 200) ≈ 0.019. The difference between two independent runs has a standard error of about √2 × 0.019 ≈ 0.027, so at 95% confidence a difference smaller than about 1.96 × 0.027 ≈ **5 points** is within noise. Running 3 trials per case and using paired comparison sharpens this considerably. If you need to detect 1-point changes, you need much larger suites, which is why must-never cases use zero-tolerance gates instead.
 
 ## Make results reviewable
 

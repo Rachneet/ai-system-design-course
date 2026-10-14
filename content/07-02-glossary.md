@@ -25,7 +25,7 @@ summary: Short, plain definitions of the terms used throughout the course, from 
 | **Dual LLM pattern** | Separating a privileged model with tools from a quarantined model that reads untrusted content, so injected text cannot trigger actions. |
 | **Embedding** | A vector representation of text where similar meanings are close together. |
 | **Error analysis** | Reading traces, noting the first failure in each, and grouping failures into categories to prioritise work and evals. |
-| **Error budget** | The amount of unreliability an SLO allows over a period (for example 0.5% of requests in 28 days). |
+| **Error budget** | The amount of unreliability an SLO allows over a period (for example 0.5% of requests in 30 days). |
 | **Golden signals** | Latency, traffic, errors, saturation: the core service health metrics. |
 | **Groundedness** | Whether an answer's claims are supported by the provided sources. |
 | **Guardrail** | A check outside the main model call that can block, modify, or flag inputs, outputs, or tool calls. |

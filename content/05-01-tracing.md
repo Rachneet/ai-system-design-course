@@ -35,7 +35,7 @@ flowchart TB
 
 [OpenTelemetry](https://opentelemetry.io/docs/languages/python/) (OTel) is the vendor-neutral standard for traces, metrics, and logs. Instrument once, send anywhere: Jaeger, Grafana Tempo, Honeycomb, Datadog, or LLM-focused tools like [Langfuse](https://langfuse.com/docs) and [Arize Phoenix](https://github.com/Arize-ai/phoenix) that accept OTel data.
 
-OTel defines [semantic conventions for generative AI](https://opentelemetry.io/docs/specs/semconv/gen-ai/): standard span names and attribute keys for model calls, agent operations, and tool executions. Using them means your traces work across tools without custom mapping. Key attributes include:
+OTel defines [semantic conventions for generative AI](https://github.com/open-telemetry/semantic-conventions-genai/tree/main/docs/gen-ai): standard span names and attribute keys for model calls, agent operations, and tool executions. Using them means your traces work across tools without custom mapping. Key attributes include:
 
 | Attribute | Example |
 |---|---|
@@ -47,7 +47,7 @@ OTel defines [semantic conventions for generative AI](https://opentelemetry.io/d
 | `gen_ai.tool.name` / `gen_ai.tool.call.id` | `get_order` / `toolu_01A…` |
 | `gen_ai.conversation.id` | session ID |
 
-The conventions are still evolving (check the spec's stability notes), so pin the version you follow. Libraries like [OpenLLMetry](https://github.com/traceloop/openllmetry) and the OTel contrib instrumentations can auto-instrument popular SDKs.
+The conventions are marked **Development** (not yet stable) and moved to their own repository in 2026, so pin the version you follow and expect renames. Cached tokens, for example, are `gen_ai.usage.cache_read.input_tokens` and `gen_ai.usage.cache_write.input_tokens`. Libraries like [OpenLLMetry](https://github.com/traceloop/openllmetry) and the OTel contrib instrumentations can auto-instrument popular SDKs.
 
 ## Instrumenting the agent loop
 
@@ -71,7 +71,8 @@ async def run_turn(ctx, messages, on_text):
                 resp = await call_model(ctx, messages, on_text)
                 llm.set_attribute("gen_ai.usage.input_tokens", resp.usage.input_tokens)
                 llm.set_attribute("gen_ai.usage.output_tokens", resp.usage.output_tokens)
-                llm.set_attribute("gen_ai.usage.cache_read_input_tokens", resp.usage.cache_read_input_tokens or 0)
+                llm.set_attribute("gen_ai.usage.cache_read.input_tokens", resp.usage.cache_read_input_tokens or 0)
+                llm.set_attribute("gen_ai.usage.cache_write.input_tokens", resp.usage.cache_creation_input_tokens or 0)
                 llm.set_attribute("gen_ai.response.finish_reasons", [resp.stop_reason])
             ...
 
@@ -96,7 +97,7 @@ A trace is only useful if it crosses process boundaries. When the API enqueues a
 
 - **HTTP**: OTel's W3C `traceparent` header. Auto-instrumented HTTP clients and servers (httpx, FastAPI) inject and extract it.
 - **Queues**: put the `traceparent` in the job payload when enqueuing; extract it in the worker and start the job span as a child (or as a linked span for long-delayed jobs).
-- **MCP**: the [Model Context Protocol](https://modelcontextprotocol.io/) uses JSON-RPC over stdio or HTTP. With HTTP transports, the `traceparent` header propagates like any HTTP call if both client and server are instrumented. MCP messages also carry a `_meta` field where implementations can pass trace context, which is the route for stdio transports. Support varies by SDK version, so verify it end to end: make an MCP tool call and check that the server's spans appear under your agent's trace.
+- **MCP**: the [Model Context Protocol](https://modelcontextprotocol.io/) sends JSON-RPC messages over stdio or Streamable HTTP. The OpenTelemetry MCP convention puts the W3C `traceparent` (and `tracestate`, `baggage`) inside each request's `params._meta` field, unprefixed, on every transport, and the server uses it as the remote parent for its spans. Because it travels in the message body, it works on stdio too. Support varies by SDK version, so verify it end to end: make an MCP tool call and check that the server's spans appear under your agent's trace.
 
 ```python
 from opentelemetry.propagate import inject, extract
@@ -159,7 +160,7 @@ Tools like Langfuse and Phoenix have dataset features for exactly this loop. You
 
 ## Further reading
 
-- [OpenTelemetry semantic conventions for GenAI](https://opentelemetry.io/docs/specs/semconv/gen-ai/).
+- [OpenTelemetry semantic conventions for GenAI](https://github.com/open-telemetry/semantic-conventions-genai/tree/main/docs/gen-ai).
 - [OpenTelemetry Python](https://opentelemetry.io/docs/languages/python/) and [contrib instrumentations](https://github.com/open-telemetry/opentelemetry-python-contrib).
 - [OpenLLMetry](https://github.com/traceloop/openllmetry), OTel-based auto-instrumentation for LLM SDKs.
 - [Langfuse docs](https://langfuse.com/docs) and [Arize Phoenix](https://github.com/Arize-ai/phoenix), open-source LLM observability.

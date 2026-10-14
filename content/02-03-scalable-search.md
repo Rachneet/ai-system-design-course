@@ -123,19 +123,19 @@ HNSW has three knobs that matter:
 
 | Parameter | Effect | Typical |
 |---|---|---|
-| `m` | Graph connections per node. Higher means better recall, more memory | 16 to 32 |
-| `ef_construction` | Build-time search width. Higher means a better graph, slower builds | 64 to 200 |
-| `ef_search` | Query-time search width. Higher means better recall, slower queries | 40 to 200 |
+| `m` | Graph connections per node. Higher means better recall, more memory | 16 (pgvector default) to 32 |
+| `ef_construction` | Build-time search width. Higher means a better graph, slower builds | 64 (default) to 200 |
+| `ef_search` | Query-time search width. Higher means better recall, slower queries | 40 (default) to 200 |
 
 Tune `ef_search` against your recall eval: plot recall@10 and p95 latency as it rises, and pick the knee.
 
 ### Filtering and ANN
 
-Metadata filters (tenant, ACL, language) interact badly with ANN indexes. **Post-filtering** (search, then drop non-matching results) can return almost nothing when the filter is selective. **Pre-filtering** (search only matching vectors) can make HNSW degrade. Modern engines handle this with filtered HNSW traversal or iterative scans (pgvector 0.8 added iterative index scans for this reason). For very selective filters, such as a single tenant's 2,000 documents, an exact scan over the filtered rows is fast and perfectly accurate.
+Metadata filters (tenant, ACL, language) interact badly with ANN indexes. **Post-filtering** (search, then drop non-matching results) can return almost nothing when the filter is selective. **Pre-filtering** (search only matching vectors) can make HNSW degrade. Modern engines handle this with filtered HNSW traversal or iterative scans. pgvector filters after the index scan, so with the default `hnsw.ef_search = 40` a filter matching 10% of rows returns only about 4 rows on average; version 0.8.0 added iterative index scans (`SET hnsw.iterative_scan = relaxed_order`) to keep scanning until enough rows match. For very selective filters, such as a single tenant's 2,000 documents, an exact scan over the filtered rows is fast and perfectly accurate.
 
 ### Memory and sharding
 
-> [!numbers] 10M chunks × 1,024 float32 dimensions × 4 bytes = **41 GB** of raw vectors, plus HNSW graph overhead (roughly m × 2 × 4 bytes per vector for links, about 1.3 GB at m=16). HNSW wants this in RAM. Halving to 512 dimensions or using int8 quantization (1 byte per dimension) brings 41 GB down to about 10 GB.
+> [!numbers] 10M chunks × 1,024 float32 dimensions × 4 bytes = **41 GB** of raw vectors, plus HNSW graph overhead (roughly m × 2 × 4 bytes per vector for links, about 1.3 GB at m=16). HNSW wants this in RAM. Halving to 512 dimensions or using int8 quantization (1 byte per dimension) brings 41 GB down to about 10 GB. In pgvector, `halfvec` (2 bytes per dimension) halves memory, and an HNSW index on the plain `vector` type supports up to 2,000 dimensions.
 
 When one node is not enough, shard. **Shard by tenant** when queries are always tenant-scoped (most B2B apps): each query hits one shard. **Shard by hash** when queries span everything: each query fans out to all shards and results are merged, so latency follows the slowest shard. Add replicas for read throughput.
 

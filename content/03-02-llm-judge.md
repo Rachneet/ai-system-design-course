@@ -118,7 +118,7 @@ If you know the judge's error rates, you can estimate the true pass rate from th
 
 ## Known judge biases
 
-Studies such as [Judging LLM-as-a-Judge](https://arxiv.org/abs/2306.05685) document systematic biases:
+[Judging LLM-as-a-Judge](https://arxiv.org/abs/2306.05685) found that strong judges agreed with human preferences over 80% of the time, about the same rate at which humans agree with each other. It also documented position, verbosity, and self-enhancement biases and limited reasoning ability:
 
 | Bias | What happens | Mitigation |
 |---|---|---|

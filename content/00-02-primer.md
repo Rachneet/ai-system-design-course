@@ -28,7 +28,7 @@ resp = client.messages.create(
     messages=[{"role": "user", "content": "What is your return window for tents?"}],
 )
 print(resp.content[0].text)
-print(resp.usage)  # input_tokens, output_tokens, cache_read_input_tokens, ...
+print(resp.usage)  # input_tokens, output_tokens, cache_creation_input_tokens, cache_read_input_tokens
 ```
 
 ## Tokens are the unit of everything

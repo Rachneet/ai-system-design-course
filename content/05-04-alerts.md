@@ -14,7 +14,7 @@ A good alert means a human must act now, and it fires rarely enough that people 
 
 Start from what users experience, expressed as **service level objectives** (SLOs). The Google SRE [chapter on SLOs](https://sre.google/sre-book/service-level-objectives/) is the reference.
 
-| SLI (what you measure) | SLO (target over 28 days) |
+| SLI (what you measure) | SLO (target over 30 days) |
 |---|---|
 | Availability: chat turns that complete without a server error | 99.5% |
 | Latency: turns with time to first token under 2.5 s | 95% |
@@ -23,13 +23,13 @@ Start from what users experience, expressed as **service level objectives** (SLO
 | Safety: must-never events (cross-customer data, refund over limit without approval) | 0 |
 | Freshness: KB changes searchable within 10 minutes | 99% |
 
-An SLO of 99.5% gives an **error budget** of 0.5%: about 3.4 hours of full outage, or a lot of small failures, per 28 days. The budget makes trade-offs explicit: when it is healthy, ship faster; when it is burning, slow down and fix reliability.
+An SLO of 99.5% gives an **error budget** of 0.5%: about 3.6 hours of full outage, or a lot of small failures, per 30 days. The budget makes trade-offs explicit: when it is healthy, ship faster; when it is burning, slow down and fix reliability.
 
 ## Burn-rate alerts
 
 Alerting on "error rate > 1% for 5 minutes" is noisy for short spikes and slow for gradual problems. The SRE workbook's [Alerting on SLOs](https://sre.google/workbook/alerting-on-slos/) recommends **multi-window burn-rate alerts**: page when you are consuming the error budget much faster than sustainable, confirmed over a short window so it resets quickly once fixed.
 
-> [!numbers] With a 99.5% SLO over 28 days, burning at 14.4× the sustainable rate exhausts 2% of the monthly budget in one hour. A common setup: **page** if the burn rate is above 14.4 over the last hour *and* the last 5 minutes; **page** if above 6 over 6 hours *and* 30 minutes; **ticket** if above 1 over 3 days. A 14.4× burn on a 0.5% budget means an error rate of 7.2%.
+> [!numbers] With a 99.5% SLO over 30 days, burning at 14.4× the sustainable rate exhausts 2% of the monthly budget in one hour. A common setup: **page** if the burn rate is above 14.4 over the last hour *and* the last 5 minutes; **page** if above 6 over 6 hours *and* 30 minutes; **ticket** if above 1 over 3 days. A 14.4× burn on a 0.5% budget means an error rate of 7.2%.
 
 ```yaml
 # Prometheus-style rule sketch

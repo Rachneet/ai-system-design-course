@@ -54,8 +54,12 @@ def run_agent(messages: list, tools: list, max_steps: int = 10) -> list:
             model=MODEL, max_tokens=4096, system=SYSTEM, tools=tools, messages=messages
         )
         messages.append({"role": "assistant", "content": resp.content})
-        if resp.stop_reason != "tool_use":
+        if resp.stop_reason == "end_turn":
             return messages  # model produced a final answer
+        if resp.stop_reason in ("max_tokens", "refusal"):
+            raise AgentStopped(resp.stop_reason, messages)  # truncated or declined: do not run tools
+        if resp.stop_reason != "tool_use":
+            return messages  # e.g. stop_sequence
         results = []
         for block in resp.content:
             if block.type == "tool_use":
@@ -68,6 +72,7 @@ Everything else in this course hangs off this loop: what goes into `SYSTEM` and 
 
 Design decisions inside the loop that matter in production:
 
+- **Check why the model stopped.** `end_turn` means done and `tool_use` means run tools. `max_tokens` means the reply was cut off, and any tool call in it may be incomplete. `refusal` means the model declined. Handle each explicitly rather than treating everything that is not a tool call as a final answer.
 - **Step limit.** Always cap steps. An agent that loops forever is a billing incident. Return a graceful message, log the trace, and alert if the rate of hitting the cap rises.
 - **Parallel tool calls.** Models can request several tools at once. Run them concurrently and return all results in one message. Splitting results across messages quietly teaches the model to stop parallelising.
 - **Tool errors are data.** If a tool fails, return a `tool_result` with `is_error: true` and a message the model can act on ("order 1042 not found; ask the customer to confirm the number"). Do not crash the loop and do not hide the error.
@@ -99,7 +104,7 @@ They hurt when:
 
 - **Subtasks share a lot of state.** Agents each make decisions with partial context, and their outputs conflict. Cognition's [Don't build multi-agents](https://cognition.ai/blog/dont-build-multi-agents) makes this argument well: for tightly coupled work like coding, one agent with full context beats several with fragments.
 - **Latency matters.** Each hop adds a full model round trip.
-- **Cost matters.** Anthropic's [multi-agent research system](https://www.anthropic.com/engineering/multi-agent-research-system) write-up reports multi-agent runs using roughly 15 times the tokens of a chat interaction. It was worth it for open-ended research. It would not be worth it for order status.
+- **Cost matters.** Anthropic's [multi-agent research system](https://www.anthropic.com/engineering/multi-agent-research-system) write-up reports that single agents use about 4 times the tokens of a chat interaction, and multi-agent systems about 15 times. It was worth it for open-ended research. It would not be worth it for order status.
 
 > [!rule] Split into multiple agents along boundaries where little information needs to cross: independent subtasks, different trust levels, or a context that would otherwise overflow.
 
@@ -129,7 +134,7 @@ Most multi-agent failures are bad delegation, not bad models. When the orchestra
 
 ## Choosing a framework (or not)
 
-You can build everything in this course with the raw SDK and about 300 lines of Python. Frameworks such as LangGraph, Pydantic AI, the OpenAI Agents SDK, and Google ADK add state graphs, checkpointing, and integrations. They are worth it when you need durable execution or complex branching. They cost you an abstraction layer between you and the actual prompts.
+You can build everything in this course with the raw SDK and about 300 lines of Python. Frameworks such as LangGraph, Pydantic AI, the OpenAI Agents SDK, Google ADK, and the Claude Agent SDK add state graphs, checkpointing, built-in tools, and integrations. They are worth it when you need durable execution or complex branching. They cost you an abstraction layer between you and the actual prompts.
 
 The labs use the raw SDK so that you see every token. After the course, pick a framework knowingly. The [12-factor agents](https://github.com/humanlayer/12-factor-agents) essay makes a strong case for owning your prompts, context, and control flow regardless of what you choose.
 

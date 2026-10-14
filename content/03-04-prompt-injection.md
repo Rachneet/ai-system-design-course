@@ -98,7 +98,7 @@ plan = privileged_agent.run(task_from(triage))  # never sees the raw email
 
 ### 4. Plan, then execute
 
-Have the agent commit to a plan (which tools, in which order) **before** reading untrusted data, then execute that plan with untrusted data only flowing into arguments, never into control flow. CaMeL formalises this with a small interpreter that tracks where each value came from and blocks a value derived from untrusted data from reaching a sensitive sink, such as an email recipient.
+Have the agent commit to a plan (which tools, in which order) **before** reading untrusted data, then execute that plan with untrusted data only flowing into arguments, never into control flow. CaMeL formalises this: a privileged model writes the plan as code, a quarantined model parses untrusted data, and a custom interpreter tags every value with where it came from and checks security policies before each tool call. On the AgentDojo benchmark it solved 77% of tasks with provable security, against 84% for an undefended system. That gap is the price of the guarantee.
 
 ### 5. Close output channels
 
@@ -112,7 +112,7 @@ The system prompt will leak eventually, so do not put secrets, API keys, or sens
 
 ### 7. Treat MCP servers and third-party tools as untrusted code
 
-Tool descriptions and tool results from third-party [MCP](https://modelcontextprotocol.io/) servers enter the context and can carry injections ("tool poisoning"). Pin server versions, review tool descriptions, run servers with minimal credentials, and follow the [MCP security best practices](https://modelcontextprotocol.io/specification/2025-06-18/basic/security_best_practices).
+Tool descriptions and tool results from third-party [MCP](https://modelcontextprotocol.io/) servers enter the context and can carry injections ("tool poisoning"). Pin server versions, review tool descriptions, run servers with minimal credentials, and follow the [MCP security best practices](https://modelcontextprotocol.io/specification/2026-07-28/basic/security_best_practices).
 
 ## Unauthorised tool use without injection
 
