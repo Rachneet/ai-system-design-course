@@ -58,7 +58,7 @@ with sourced figures).
 | Cloud Run timeout up to 60 min (W4) | [Cloud Run docs](https://docs.cloud.google.com/run/docs/configuring/request-timeout): default 5 min, max 60 | OK |
 | Cloud Run worker pools need no port (Lab 4) | [Worker pools docs](https://docs.cloud.google.com/run/docs/deploy-worker-pools): no endpoint, no autoscaling | ADDED "no autoscaling" and command |
 | Dockerfile (W4) | [uv Docker guide](https://docs.astral.sh/uv/guides/integration/docker/): copy `/uv /uvx`, cache mounts, `--frozen` then `--locked` | **FIXED** to current pattern, uv pinned to 0.12.21 |
-| GitHub Actions versions (W4) | Latest releases: checkout v7, setup-uv v10, paths-filter v4, sticky-pull-request-comment v3 | **FIXED** (were v4, v6, v3, v2) |
+| GitHub Actions versions (W4) | Tags that exist: checkout `v7`, setup-uv `v10.0.1` (no `v10` major tag), paths-filter `v4`, sticky-pull-request-comment `v3.0.5` (no `v3` tag) | **FIXED** (were v4, v6, v3, v2). Found by CI: the first fix used major tags that do not exist |
 | Burn-rate alerting 14.4 / 6 / 1 (W5) | [SRE workbook](https://sre.google/workbook/alerting-on-slos/): assumes a 30-day window | **FIXED** 28 days to 30 days (error budget 3.4 h to 3.6 h) |
 | OTel GenAI attribute names (W5) | [semantic-conventions-genai](https://github.com/open-telemetry/semantic-conventions-genai/tree/main/docs/gen-ai): status Development; cache attrs `gen_ai.usage.cache_read.input_tokens` / `cache_write.input_tokens` | **FIXED** attribute name and spec link |
 | MCP trace propagation "via headers, `_meta` for stdio" (W5, Lab 5) | OTel MCP convention: `traceparent` in `params._meta` on every transport | **FIXED** |
