@@ -13,9 +13,11 @@ from pydantic import BaseModel, ConfigDict, Field
 from .agent import run_turn
 from .config import settings
 from .db import NotFound, Store, open_pool
+from .guardrails import check_reply, redact_cards
 from .llm import AnthropicLLM
 from .memory import AnthropicExtractor, remember
 from .prompts import system_prompt
+from .retrieval import Retriever
 from .tools import Context
 
 
@@ -31,6 +33,10 @@ async def lifespan(app: FastAPI):
         app.state.llm = AnthropicLLM(settings.model, settings.max_tokens, settings.refusal_fallback)
     if not hasattr(app.state, "extractor"):
         app.state.extractor = AnthropicExtractor(settings.memory_model)
+    if not hasattr(app.state, "retriever"):
+        from .embeddings import LocalEmbedder, LocalReranker  # loads local models; tests inject fakes instead
+
+        app.state.retriever = Retriever(app.state.store, LocalEmbedder(), LocalReranker())
     yield
     if pool is not None:
         await pool.close()
@@ -40,8 +46,12 @@ app = FastAPI(title="Relay", lifespan=lifespan)
 
 
 async def current_customer(x_customer_id: str = Header(min_length=1, max_length=64)) -> str:
-    # Lab 1 trusts a header. Lab 4 replaces this with JWT verification. Never let the model choose identity.
+    # Labs 1-3 trust headers. Lab 4 replaces them with JWT verification. Never let the model choose identity.
     return x_customer_id
+
+
+async def is_staff(x_role: str | None = Header(default=None)) -> bool:
+    return x_role == "staff"
 
 
 class ChatIn(BaseModel):
@@ -56,7 +66,11 @@ def sse(data: dict) -> str:
 
 @app.post("/chat")
 async def chat(
-    body: ChatIn, request: Request, bg: BackgroundTasks, customer_id: str = Depends(current_customer)
+    body: ChatIn,
+    request: Request,
+    bg: BackgroundTasks,
+    customer_id: str = Depends(current_customer),
+    staff: bool = Depends(is_staff),
 ):
     store: Store = request.app.state.store
     session_id = body.session_id or uuid4()
@@ -64,9 +78,21 @@ async def chat(
         history = await store.load_session(session_id, customer_id, create=True)
     except NotFound:
         raise HTTPException(404, "Session not found")
-    user_msg = {"role": "user", "content": [{"type": "text", "text": body.message}]}
+    text, _ = redact_cards(body.message)  # before it is stored, logged, or sent to the model
+    user_msg = {"role": "user", "content": [{"type": "text", "text": text}]}
     now = datetime.now(UTC)
-    ctx = Context(store=store, customer_id=customer_id, session_id=session_id, now=now)
+    ctx = Context(
+        store=store,
+        customer_id=customer_id,
+        session_id=session_id,
+        now=now,
+        retriever=request.app.state.retriever,
+        staff=staff,
+    )
+
+    def guard(draft: str, result) -> list[str]:
+        return check_reply(draft, ctx.retrieved, result.tool_calls)
+
     system = system_prompt(await store.memories(customer_id), now)
 
     async def events():
@@ -77,7 +103,9 @@ async def chat(
 
         async def work():
             try:
-                return await run_turn(ctx, request.app.state.llm, system, history + [user_msg], on_text)
+                return await run_turn(
+                    ctx, request.app.state.llm, system, [*history, user_msg], on_text, guard=guard
+                )
             finally:
                 await queue.put(None)
 

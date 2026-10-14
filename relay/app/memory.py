@@ -63,7 +63,11 @@ def customer_text(messages: list[dict]) -> str:
         if isinstance(content, str):
             lines.append(content)
         else:
-            lines += [b["text"] for b in content if b.get("type") == "text"]
+            lines += [
+                b["text"]
+                for b in content
+                if b.get("type") == "text" and not b["text"].startswith("<guardrail>")
+            ]
     return "\n".join(lines)
 
 
