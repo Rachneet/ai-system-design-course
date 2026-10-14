@@ -4,7 +4,7 @@ week: 3
 kind: lesson
 title: Prompt injection and unauthorized tool use
 short: Injection + tool security
-minutes: 55
+minutes: 60
 summary: How attackers hijack agents through direct and indirect prompt injection, why filters alone cannot stop it, and the architectural defences (least privilege, isolation, approvals, plan-then-execute) plus red-team testing that actually reduce risk.
 ---
 
@@ -35,22 +35,25 @@ This is **prompt injection**, named by Simon Willison in 2022. It sits at the to
 
 Willison's [lethal trifecta](https://simonwillison.net/2025/Jun/16/the-lethal-trifecta/) is the most useful mental model for risk. An agent is exposed to data theft when it has all three:
 
-```mermaid
-flowchart TB
-  P[Access to private data] --- X((Exfiltration risk))
-  U[Exposure to untrusted content] --- X
-  E[Ability to communicate externally] --- X
-```
-
 1. Access to private data (orders, emails, internal docs).
 2. Exposure to untrusted content (anything an outsider can write).
 3. A way to send data out (email, HTTP requests, rendering images or links, writing to a shared place).
 
-Remove any one leg and the exfiltration path closes. Most practical defences are about breaking the trifecta for each workflow.
+```viz
+caption: All three legs together make a theft path. Remove any one and the attack has nothing to steal, no way in, or no way out.
+<div class="vz-row"><span class="ch sk">private data</span>+<span class="ch sk b">untrusted content</span>+<span class="ch sk">way out</span><span class="arr sk b"></span><span class="ch sk b">data stolen</span></div>
+<div class="vz-cols" style="--k:3">
+  <div class="vz-panel sk g"><h5>No private data</h5><div class="vz-row"><span class="ch sk ghost">private data</span></div><p>Injection works, but there is nothing worth stealing.</p><p class="big g">safe</p></div>
+  <div class="vz-panel sk g"><h5>No untrusted input</h5><div class="vz-row"><span class="ch sk ghost">untrusted content</span></div><p>Only you and the user write the context, so no attacker instructions.</p><p class="big g">safe</p></div>
+  <div class="vz-panel sk g"><h5>No way out</h5><div class="vz-row"><span class="ch sk ghost">way out</span></div><p>The model may be fooled, but the data cannot leave.</p><p class="big g">safe</p></div>
+</div>
+```
+
+Most practical defences are about breaking the trifecta for each workflow. Relay's customer chat needs private data (the customer's orders) and reads untrusted content (reviews, emails), so the leg to cut is the way out: no outbound email to arbitrary addresses, no rendered images from unknown domains.
 
 ## Why filters are not enough
 
-Input classifiers that detect "ignore previous instructions" catch naive attacks and are worth having as one layer. But attackers adapt: encodings, other languages, instructions split across documents, payloads that look like normal text. Research on adaptive attacks consistently breaks detection-only defences. Treat detectors as a tripwire that raises alerts, not as a wall.
+Input classifiers that detect "ignore previous instructions" catch naive attacks and are worth having as one layer. Options exist for every stack: open-weights classifiers such as Meta's [Llama Prompt Guard 2](https://huggingface.co/meta-llama/Llama-Prompt-Guard-2-86M) that you run yourself, and managed services such as Azure AI Content Safety [Prompt Shields](https://learn.microsoft.com/en-us/azure/ai-services/content-safety/concepts/jailbreak-detection) and Google Cloud [Model Armor](https://docs.cloud.google.com/model-armor/overview), which screen prompts and documents whichever model you call. But attackers adapt: encodings, other languages, instructions split across documents, payloads that look like normal text. Research on adaptive attacks consistently breaks detection-only defences. Treat detectors as a tripwire that raises alerts, not as a wall.
 
 Likewise, "the system prompt says never to follow instructions in documents" helps a little and guarantees nothing.
 
@@ -84,7 +87,24 @@ Approval UX matters: show the human the exact action and arguments ("Refund $340
 
 Willison's [dual LLM pattern](https://simonwillison.net/2023/Apr/25/dual-llm-pattern/): a **privileged** model plans and calls tools but never sees untrusted text; a **quarantined** model reads untrusted text but has no tools. The quarantined model's outputs are stored as variables (`$summary_1`) that the privileged model can pass around without reading.
 
-A practical lighter version for Relay: when the agent needs to analyse a product review or an email, call a sub-agent with **no tools** that returns a constrained, structured output (a category, a sentiment, extracted order numbers matching a regex). Structured outputs with narrow types give injected text little room to smuggle instructions.
+```viz
+caption: Split capability from exposure. The model that reads attacker text has no tools; the model with tools never reads attacker text.
+<div class="vz-cols">
+  <div class="vz-panel sk b"><h5>Quarantined model</h5>
+    <div class="vz-row"><span class="ch sk b">raw email</span><span class="arr sk"></span><span class="ch sk">reads it</span></div>
+    <p>no tools, no memory</p>
+    <div class="vz-row"><span class="arr sk"></span><span class="ch sk g">{intent, order_ids}</span></div>
+  </div>
+  <div class="vz-panel sk c"><h5>Privileged model</h5>
+    <div class="vz-row"><span class="ch sk g">$triage_1</span><span class="arr sk c"></span><span class="ch sk c">plans</span></div>
+    <p>sees types, never the raw text</p>
+    <div class="vz-row"><span class="arr sk c"></span><span class="ch sk c">calls tools</span></div>
+  </div>
+</div>
+<p>An injection can only change a field's value, and narrow types (an enum, integers) leave it almost nothing to change.</p>
+```
+
+A practical lighter version for Relay: when the agent needs to analyse a product review or an email, call a sub-agent with **no tools** that returns a constrained, structured output (a category, a sentiment, extracted order numbers matching a regex). Structured outputs with narrow types give injected text little room to smuggle instructions. Every major stack can enforce a JSON schema on the output: [OpenAI](https://developers.openai.com/api/docs/guides/structured-outputs), [Gemini](https://ai.google.dev/gemini-api/docs/structured-output), [Anthropic](https://platform.claude.com/docs/en/build-with-claude/structured-outputs), and for open-weights models [vLLM](https://docs.vllm.ai/en/latest/features/structured_outputs.html) and [Ollama](https://docs.ollama.com/capabilities/structured-outputs). The quarantined call is also a good job for a small, cheap model, including a local one, because it never holds a tool.
 
 ```python
 class EmailTriage(BaseModel):
@@ -92,13 +112,19 @@ class EmailTriage(BaseModel):
     order_ids: list[conint(ge=1, le=10_000_000)]   # integers only: no room for prose
     urgency: Literal["low", "normal", "high"]
 
-triage = quarantined_model.parse(untrusted_email_text, output_format=EmailTriage)  # no tools
+triage = quarantined_model.parse(untrusted_email_text, schema=EmailTriage)  # no tools, any provider
 plan = privileged_agent.run(task_from(triage))  # never sees the raw email
 ```
 
 ### 4. Plan, then execute
 
 Have the agent commit to a plan (which tools, in which order) **before** reading untrusted data, then execute that plan with untrusted data only flowing into arguments, never into control flow. CaMeL formalises this: a privileged model writes the plan as code, a quarantined model parses untrusted data, and a custom interpreter tags every value with where it came from and checks security policies before each tool call. On the AgentDojo benchmark it solved 77% of tasks with provable security, against 84% for an undefended system. That gap is the price of the guarantee.
+
+```viz
+caption: CaMeL gives up 7 points of task success to make injected text unable to change which tools run.
+<div class="vz-bars"><span>Undefended</span><span class="bar sk"><i class="sk c" style="--w:84%"></i></span><b>84%</b><span>CaMeL</span><span class="bar sk"><i class="sk g" style="--w:77%"></i></span><b>77%, provably secure</b></div>
+<div class="vz-src">Tasks solved on AgentDojo. Debenedetti et al., <a href="https://arxiv.org/abs/2503.18813">Defeating Prompt Injections by Design</a>, 2025.</div>
+```
 
 ### 5. Close output channels
 

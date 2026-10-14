@@ -21,6 +21,19 @@ flowchart LR
   API -.-> LOG[Audit log]
 ```
 
+Each layer stops a different attack, and no single layer stops them all. The tool check at the bottom is the one that still holds when the model itself has been fooled.
+
+```viz
+caption: Defence in depth. Every request passes all six checks; each one stops something the others let through.
+<div class="vz-row"><span class="ch sk c">1. Edge: TLS, WAF, IP limit</span><span class="arr sk"></span><span class="ch sk b">floods, scrapers</span></div>
+<div class="vz-row"><span class="ch sk c">2. AuthN: verify token</span><span class="arr sk"></span><span class="ch sk b">forged or expired tokens</span></div>
+<div class="vz-row"><span class="ch sk c">3. AuthZ: endpoint</span><span class="arr sk"></span><span class="ch sk b">other users' sessions</span></div>
+<div class="vz-row"><span class="ch sk c">4. Validation</span><span class="arr sk"></span><span class="ch sk b">500k-token messages</span></div>
+<div class="vz-row"><span class="ch sk c">5. Per-user limits, budget</span><span class="arr sk"></span><span class="ch sk b">denial of wallet</span></div>
+<div class="vz-row"><span class="ch sk c">6. AuthZ: inside each tool</span><span class="arr sk"></span><span class="ch sk b">injected refunds</span></div>
+<div class="vz-row"><span class="ch wide sk g">identity comes from the token, never from the model</span></div>
+```
+
 ## Authentication
 
 Pick based on who calls you:
@@ -31,7 +44,7 @@ Pick based on who calls you:
 | Server-to-server (partners, internal services) | API keys or OAuth client credentials | Store keys hashed; support rotation; scope keys |
 | Internal service mesh | mTLS or workload identity | No long-lived secrets |
 
-Do not build your own login system for a course project or a startup. Use an identity provider (Auth0, Clerk, Supabase Auth, Cognito, Firebase Auth, Keycloak) and verify tokens in the API.
+Do not build your own login system for a course project or a startup. Use an identity provider (Auth0, Clerk, Supabase Auth, Amazon Cognito, Firebase Auth or Google Identity Platform, Microsoft Entra ID, Keycloak) and verify tokens in the API.
 
 ```python
 # app/auth.py
@@ -128,8 +141,8 @@ Clients retry. Networks drop responses. If a retried `POST /refund-requests` cre
 
 ## Secrets
 
-- Never commit secrets. Use a `.env` file locally (git-ignored) and a secret manager in the cloud (Google Secret Manager, AWS Secrets Manager, Doppler, 1Password). Inject as environment variables at runtime, following [12-factor config](https://12factor.net/).
-- Give each environment its own model API key with a spending limit, so a leaked dev key cannot burn your production budget.
+- Never commit secrets. Use a `.env` file locally (git-ignored) and a secret manager in the cloud (Google Secret Manager, AWS Secrets Manager, Azure Key Vault, Doppler, 1Password). Inject as environment variables at runtime, following [12-factor config](https://12factor.net/).
+- Give each environment its own model API key with a spending limit, so a leaked dev key cannot burn your production budget. How depends on the provider: Anthropic [workspaces](https://platform.claude.com/docs/en/manage-claude/workspaces) take a monthly spend limit per environment; other providers offer per-project keys and budgets in their consoles. If you use several providers, a gateway such as [LiteLLM](https://docs.litellm.ai/docs/proxy/virtual_keys) can issue virtual keys with a `max_budget` each, so one place enforces the cap whichever model is behind it. A local model on Ollama or vLLM needs no vendor key, but keep its endpoint off the public internet.
 - Rotate keys. Scan the repo and CI logs for leaks (GitHub secret scanning is free for public repos).
 - Never put secrets in prompts. Tools hold credentials; the model never sees them.
 
@@ -160,6 +173,25 @@ USER relay
 EXPOSE 8080
 HEALTHCHECK CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/healthz')"
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080", "--proxy-headers"]
+```
+
+```viz
+caption: Order layers from least to most often changed. A code edit rebuilds one thin layer; only a lockfile change reinstalls dependencies.
+<div class="vz-cols">
+  <div class="vz-panel sk"><h5>You edit app code</h5>
+    <div class="vz-row"><span class="ch wide sk w">app code: rebuilt</span></div>
+    <div class="vz-row"><span class="ch wide sk g">dependencies: cached</span></div>
+    <div class="vz-row"><span class="ch wide sk g">python:3.12-slim: cached</span></div>
+    <p class="big g">seconds</p>
+  </div>
+  <div class="vz-panel sk"><h5>You change uv.lock</h5>
+    <div class="vz-row"><span class="ch wide sk w">app code: rebuilt</span></div>
+    <div class="vz-row"><span class="ch wide sk w">dependencies: reinstalled</span></div>
+    <div class="vz-row"><span class="ch wide sk g">python:3.12-slim: cached</span></div>
+    <p class="big w">minutes</p>
+  </div>
+</div>
+<p>Final image: base plus .venv plus code, without uv's cache or build tools.</p>
 ```
 
 Why each choice:

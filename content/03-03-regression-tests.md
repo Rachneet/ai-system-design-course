@@ -4,7 +4,7 @@ week: 3
 kind: lesson
 title: Automated regression tests for deployment
 short: Regression gates
-minutes: 45
+minutes: 50
 summary: Turn your evals into a deployment gate, with tiered suites, thresholds that respect non-determinism, statistical comparison against a baseline, and fast feedback on every pull request.
 ---
 
@@ -34,11 +34,43 @@ Running 400 cases × 3 trials on every commit is slow and costly. Tier your suit
 | Release | Before production deploy, nightly | Full suite incl. held-out, 5 trials | 30 to 90 min | Release confidence, trends |
 | Online | Continuously in production | Sampled live traffic, judged | Ongoing | Catch drift the suite misses |
 
+```viz
+caption: Each tier buys more confidence with more runs and more minutes. Cheap tiers run often; the expensive one runs before a deploy.
+<div class="vz-cols">
+  <div class="vz-panel sk c"><h5>Runs (cases x trials)</h5>
+    <div class="vz-bars"><span>Smoke</span><span class="bar sk"><i class="sk c" style="--w:2%"></i></span><b>30</b><span>PR gate</span><span class="bar sk"><i class="sk c" style="--w:30%"></i></span><b>600</b><span>Release</span><span class="bar sk"><i class="sk c" style="--w:100%"></i></span><b>2,000</b></div>
+  </div>
+  <div class="vz-panel sk w"><h5>Wall time</h5>
+    <div class="vz-bars"><span>Smoke</span><span class="bar sk"><i class="sk w" style="--w:4%"></i></span><b>2 min</b><span>PR gate</span><span class="bar sk"><i class="sk w" style="--w:25%"></i></span><b>15 min</b><span>Release</span><span class="bar sk"><i class="sk w" style="--w:100%"></i></span><b>60 min</b></div>
+  </div>
+</div>
+<div class="vz-row"><span class="ch sk g">every push</span><span class="arr sk"></span><span class="ch sk g">every PR</span><span class="arr sk"></span><span class="ch sk g">before deploy</span></div>
+<p>Illustrative sizes from the table above (30 x 1, 200 x 3, 400 x 5), not a standard. Tune them to your suite and budget.</p>
+```
+
 The smoke tier should include your **must-never-happen** cases: refund to the wrong customer, leaking internal documents, obeying a prompt injection. A single failure in these blocks the merge, regardless of the overall score.
 
 ## Thresholds that respect non-determinism
 
-Agents are stochastic, so a single run of a suite is a noisy measurement. Two designs:
+Agents are stochastic, so a single run of a suite is a noisy measurement. First decide what "pass" means for a case run k times:
+
+- **pass@k**: at least one of k trials passed. Right for code generation, where you can test candidates and keep the good one.
+- **pass^k**: all k trials passed. Right for agents, because every customer gets one trial and you cannot pick the best. [τ-bench](https://arxiv.org/abs/2406.12045) introduced pass^k for exactly this reason and found that agents that look fine at k = 1 fall apart at k = 8.
+
+```viz
+caption: The same agent, 90% per trial. pass@k climbs to almost 100%, while pass^k falls to 43% by k = 8. Gate agents on pass^k.
+<div class="vz-cols">
+  <div class="vz-panel sk g"><h5>pass@k: any trial passes</h5>
+    <div class="vz-bars"><span>k = 1</span><span class="bar sk"><i class="sk g" style="--w:90%"></i></span><b>90%</b><span>k = 3</span><span class="bar sk"><i class="sk g" style="--w:99.9%"></i></span><b>99.9%</b><span>k = 5</span><span class="bar sk"><i class="sk g" style="--w:100%"></i></span><b>~100%</b><span>k = 8</span><span class="bar sk"><i class="sk g" style="--w:100%"></i></span><b>~100%</b></div>
+  </div>
+  <div class="vz-panel sk b"><h5>pass^k: every trial passes</h5>
+    <div class="vz-bars"><span>k = 1</span><span class="bar sk"><i class="sk b" style="--w:90%"></i></span><b>90%</b><span>k = 3</span><span class="bar sk"><i class="sk b" style="--w:72.9%"></i></span><b>72.9%</b><span>k = 5</span><span class="bar sk"><i class="sk b" style="--w:59%"></i></span><b>59%</b><span>k = 8</span><span class="bar sk"><i class="sk b" style="--w:43%"></i></span><b>43%</b></div>
+  </div>
+</div>
+<div class="vz-src">Metric from Yao et al., <a href="https://arxiv.org/abs/2406.12045">τ-bench</a> (2024), which reports pass^8 under 25% on its retail tasks for the agents it tested. Bars computed for independent trials: 1 - 0.1<sup>k</sup> and 0.9<sup>k</sup>.</div>
+```
+
+Then pick a threshold design. Two options:
 
 ### Absolute thresholds per category
 
@@ -83,6 +115,13 @@ def regression_check(main: dict, pr: dict, alpha=0.05):
 
 > [!numbers] Your suite has 200 cases at a 92% pass rate. How big a drop can you detect? The standard error of one run's pass rate is √(0.92 × 0.08 / 200) ≈ 0.019. The difference between two independent runs has a standard error of about √2 × 0.019 ≈ 0.027, so at 95% confidence a difference smaller than about 1.96 × 0.027 ≈ **5 points** is within noise. Running 3 trials per case and using paired comparison sharpens this considerably. If you need to detect 1-point changes, you need much larger suites, which is why must-never cases use zero-tolerance gates instead.
 
+```viz
+caption: The noise floor shrinks only with the square root of suite size. Quadrupling the suite halves the smallest drop you can trust.
+<div class="vz-bars"><span>100 cases</span><span class="bar sk"><i class="sk w" style="--w:71%"></i></span><b>7.5 pts</b><span>200 cases</span><span class="bar sk"><i class="sk w" style="--w:50%"></i></span><b>5.3 pts</b><span>400 cases</span><span class="bar sk"><i class="sk w" style="--w:36%"></i></span><b>3.8 pts</b><span>1,000 cases</span><span class="bar sk"><i class="sk w" style="--w:23%"></i></span><b>2.4 pts</b><span>3,000 cases</span><span class="bar sk"><i class="sk w" style="--w:13%"></i></span><b>1.4 pts</b></div>
+<p>smallest drop outside the noise, one trial each, two independent runs, 92% pass rate</p>
+<div class="vz-src">Computed as 1.96 x √(2 x 0.92 x 0.08 / n), the same formula as the box above. Paired comparison and more trials per case lower every bar.</div>
+```
+
 ## Make results reviewable
 
 A gate that only says "FAILED 91.5% < 92%" is frustrating. The PR comment should show:
@@ -95,7 +134,7 @@ A gate that only says "FAILED 91.5% < 92%" is frustrating. The PR comment should
 Reviewers then read the five regressions, decide whether they are real, and either fix the change or update the case with a reason.
 
 ```text
-Relay eval · suite v14 · 212 cases × 3 trials · model claude-sonnet-5-5 · prompt sha 9f3e2c1
+Relay eval · suite v14 · 212 cases × 3 trials · agent openai:gpt-5 · prompt sha 9f3e2c1
 category                  main     PR      Δ
 must_never                100%    100%     0     ✅
 refund_eligibility        94.1%   89.7%   -4.4   ❌ (b=7, c=1, p=0.035)
@@ -111,13 +150,13 @@ Regressions: refund-window-expired-017, refund-partial-022, ... (view traces)
 - **Cache what is deterministic.** Agent requests include every tool description, so almost any change invalidates them. Judge calls on identical transcripts, retrieval results, and embedding calls are often unchanged between runs, so cache those keyed by their exact inputs.
 - **Run cases in parallel**, bounded by your rate limits. 200 cases × 3 trials at 20 concurrent runs of 8 s each finish in about 4 minutes.
 - **Select tests by impact** for very large suites: a change to `issue_refund` must run refund cases; a change to the system prompt runs everything.
-- **Use the batch API** for nightly release suites, which is typically half price and does not need to be fast.
+- **Use a batch API** for nightly release suites, which do not need to be fast. OpenAI's [Batch API](https://developers.openai.com/api/docs/guides/batch), Anthropic's [Message Batches](https://platform.claude.com/docs/en/build-with-claude/batch-processing) and Gemini's [Batch Mode](https://ai.google.dev/gemini-api/docs/batch-mode) each charge 50% of the standard price, in exchange for asynchronous results, which arrive within a 24-hour window (often much sooner). With open-weights models you self-host (vLLM, Ollama), there is no per-token price to halve, but the same suite can run overnight on otherwise idle GPUs.
 
 ## Pin your dependencies
 
 A regression gate is only meaningful if the baseline is stable:
 
-- Pin exact model IDs, not "latest" aliases.
+- Pin exact model IDs, not "latest" aliases. For open-weights models, pin the checkpoint (a Hugging Face revision or an Ollama tag) the chat template and the serving engine version, because all three shape the output.
 - Pin judge model and judge prompt versions.
 - Pin SDK and library versions (`uv.lock`).
 - Snapshot the knowledge base used by evals, or the eval results will change whenever someone edits a policy.
@@ -148,6 +187,7 @@ Week 4 builds this into the deployment pipeline.
 - [DeepEval](https://github.com/confident-ai/deepeval), pytest-style LLM tests.
 - [What We Learned from a Year of Building with LLMs](https://applied-llms.org/), the evaluation and operations sections.
 - [Demystifying evals for AI agents](https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents), Anthropic.
+- [τ-bench](https://arxiv.org/abs/2406.12045), the paper that introduced pass^k for agent reliability.
 
 ```quiz
 [
