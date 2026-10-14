@@ -1,16 +1,14 @@
 """Relay's tools. Every limit the prompt mentions is also enforced here: the prompt guides, the code guarantees."""
 
-import re
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from pathlib import Path
 from uuid import UUID
 
 from .config import settings
 from .db import Store
+from .retrieval import Retriever, principals_for
 
-KB_DIR = Path(__file__).parent.parent / "kb"
 RETURN_WINDOW_DAYS = 60
 USED_RETURN_WINDOW_DAYS = 30  # used tents and sleeping bags
 USED_STRICT_CATEGORIES = {"tent", "sleeping_bag"}
@@ -26,6 +24,13 @@ class Context:
     customer_id: str  # from authentication, never from the model
     session_id: UUID | None = None
     now: datetime = field(default_factory=lambda: datetime.now(UTC))
+    retriever: Retriever | None = None
+    staff: bool = False  # support staff may also read group:support documents
+    retrieved: set[str] = field(default_factory=set)  # doc IDs returned this turn, for the citation guardrail
+
+    @property
+    def principals(self) -> list[str]:
+        return principals_for(self.customer_id, self.staff)
 
 
 @dataclass
@@ -125,18 +130,13 @@ async def list_orders(ctx: Context) -> str:
     ["query"],
 )
 async def search_kb(ctx: Context, query: str) -> str:
-    # Lab 1 keyword search over local Markdown. Lab 2 replaces this with hybrid retrieval in Postgres.
-    terms = set(re.findall(r"[a-z0-9]+", query.lower())) - {"the", "a", "an", "for", "of", "to", "my", "is"}
-    scored = []
-    for path in sorted(KB_DIR.glob("*.md")):
-        text = path.read_text()
-        score = sum(text.lower().count(t) for t in terms)
-        if score:
-            scored.append((score, path.stem, text.strip()))
-    if not scored:
+    if ctx.retriever is None:
+        raise ToolError("Search is unavailable right now. Say you are not sure and offer a teammate.")
+    hits = await ctx.retriever.search(query, ctx.principals)
+    if not hits:
         return "No matching documents. Say you are not sure and offer to connect them with the team."
-    scored.sort(reverse=True)
-    return "\n\n".join(f'<doc id="{doc_id}">\n{text}\n</doc>' for _, doc_id, text in scored[:2])
+    ctx.retrieved.update(h.doc_id for h in hits)
+    return "\n\n".join(f'<doc id="{h.doc_id}" section="{h.context}">\n{h.content}\n</doc>' for h in hits)
 
 
 @tool(
