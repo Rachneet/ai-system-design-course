@@ -30,6 +30,9 @@ def client(store, retriever, monkeypatch):
         Settings(auth_mode="dev", dev_jwt_secret=SECRET)
     )
     monkeypatch.setattr(main.settings, "memory_idle_s", 0)
+    monkeypatch.setattr(
+        main.settings, "online_judge_rate", 0.0
+    )  # sampling is random; tests opt in explicitly
     yield httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://relay")
     app.dependency_overrides.clear()
 

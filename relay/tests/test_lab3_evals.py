@@ -5,9 +5,10 @@ import pytest
 import yaml
 
 from app.embeddings import HashEmbedder
+from app.judges import Verdict, render
 from evals import error_analysis, generate, run
 from evals.calibrate import corrected_pass_rate, metrics, split_of
-from evals.judges import DATA, Verdict, render
+from evals.paths import JUDGE_DATA as DATA
 from tests.fakes import FakeQuarantine, ScriptedLLM, text, tool_use
 
 
