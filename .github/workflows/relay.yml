@@ -23,3 +23,43 @@ jobs:
       - run: uv run ruff check . && uv run ruff format --check .
       - run: uv run pytest -q
       - run: uv run python -m evals.run --validate
+
+  evals:
+    needs: test
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: relay
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: relay
+          POSTGRES_DB: relay
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.EVAL_ANTHROPIC_API_KEY }}   # a separate key with a spend cap
+      RELAY_DATABASE_URL: postgresql://postgres:relay@localhost:5432/relay
+      RELAY_MODEL: claude-haiku-5-5
+    steps:
+      - if: env.ANTHROPIC_API_KEY == ''
+        run: echo "::notice::EVAL_ANTHROPIC_API_KEY is not set, so the model eval gate was skipped."
+      - if: env.ANTHROPIC_API_KEY != ''
+        uses: actions/checkout@v7
+      - if: env.ANTHROPIC_API_KEY != ''
+        uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+      - if: env.ANTHROPIC_API_KEY != ''
+        run: |
+          uv sync --locked
+          uv run python -m evals.run --suite pr --trials 3 --save runs/pr.json | tee runs-report.txt
+      - if: always() && env.ANTHROPIC_API_KEY != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: |
+            relay/runs/pr.json
+            relay/runs-report.txt
