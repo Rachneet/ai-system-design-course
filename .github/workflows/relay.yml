@@ -116,3 +116,14 @@ jobs:
           test "$(docker inspect worker --format '{{.State.ExitCode}}')" = "0"
       - if: failure()
         run: docker logs api; docker logs worker
+
+  ops-config:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Prometheus rules
+        run: docker run --rm -v "$PWD/relay/ops/prometheus:/r:ro" --entrypoint promtool prom/prometheus:v2.53.0 check rules /r/alerts.yml
+      - name: Prometheus config
+        run: docker run --rm -v "$PWD/relay/ops/prometheus:/etc/prometheus:ro" --entrypoint promtool prom/prometheus:v2.53.0 check config /etc/prometheus/prometheus.yml
+      - name: Collector config
+        run: docker run --rm -e TRACE_BACKEND_ENDPOINT=http://localhost:4318 -v "$PWD/relay/ops/otel-collector.yaml:/c.yaml:ro" otel/opentelemetry-collector-contrib:0.111.0 validate --config=/c.yaml
