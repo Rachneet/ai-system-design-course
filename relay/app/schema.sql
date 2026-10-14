@@ -1,3 +1,6 @@
+-- pgvector lives in public so per-test and per-eval schemas can be dropped without dropping the extension.
+CREATE EXTENSION IF NOT EXISTS vector SCHEMA public;
+
 CREATE TABLE IF NOT EXISTS customers (
   id    text PRIMARY KEY,
   name  text NOT NULL,
@@ -66,3 +69,40 @@ CREATE TABLE IF NOT EXISTS memories (
   UNIQUE (customer_id, fact)
 );
 CREATE INDEX IF NOT EXISTS memories_customer ON memories (customer_id, updated_at DESC);
+
+-- ---- Lab 2: knowledge base ------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS documents (
+  doc_id       text PRIMARY KEY,           -- the source's own ID (file stem here)
+  title        text NOT NULL,
+  source_path  text NOT NULL,
+  content_hash text NOT NULL,              -- hash of the whole source file: unchanged files are skipped
+  acl          text[] NOT NULL,            -- principals allowed to read: 'public', 'group:support', 'user:c_77'
+  updated_at   timestamptz NOT NULL DEFAULT now(),
+  deleted_at   timestamptz                 -- tombstone; its chunks are removed
+);
+
+CREATE TABLE IF NOT EXISTS chunks (
+  chunk_id    text PRIMARY KEY,            -- doc_id + hash of the chunk text: edits only touch changed chunks
+  doc_id      text NOT NULL REFERENCES documents(doc_id) ON DELETE CASCADE,
+  ord         int NOT NULL,
+  context     text NOT NULL,               -- "Title > Section", prepended for search and shown to the model
+  content     text NOT NULL,
+  embedding   public.vector(384) NOT NULL,
+  embed_model text NOT NULL,
+  tsv         tsvector GENERATED ALWAYS AS (to_tsvector('english', context || ' ' || content)) STORED
+);
+CREATE INDEX IF NOT EXISTS chunks_doc ON chunks (doc_id);
+CREATE INDEX IF NOT EXISTS chunks_tsv ON chunks USING gin (tsv);
+CREATE INDEX IF NOT EXISTS chunks_embedding ON chunks USING hnsw (embedding public.vector_cosine_ops);
+
+CREATE TABLE IF NOT EXISTS ingest_jobs (
+  id         bigserial PRIMARY KEY,
+  doc_path   text NOT NULL,
+  op         text NOT NULL CHECK (op IN ('upsert', 'delete')),
+  status     text NOT NULL DEFAULT 'queued' CHECK (status IN ('queued', 'running', 'done', 'dead')),
+  attempts   int NOT NULL DEFAULT 0,
+  last_error text,
+  run_after  timestamptz NOT NULL DEFAULT now(),
+  created_at timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS ingest_jobs_ready ON ingest_jobs (run_after) WHERE status = 'queued';
