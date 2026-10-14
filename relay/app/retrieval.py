@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from .db import Store
 from .embeddings import Embedder, Reranker, to_pgvector
+from .telemetry import tracer
 
 RRF_K = 60
 STOPWORDS = {
@@ -121,19 +122,41 @@ class Retriever:
         self, query: str, principals: list[str], k: int = 6, mode: str = "hybrid+rerank"
     ) -> list[Hit]:
         """mode: vector | lexical | hybrid | hybrid+rerank"""
+        with tracer.start_as_current_span("retrieval.search") as span:
+            span.set_attributes(
+                {
+                    "gen_ai.operation.name": "retrieval",
+                    "relay.retrieval.mode": mode,
+                    "gen_ai.retrieval.top_k": k,
+                    "relay.retrieval.principals": len(principals),
+                }
+            )
+            hits = await self._search(query, principals, k, mode)
+            span.set_attributes(
+                {"relay.retrieval.hits": len(hits), "relay.retrieval.doc_ids": [h.doc_id for h in hits]}
+            )
+            return hits
+
+    async def _search(self, query: str, principals: list[str], k: int, mode: str) -> list[Hit]:
         if mode == "vector":
             ids = await self.vector_ids(query, principals)
         elif mode == "lexical":
             ids = await self.lexical_ids(query, principals)
         else:
-            ids = rrf(await self.lexical_ids(query, principals), await self.vector_ids(query, principals))
+            with tracer.start_as_current_span("retrieval.lexical"):
+                lexical = await self.lexical_ids(query, principals)
+            with tracer.start_as_current_span("retrieval.vector"):
+                vector = await self.vector_ids(query, principals)
+            ids = rrf(lexical, vector)
         if mode != "hybrid+rerank" or self.reranker is None:
             hits = await self.fetch(ids[:k])
             for i, h in enumerate(hits):
                 h.score = 1.0 / (i + 1)
             return hits
         hits = await self.fetch(ids[: self.candidates])
-        scores = await self.reranker.scores(query, [f"{h.context}\n{h.content}" for h in hits])
+        with tracer.start_as_current_span("retrieval.rerank") as span:
+            span.set_attribute("relay.rerank.candidates", len(hits))
+            scores = await self.reranker.scores(query, [f"{h.context}\n{h.content}" for h in hits])
         for h, s in zip(hits, scores, strict=True):
             h.score = float(s)
         return sorted(hits, key=lambda h: h.score, reverse=True)[:k]

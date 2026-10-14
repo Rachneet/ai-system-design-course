@@ -6,7 +6,9 @@ from datetime import timedelta
 from psycopg import AsyncConnection
 from psycopg.types.json import Jsonb
 
+from . import metrics
 from .db import Store
+from .telemetry import inject, link_from, tracer
 
 MAX_ATTEMPTS = 5
 
@@ -28,7 +30,7 @@ async def enqueue(
         "INSERT INTO jobs (kind, dedupe_key, payload, run_after) VALUES (%s, %s, %s, now() + %s) "
         "ON CONFLICT (kind, dedupe_key) WHERE status = 'queued' "
         "DO UPDATE SET payload = EXCLUDED.payload, run_after = EXCLUDED.run_after",
-        (kind, dedupe_key, Jsonb(payload), timedelta(seconds=delay_s)),
+        (kind, dedupe_key, Jsonb(payload | {"trace": inject()}), timedelta(seconds=delay_s)),
     )
 
 
@@ -39,12 +41,19 @@ async def run_ready(store: Store, handlers: dict, max_jobs: int = 100) -> int:
             job = await (await c.execute(CLAIM)).fetchone()
         if job is None:
             return done
-        try:
-            await handlers[job["kind"]](job["payload"])
-            status, error, delay = "done", None, 0.0
-        except Exception as e:  # noqa: BLE001 - one bad job must not stop the worker
-            status = "queued" if job["attempts"] < MAX_ATTEMPTS else "dead"
-            error, delay = repr(e)[:500], min(600, 2 ** job["attempts"]) + random.random()
+        payload = dict(job["payload"])
+        with tracer.start_as_current_span(
+            f"job {job['kind']}", links=link_from(payload.pop("trace", None))
+        ) as span:
+            span.set_attributes({"relay.job.id": job["id"], "relay.job.attempt": job["attempts"]})
+            try:
+                await handlers[job["kind"]](payload)
+                status, error, delay = "done", None, 0.0
+            except Exception as e:  # noqa: BLE001 - one bad job must not stop the worker
+                status = "queued" if job["attempts"] < MAX_ATTEMPTS else "dead"
+                error, delay = repr(e)[:500], min(600, 2 ** job["attempts"]) + random.random()
+                span.record_exception(e)
+        metrics.jobs.labels(kind=job["kind"], outcome=status).inc()
         async with store.conn() as c:
             if status == "queued":
                 # A newer job for the same key may already be queued; then this retry is redundant.
