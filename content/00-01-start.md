@@ -98,7 +98,17 @@ Relay, the system you build, chooses its model from one setting, `RELAY_MODEL`, 
 
 This works because most providers, local servers and gateways speak the same OpenAI-style Chat Completions format; Relay translates its messages into it, and talks to Anthropic natively. Model IDs change often, so check each provider's model list before you copy one.
 
-> [!numbers] Model cost for the whole course is small if you are deliberate. A typical lab session sends about 300 agent turns of roughly 6,000 input and 500 output tokens: 1.8M input and 150,000 output tokens. Cost = 1.8 × input price + 0.15 × output price, with prices per million tokens. On Claude Haiku 5.5 ($0.10 input, $0.50 output) that is 0.18 + 0.075 ≈ **$0.26** per session. On Claude Opus 5.5 ($4 / $20) the same session costs about **$10**. Develop on a small model, then run your eval suite on the model you intend to ship.
+> [!numbers] What one lab session costs. A session is about 300 agent turns. Each turn sends about 6,000 tokens to the model and gets about 500 back. Over the session that adds up to:
+>
+> - **1.8M input tokens** (300 × 6,000)
+> - **0.15M output tokens** (300 × 500)
+>
+> Providers price per million tokens, so multiply each total by its price and add the two:
+>
+> - Claude Haiku 5.5 ($0.10 in, $0.50 out): 1.8 × $0.10 + 0.15 × $0.50 = **$0.26**
+> - Claude Opus 5.5 ($4 in, $20 out): 1.8 × $4 + 0.15 × $20 = **$10.20**
+>
+> Same work, about 40 times the price. Build and debug on a small or local model, and save the large one for the eval run that decides what ships. The figure below adds other providers.
 
 ```viz
 caption: The same lab session costs nothing on a local model and about $10 on a frontier model. Develop small; let your evals pick what ships.
