@@ -66,6 +66,27 @@ expect:
     must_cite: [POL-RETURNS-2026]
 ```
 
+```viz
+caption: An agent case is a small world plus a checklist. The world is frozen so the run is reproducible; the checklist judges actions and end state, not wording alone.
+<div class="vz-cols" style="--k:3">
+  <div class="vz-panel sk m"><h5>Frozen env</h5>
+    <div class="vz-row"><span class="ch sk m">now: Oct 1</span></div>
+    <div class="vz-row"><span class="ch sk m">order 5520, used</span></div>
+    <div class="vz-row"><span class="ch sk m">customer c_301</span></div>
+  </div>
+  <div class="vz-panel sk c"><h5>Conversation</h5>
+    <div class="vz-row"><span class="ch sk c">"It leaks."</span></div>
+    <div class="vz-row"><span class="ch sk ghost">scripted or simulated</span></div>
+  </div>
+  <div class="vz-panel sk g"><h5>Expect</h5>
+    <div class="vz-row"><span class="ch sk g">must call get_order</span></div>
+    <div class="vz-row"><span class="ch sk g">never issue_refund</span></div>
+    <div class="vz-row"><span class="ch sk g">refunds: none</span></div>
+    <div class="vz-row"><span class="ch sk g">rubric for the judge</span></div>
+  </div>
+</div>
+```
+
 Key ideas in this format:
 
 - **Frozen environment.** Time, database rows, and external API responses are fixed per case, so failures are reproducible.
@@ -82,6 +103,12 @@ Key ideas in this format:
 | Bug regressions | Each one is a proven failure | Narrow | Growing over time |
 | Synthetic generation | Covers rare cases and new features before launch | Can be unrealistic or repetitive | 20 to 40% |
 | Red-team / adversarial | Security and abuse coverage | Skews toward attacks | 10 to 20% |
+
+```viz
+caption: The course's reference suite has 163 cases and none from production yet, because it has no real users. Your first production traces should change that mix.
+<div class="vz-bars"><span>synthetic</span><span class="bar sk"><i class="sk c" style="--w:100%"></i></span><b>70</b><span>hand-written</span><span class="bar sk"><i class="sk c" style="--w:80%"></i></span><b>56</b><span>red-team</span><span class="bar sk"><i class="sk c" style="--w:39%"></i></span><b>27</b><span>encoded attacks</span><span class="bar sk"><i class="sk c" style="--w:14%"></i></span><b>10</b><span>production</span><span class="bar sk"><i class="sk b" style="--w:1%"></i></span><b>0</b></div>
+<div class="vz-src">Source: counted from the <code>source</code> field of every case in <a href="https://github.com/Rachneet/ai-system-design-course/tree/main/relay/evals/cases">relay/evals/cases</a> (dev and held-out).</div>
+```
 
 ### Turning traces into cases
 
@@ -103,7 +130,7 @@ DIMENSIONS = {
 # sample combinations, then for each: generate a realistic first message, an env, and draft expectations
 ```
 
-Generate the scenario and environment with one model call, then have a human review and fix expectations. **Never let the same model that runs the agent write the expected answers unchecked**: you would be testing the model against itself.
+Generate the scenario and environment with one model call, then have a human review and fix expectations. Any capable model works as the generator, hosted (OpenAI, Gemini, Anthropic) or open-weights (Qwen, Llama, DeepSeek, Mistral) through vLLM, Ollama or a router such as OpenRouter. **Never let the same model that runs the agent write the expected answers unchecked**: you would be testing the model against itself. A generator from a different model family also brings different phrasing and blind spots.
 
 ### Simulated users for multi-turn cases
 
@@ -118,7 +145,14 @@ Reply in one or two short sentences, as a real customer would. When your goal is
 met or clearly impossible, end your message with ###DONE###."""
 ```
 
-Simulators introduce their own variance, so run multi-turn cases several times and look at pass^k. In the τ-bench paper, even strong function-calling agents solved fewer than 50% of tasks, and pass^8 in the retail domain was below 25%.
+Simulators introduce their own variance, so run multi-turn cases several times and look at pass^k: the chance that **all** k trials pass, not just one. In the τ-bench paper, even strong function-calling agents such as GPT-4o solved fewer than 50% of tasks, and pass^8 in the retail domain was below 25%. The simulator does not need to be the agent's model; a cheaper model, or another provider's, keeps the two from sharing habits.
+
+```viz
+caption: Passing once is not the same as passing reliably. Agents that solved under half of τ-bench tasks once solved under a quarter in all eight retail trials.
+<div class="vz-bars"><span>pass^1</span><span class="bar sk"><i class="sk c" style="--w:50%"></i></span><b>under 50%</b><span>pass^8, retail</span><span class="bar sk"><i class="sk b" style="--w:25%"></i></span><b>under 25%</b></div>
+<p>bars show the upper bounds reported</p>
+<div class="vz-src">Source: Yao et al., <a href="https://arxiv.org/abs/2406.12045">τ-bench</a> (2024), abstract.</div>
+```
 
 ## Environments: sandboxes for write tools
 

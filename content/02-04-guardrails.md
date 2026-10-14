@@ -35,8 +35,8 @@ flowchart LR
 | Size and rate limits | Abuse, cost attacks | Code | ~0 ms |
 | PII detection and redaction | Card numbers, SSNs, emails going to the model or logs | Regex + checksums, [Presidio](https://microsoft.github.io/presidio/) | 1 to 20 ms |
 | Topic / scope classifier | Off-topic use ("write my essay") | Small classifier or small LLM | 50 to 300 ms |
-| Harmful content | Self-harm, violence, abuse | Moderation model, e.g. [Llama Guard](https://huggingface.co/meta-llama/Llama-Guard-3-8B) | 100 to 400 ms |
-| Prompt injection detection | Known jailbreak patterns | Classifier | 20 to 200 ms |
+| Harmful content | Self-harm, violence, abuse | Hosted moderation, e.g. OpenAI's free [moderation endpoint](https://developers.openai.com/api/docs/guides/moderation); or open classifiers you host: [Llama Guard 4](https://huggingface.co/meta-llama/Llama-Guard-4-12B), [gpt-oss-safeguard](https://openai.com/index/introducing-gpt-oss-safeguard/) (reads your own written policy) | 100 to 400 ms |
+| Prompt injection detection | Known jailbreak patterns | Small classifier, e.g. [Prompt Guard 2](https://huggingface.co/meta-llama/Llama-Prompt-Guard-2-86M) (86M or 22M parameters) | 20 to 200 ms |
 
 ### Output side
 
@@ -56,6 +56,13 @@ Tool-call guardrails are the most important for agents, because that is where th
 ## Cheap checks first, in parallel where possible
 
 Guardrails add latency and cost to every request. Design the stack like an airport security line: quick checks for everyone, expensive checks only when needed.
+
+```viz
+caption: Each layer is slower than the one before by orders of magnitude. Run the cheap ones on everything and the expensive ones only where they earn it.
+<div class="vz-bars"><span>regex + Luhn</span><span class="bar sk"><i class="sk g" style="--w:1%"></i></span><b>0.01 ms</b><span>22M classifier</span><span class="bar sk"><i class="sk w" style="--w:21%"></i></span><b>19 ms</b><span>86M classifier</span><span class="bar sk"><i class="sk w" style="--w:100%"></i></span><b>92 ms</b><span>LLM judge</span><span class="bar sk"><i class="sk b" style="--w:100%"></i></span><b>a full model call</b></div>
+<div class="vz-row"><span class="ch sk g">every message</span><span class="arr sk"></span><span class="ch sk w">most messages</span><span class="arr sk"></span><span class="ch sk b">flagged or sampled</span></div>
+<div class="vz-src">Regex + Luhn: the <code>redact_cards</code> code below on a 500-character message, about 10 µs on a laptop CPU (our measurement). Classifiers: <a href="https://huggingface.co/meta-llama/Llama-Prompt-Guard-2-86M">Prompt Guard 2 model card</a>, 512 tokens on one A100 GPU. The judge bar is not to scale.</div>
+```
 
 1. **Deterministic code checks first.** Length, regexes, checksums (a Luhn check catches real card numbers with few false positives), allow-lists. Microseconds.
 2. **Small classifiers next.** Fine-tuned small models or small LLMs, for topic and safety.
@@ -101,7 +108,19 @@ async def handle(message):
     return await work
 ```
 
-> [!numbers] Sequential: input guard 200 ms + agent 4,000 ms + output guard 300 ms = 4.5 s. Input guard in parallel: 4.3 s. Output check on streamed text is harder, see below. For a cheap-model judge at 1,500 input and 50 output tokens on Haiku 5.5, each check costs about $0.00018. At 1M messages a month, that is **$180** for the check, often worth it, but only if it measurably catches problems.
+```viz
+caption: Start the input check alongside the agent instead of before it. You still pay for the check, but the user no longer waits for it.
+<div class="vz-panel sk"><h5>Sequential: 4.5 s</h5>
+  <div class="vz-row"><span class="ch sk w">guard 0.2 s</span><span class="ch wide sk c">agent 4.0 s</span><span class="ch sk w">output check 0.3 s</span></div>
+</div>
+<div class="vz-panel sk"><h5>Parallel input guard: 4.3 s</h5>
+  <div class="vz-row"><span class="ch sk w">guard 0.2 s</span><b>runs alongside</b></div>
+  <div class="vz-row"><span class="ch wide sk c">agent 4.0 s</span><span class="ch sk w">output check 0.3 s</span></div>
+</div>
+<p>block verdict: cancel the agent run</p>
+```
+
+> [!numbers] Sequential: input guard 200 ms + agent 4,000 ms + output guard 300 ms = 4.5 s. Input guard in parallel: 4.3 s. Output check on streamed text is harder, see below. A judge on a small hosted model, at 1,500 input and 50 output tokens per check, costs about $0.0001 to $0.0002: $0.000175 on Claude Haiku 5.5 ($0.10 / $0.50 per million input / output tokens), $0.00017 on Gemini 2.5 Flash-Lite ($0.10 / $0.40), $0.000095 on GPT-5 nano ($0.05 / $0.40). At 1M messages a month, that is **about $95 to $175** for the check, often worth it, but only if it measurably catches problems. A self-hosted open classifier swaps the per-token bill for GPU hours. Prices as listed in October 2026 by [Anthropic](https://platform.claude.com/docs/en/about-claude/pricing), [Google](https://ai.google.dev/gemini-api/docs/pricing) and [OpenAI](https://developers.openai.com/api/docs/pricing); check before you budget.
 
 ## Guardrails and streaming
 
@@ -136,7 +155,7 @@ Design the failure path:
 
 ## Build or buy
 
-Frameworks such as [Guardrails AI](https://github.com/guardrails-ai/guardrails) and [NeMo Guardrails](https://github.com/NVIDIA/NeMo-Guardrails) give you a library of validators and a way to compose them. Cloud providers offer managed content filters. They are good starting points. Whatever you use, the evaluation discipline above still applies: you need your own labelled data to know whether a guardrail works for your traffic.
+Frameworks such as [Guardrails AI](https://github.com/guardrails-ai/guardrails) and [NeMo Guardrails](https://github.com/NVIDIA/NeMo-Guardrails) give you a library of validators and a way to compose them. Model providers and clouds offer managed content filters, such as OpenAI's moderation endpoint, and open safety models (Llama Guard, Prompt Guard, gpt-oss-safeguard) are open weights you can host yourself, so text never leaves your infrastructure. They are good starting points. Whatever you use, the evaluation discipline above still applies: you need your own labelled data to know whether a guardrail works for your traffic.
 
 ## Design review questions
 
@@ -151,9 +170,9 @@ Frameworks such as [Guardrails AI](https://github.com/guardrails-ai/guardrails) 
 ## Further reading
 
 - [OWASP Top 10 for LLM Applications](https://genai.owasp.org/llm-top-10/), the standard risk list.
-- [How to implement LLM guardrails](https://cookbook.openai.com/examples/how_to_use_guardrails), OpenAI Cookbook. Covers async guardrails and their trade-offs.
+- [How to use guardrails](https://developers.openai.com/cookbook/examples/how_to_use_guardrails), OpenAI Cookbook (archived; the pattern applies to any provider). Covers async guardrails and their trade-offs.
 - [Microsoft Presidio](https://microsoft.github.io/presidio/), open-source PII detection and anonymisation.
-- [Llama Guard 3](https://huggingface.co/meta-llama/Llama-Guard-3-8B), an open safety classifier.
+- [Llama Guard 4](https://huggingface.co/meta-llama/Llama-Guard-4-12B) and [Prompt Guard 2](https://huggingface.co/meta-llama/Llama-Prompt-Guard-2-86M), open safety and injection classifiers.
 - [NeMo Guardrails](https://github.com/NVIDIA/NeMo-Guardrails) and [Guardrails AI](https://github.com/guardrails-ai/guardrails).
 
 ```quiz

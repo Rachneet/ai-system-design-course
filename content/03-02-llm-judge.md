@@ -4,7 +4,7 @@ week: 3
 kind: lesson
 title: LLM-as-judge versus human evaluation
 short: LLM judge vs humans
-minutes: 45
+minutes: 50
 summary: When to use a model as a grader, how to design judges that agree with humans, how to measure that agreement, and the biases that make naive judges unreliable.
 ---
 
@@ -51,10 +51,12 @@ A judge needs the same context a human grader would: the conversation, the tool 
 ### Ask for reasoning, then a verdict, in structured output
 
 ```python
-from pydantic import BaseModel
 from typing import Literal
+from openai import OpenAI
+from pydantic import BaseModel, ConfigDict
 
 class Verdict(BaseModel):
+    model_config = ConfigDict(extra="forbid")   # strict schemas need additionalProperties: false
     reasoning: str                      # short; written before the verdict
     verdict: Literal["pass", "fail"]
 
@@ -73,18 +75,41 @@ Fail example: Tool shows ETA Oct 18; reply says "It will arrive tomorrow."
 
 Explain your reasoning in two or three sentences, then give the verdict."""
 
+# One client for OpenAI, Gemini, OpenRouter, Hugging Face, vLLM or Ollama: change base_url and model.
+client = OpenAI(base_url=JUDGE_BASE_URL, api_key=JUDGE_API_KEY)
+
 def judge(transcript: str) -> Verdict:
-    resp = client.messages.parse(
-        model=JUDGE_MODEL, max_tokens=512,
+    resp = client.chat.completions.create(
+        model=JUDGE_MODEL,
         messages=[{"role": "user", "content": JUDGE_PROMPT.format(transcript=transcript)}],
-        output_format=Verdict,
+        response_format={"type": "json_schema", "json_schema": {
+            "name": "verdict", "schema": Verdict.model_json_schema(), "strict": True}},
     )
-    return resp.parsed_output
+    return Verdict.model_validate_json(resp.choices[0].message.content)
 ```
+
+JSON-schema output is supported by [OpenAI](https://developers.openai.com/api/docs/guides/structured-outputs), Gemini's [OpenAI-compatible endpoint](https://ai.google.dev/gemini-api/docs/openai), [vLLM](https://docs.vllm.ai/en/latest/features/structured_outputs.html), [Ollama](https://docs.ollama.com/capabilities/structured-outputs) (local models) and [OpenRouter](https://openrouter.ai/docs/features/structured-outputs) (on endpoints that support it). Anthropic's SDK does the same natively with `client.messages.parse(..., output_format=Verdict)` and returns `parsed_output` ([docs](https://platform.claude.com/docs/en/build-with-claude/structured-outputs)). Whatever the provider, validate the result: a judge that returns malformed JSON should count as an error, not a pass.
 
 ### Pick the judge model deliberately
 
 A judge should usually be at least as capable as the model being judged on the relevant skill. For narrow binary checks, a small model with a good prompt often matches a large one: measure it. Pin the judge model version; a silent judge upgrade changes all your scores.
+
+Prefer a judge from a **different model family** than the agent. Models can recognise their own outputs, and the more strongly they do, the more they favour them ([Panickssery et al., 2024](https://arxiv.org/abs/2404.13076)). Because the judge is just another model call, it can sit on any provider: an agent on OpenAI judged by Gemini, an agent on Claude judged by an open Qwen or Llama model on vLLM. In Relay this is one setting, for example `RELAY_MODEL=openai:gpt-5` with `RELAY_JUDGE_MODEL=gemini:gemini-2.5-flash`.
+
+```viz
+caption: Same family grading itself can inflate scores. A judge from another family, calibrated on human labels, is the safer default.
+<div class="vz-cols">
+  <div class="vz-panel sk b"><h5>Same family</h5>
+    <div class="vz-row"><span class="ch sk">agent: family A</span><span class="arr sk"></span><span class="ch sk b">judge: family A</span></div>
+    <p>recognises its own style, favours it</p>
+  </div>
+  <div class="vz-panel sk g"><h5>Different family</h5>
+    <div class="vz-row"><span class="ch sk">agent: family A</span><span class="arr sk"></span><span class="ch sk g">judge: family B</span></div>
+    <p>still calibrate it against human labels</p>
+  </div>
+</div>
+<div class="vz-src">Self-preference: Panickssery, Bowman and Feng, <a href="https://arxiv.org/abs/2404.13076">LLM Evaluators Recognize and Favor Their Own Generations</a> (2024).</div>
+```
 
 ## Measuring judge quality
 
@@ -96,7 +121,21 @@ Do not report raw accuracy alone. If 90% of outputs pass, a judge that always sa
 |---|---|
 | True positive rate (recall on fails) | Of real failures, how many did the judge catch? |
 | True negative rate | Of real passes, how many did it pass? |
-| Cohen's kappa | Agreement corrected for chance; above 0.6 is good, above 0.8 is excellent |
+| Cohen's kappa | Agreement corrected for chance. The common [Landis and Koch (1977)](https://doi.org/10.2307/2529310) bands call 0.61 to 0.80 substantial and above 0.80 almost perfect; they are a convention, not a law |
+
+```viz
+caption: 100 labelled outputs, 10 of them real failures. The judge that passes everything scores 90% accuracy and catches nothing; kappa and fail recall expose it.
+<div class="vz-cols">
+  <div class="vz-panel sk b"><h5>Always says pass</h5>
+    <div class="vz-bars"><span>accuracy</span><span class="bar sk"><i class="sk c" style="--w:90%"></i></span><b>0.90</b><span>fail recall</span><span class="bar sk"><i class="sk b" style="--w:1%"></i></span><b>0.00</b><span>kappa</span><span class="bar sk"><i class="sk b" style="--w:1%"></i></span><b>0.00</b></div>
+  </div>
+  <div class="vz-panel sk g"><h5>Catches 8 of 10 fails</h5>
+    <div class="vz-bars"><span>accuracy</span><span class="bar sk"><i class="sk c" style="--w:94%"></i></span><b>0.94</b><span>fail recall</span><span class="bar sk"><i class="sk g" style="--w:80%"></i></span><b>0.80</b><span>kappa</span><span class="bar sk"><i class="sk g" style="--w:69%"></i></span><b>0.69</b></div>
+    <p>4 false alarms on real passes</p>
+  </div>
+</div>
+<p>accuracy barely moves; kappa goes from 0 to 0.69</p>
+```
 
 ```python
 from sklearn.metrics import cohen_kappa_score, confusion_matrix
@@ -124,7 +163,7 @@ If you know the judge's error rates, you can estimate the true pass rate from th
 |---|---|---|
 | Position bias | In pairwise comparisons, prefers the first (or second) option | Evaluate both orders; count only consistent wins |
 | Verbosity bias | Prefers longer answers | Rubric that rewards concision; binary criteria |
-| Self-preference | Prefers outputs from its own model family | Use a different family as judge where possible; calibrate |
+| Self-preference | Prefers outputs from its own model family ([Panickssery et al.](https://arxiv.org/abs/2404.13076)) | Use a different family as judge where possible; calibrate |
 | Leniency | Passes borderline cases | Include hard fail examples in the prompt; measure fail recall |
 | Rubric drift | Interprets vague criteria differently over time | Specific, example-backed criteria; pinned model version |
 
@@ -146,7 +185,14 @@ If you know the judge's error rates, you can estimate the true pass rate from th
 
 ## Cost
 
-> [!numbers] 400 cases × 3 trials × 3 judges = 3,600 judge calls. At about 4,000 input and 150 output tokens each on Sonnet 5.5 ($2 / $10 per million): 3,600 × (4,000 × 2 + 150 × 10) / 1e6 ≈ **$34** per full run. On Haiku 5.5 ($0.10 / $0.50): about **$1.70**. If the small judge's kappa is close to the large one's, use it for CI and the large one for release checks.
+400 cases × 3 trials × 3 judges = 3,600 judge calls per full run. At about 4,000 input and 150 output tokens each, the cost is 3,600 × (4,000 × input price + 150 × output price) / 1M:
+
+```viz
+caption: The same 3,600 judge calls cost from under $2 to about $34 depending on the model. If a small judge's kappa is close to a large one's, use it for CI and the large one for release checks.
+<div class="vz-bars"><span>Claude Sonnet 5.5</span><span class="bar sk"><i class="sk w" style="--w:100%"></i></span><b>$34</b><span>GPT-5</span><span class="bar sk"><i class="sk w" style="--w:68%"></i></span><b>$23</b><span>Gemini 2.5 Flash</span><span class="bar sk"><i class="sk w" style="--w:17%"></i></span><b>$5.70</b><span>GPT-5 mini</span><span class="bar sk"><i class="sk w" style="--w:14%"></i></span><b>$4.70</b><span>Claude Haiku 5.5</span><span class="bar sk"><i class="sk w" style="--w:5%"></i></span><b>$1.70</b><span>Gemini 2.5 Flash-Lite</span><span class="bar sk"><i class="sk w" style="--w:5%"></i></span><b>$1.70</b></div>
+<p>open models on your own GPUs: no per-token bill, you pay for GPU hours</p>
+<div class="vz-src">List prices per million input / output tokens in October 2026: Sonnet 5.5 $2 / $10 and Haiku 5.5 $0.10 / $0.50 (<a href="https://platform.claude.com/docs/en/about-claude/pricing">Anthropic</a>); GPT-5 $1.25 / $10 and GPT-5 mini $0.25 / $2 (<a href="https://developers.openai.com/api/docs/pricing">OpenAI</a>); 2.5 Flash $0.30 / $2.50 and 2.5 Flash-Lite $0.10 / $0.40 (<a href="https://ai.google.dev/gemini-api/docs/pricing">Google</a>). Same token counts assumed for every model; real tokenizers differ, so the same text can be more or fewer tokens.</div>
+```
 
 ## Design review questions
 

@@ -4,7 +4,7 @@ week: 2
 kind: lesson
 title: Scalable search for better context
 short: Scalable search
-minutes: 55
+minutes: 60
 summary: Build a retrieval pipeline that finds the right context at scale, with query understanding, hybrid search, fusion, reranking, and the index tuning and sharding that keep it fast.
 ---
 
@@ -80,13 +80,42 @@ fused = rrf(bm25_ids, vector_ids)
 
 RRF is simple, robust, and needs no tuning. It is from a 2009 [SIGIR paper](https://plg.uwaterloo.ca/~gvcormac/cormacksigir09-rrf.pdf) and is still the default in most hybrid systems.
 
+### Measure before you believe it
+
+Hybrid search and reranking usually help, but not always, and not by the same amount. The course's reference implementation measured all four set-ups on its own small eval set:
+
+```viz
+caption: On this eval set the reranker gave the biggest gain, and plain hybrid scored below vector search alone. Measure on your own data.
+<div class="vz-bars"><span>full text</span><span class="bar sk"><i class="sk c" style="--w:61%"></i></span><b>0.61</b><span>vector</span><span class="bar sk"><i class="sk c" style="--w:82%"></i></span><b>0.82</b><span>hybrid (RRF)</span><span class="bar sk"><i class="sk b" style="--w:77%"></i></span><b>0.77</b><span>hybrid + rerank</span><span class="bar sk"><i class="sk g" style="--w:89%"></i></span><b>0.89</b></div>
+<p>recall@1: the right document ranked first</p>
+<div class="vz-row"><span class="ch sk">p50 latency</span><span class="ch sk">full text under 1 ms</span><span class="ch sk">vector 3 ms</span><span class="ch sk">hybrid 3 ms</span><span class="ch sk g">rerank 82 ms</span></div>
+<div class="vz-src">Source: <a href="https://github.com/Rachneet/ai-system-design-course/tree/main/relay#measure-retrieval-free-local">Relay retrieval eval</a>: 44 paraphrased queries, 30 documents, bge-small-en-v1.5 embeddings and a MiniLM cross-encoder on a laptop CPU. A small corpus: a worked example of the method, not a general result.</div>
+```
+
+Why did hybrid lose here? RRF gives both lists equal weight, so when the keyword ranker is weak (short paraphrased queries against a small corpus), it pulls noise into the top spot. Fusion helps when both rankers are decent; a reranker fixes the order either way.
+
 ## Reranking
 
 First-stage retrieval uses **bi-encoders**: query and document are embedded separately, so documents can be pre-computed. Fast, but the model never sees query and document together. A **cross-encoder reranker** reads the pair together and scores relevance much more accurately, at the cost of one model pass per candidate.
 
 So: retrieve 50 to 100 candidates cheaply, rerank them, keep the top 5 to 10.
 
-Options: hosted rerank APIs (for example [Cohere Rerank](https://docs.cohere.com/docs/rerank-overview)), open models such as [bge-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3) that you run yourself, or an LLM scoring candidates (accurate, slow, and expensive). Sentence-Transformers documents the [retrieve and re-rank](https://sbert.net/examples/sentence_transformer/applications/retrieve_rerank/README.html) pattern well.
+```viz
+caption: A bi-encoder embeds documents ahead of time, so it can search millions. A cross-encoder reads query and document together, so it is more accurate but runs once per candidate.
+<div class="vz-cols">
+  <div class="vz-panel sk c"><h5>Bi-encoder: first stage</h5>
+    <div class="vz-row"><span class="ch sk">query</span><span class="arr sk"></span><span class="ch sk c">vector</span></div>
+    <div class="vz-row"><span class="ch sk">doc</span><span class="arr sk"></span><span class="ch sk c">vector, stored</span></div>
+    <div class="vz-row"><span class="ch sk">compare vectors</span><b>millions, milliseconds</b></div>
+  </div>
+  <div class="vz-panel sk g"><h5>Cross-encoder: rerank</h5>
+    <div class="vz-row"><span class="ch sk">query + doc</span><span class="arr sk"></span><span class="ch sk g">one model pass</span><span class="arr sk"></span><span class="ch sk">score</span></div>
+    <div class="vz-row"><b>sees both at once; 50 pairs, not millions</b></div>
+  </div>
+</div>
+```
+
+Options: hosted rerank APIs (for example [Cohere Rerank](https://docs.cohere.com/docs/rerank-overview) and [Voyage's rerankers](https://docs.voyageai.com/docs/reranker)), open models you run yourself such as [bge-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3) or the small MS MARCO MiniLM cross-encoders, or an LLM from any provider scoring candidates (accurate, slow, and expensive). Sentence-Transformers documents the [retrieve and re-rank](https://sbert.net/examples/sentence_transformer/applications/retrieve_rerank/README.html) pattern well.
 
 > [!numbers] Reranking 50 candidates of 400 tokens each with a hosted reranker typically adds 100 to 300 ms. On a GPU-hosted open model, a batch of 50 pairs takes tens of milliseconds. Both are small next to multi-second generation, and reranking usually lifts precision enough that you can send fewer chunks to the LLM, which saves more time and money than the reranker costs.
 
@@ -113,7 +142,7 @@ Used tents and sleeping bags may be returned within 30 days of delivery ...
 
 ## Choosing an embedding model
 
-Check the [MTEB leaderboard](https://huggingface.co/spaces/mteb/leaderboard) for retrieval scores, then test the top few on **your** retrieval eval set, because leaderboards rarely match your domain. Consider: dimension (storage and speed), max input length, multilingual support, cost, and whether you can self-host. Many models support shortened (Matryoshka) embeddings: you can store 256 dimensions instead of 1,024 with a small quality loss and a 4x storage saving.
+Check the [MTEB leaderboard](https://huggingface.co/spaces/mteb/leaderboard) for retrieval scores, then test the top few on **your** retrieval eval set, because leaderboards rarely match your domain. Consider: dimension (storage and speed), max input length, multilingual support, cost, and whether you can self-host. Many models support shortened (Matryoshka) embeddings: you can store 256 dimensions instead of 1,024 with a small quality loss and a 4x storage saving. Each API names the setting differently: `dimensions` for [OpenAI's text-embedding-3 models](https://developers.openai.com/api/docs/guides/embeddings), `output_dimensionality` for [Gemini embeddings](https://ai.google.dev/gemini-api/docs/embeddings) (Google recommends 768, 1,536 or 3,072), `output_dimension` for [Voyage](https://docs.voyageai.com/docs/embeddings) (256 to 2,048), and `truncate_dim` when you load a Matryoshka-trained open model in [sentence-transformers](https://sbert.net/examples/sentence_transformer/training/matryoshka/README.html). Only truncate models trained for it.
 
 ## Making it fast at scale
 
@@ -132,6 +161,21 @@ Tune `ef_search` against your recall eval: plot recall@10 and p95 latency as it 
 ### Filtering and ANN
 
 Metadata filters (tenant, ACL, language) interact badly with ANN indexes. **Post-filtering** (search, then drop non-matching results) can return almost nothing when the filter is selective. **Pre-filtering** (search only matching vectors) can make HNSW degrade. Modern engines handle this with filtered HNSW traversal or iterative scans. pgvector filters after the index scan, so with the default `hnsw.ef_search = 40` a filter matching 10% of rows returns only about 4 rows on average; version 0.8.0 added iterative index scans (`SET hnsw.iterative_scan = relaxed_order`) to keep scanning until enough rows match. For very selective filters, such as a single tenant's 2,000 documents, an exact scan over the filtered rows is fast and perfectly accurate.
+
+```viz
+caption: pgvector filters after the index scan. With a filter that matches 10% of rows, the default scan returns about 4 rows, not 20; an iterative scan keeps going until enough rows match.
+<div class="vz-cols">
+  <div class="vz-panel sk b"><h5>Default: ef_search = 40</h5>
+    <div class="cells" style="--n:10"><i class="sk g"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk g"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk g"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk x"></i><i class="sk g"></i><i class="sk x"></i><i class="sk x"></i></div>
+    <p class="big b">about 4 rows</p><p>asked for LIMIT 20</p>
+  </div>
+  <div class="vz-panel sk g"><h5>Iterative scan, 0.8.0+</h5>
+    <div class="vz-row"><span class="ch sk">scan 40</span><span class="arr sk"></span><span class="ch sk">scan more</span><span class="arr sk"></span><span class="ch sk g">20 matches</span></div>
+    <p class="big g">full result list</p><p>SET hnsw.iterative_scan = relaxed_order</p>
+  </div>
+</div>
+<div class="vz-src">Source: <a href="https://github.com/pgvector/pgvector">pgvector README</a>, sections on filtering and iterative index scans.</div>
+```
 
 ### Memory and sharding
 

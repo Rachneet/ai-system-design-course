@@ -44,7 +44,7 @@ CREATE TABLE chunks (
   source        text NOT NULL,
   content       text NOT NULL,
   content_hash  text NOT NULL,
-  embedding     vector(1024),
+  embedding     vector(1024),             -- must match your embedding model's output size
   embed_model   text NOT NULL,             -- which model produced this vector
   acl           text[] NOT NULL,           -- who may see it (next lesson)
   doc_version   bigint NOT NULL,
@@ -80,6 +80,25 @@ async def sync_document(db, doc):
         await db.update_doc_metadata(doc.id, version=doc.version, acl=doc.acl)  # ACL change applies to all chunks
 ```
 
+```viz
+caption: Edit one paragraph and only its chunk gets a new hash. The diff re-embeds one chunk, deletes one, and leaves the rest alone.
+<div class="vz-cols">
+  <div class="vz-panel sk"><h5>Version 6 in the index</h5>
+    <div class="vz-row"><span class="ch sk">#0 9f2c</span><span class="ch sk">#1 a71e</span><span class="ch sk">#2 3b0d</span><span class="ch sk">#3 c44a</span></div>
+    <span class="arr d sk"></span>
+    <div class="vz-row"><span class="ch sk">edit: paragraph 3</span></div>
+  </div>
+  <div class="vz-panel sk"><h5>Version 7 after the diff</h5>
+    <div class="vz-row"><span class="ch sk g">#0 9f2c</span><span class="ch sk g">#1 a71e</span><span class="ch sk b">3b0d gone</span><span class="ch sk c">#2 e810 new</span><span class="ch sk g">#3 c44a</span></div>
+    <div class="vz-row"><span class="ch sk g">same hash: skip</span><span class="ch sk c">new: embed</span><span class="ch sk b">removed: delete</span></div>
+  </div>
+</div>
+<div class="vz-panel sk"><h5>Embeddings per edit</h5>
+  <div class="vz-bars"><span>full re-index</span><span class="bar sk"><i class="sk c" style="--w:100%"></i></span><b>60,000</b><span>hash diff</span><span class="bar sk"><i class="sk c" style="--w:1%"></i></span><b>about 2</b></div>
+  <p>the help centre in the worked example below</p>
+</div>
+```
+
 > [!numbers] A help centre has 5,000 articles averaging 12 chunks. A typical edit changes 1 to 2 paragraphs. Full re-index on every edit: 60,000 embeddings. Hash-based incremental: about 2. With 300 edits a day, that is 18M versus 600 embedding calls daily. The cost difference is real, but the bigger win is freshness: incremental updates land in seconds.
 
 ### How do you learn that something changed?
@@ -90,6 +109,21 @@ async def sync_document(db, doc):
 | Webhooks | Source pushes an event on create, update, delete | Seconds | Usually |
 | Change data capture (CDC) | Read the database's change log (e.g. Postgres logical replication, Debezium) | Seconds | Yes |
 | Full reconciliation | Periodically list all source IDs and diff against the index | Hours | Yes, the safety net |
+
+```viz
+caption: Push gets most changes in within seconds. Reconciliation is slow, but it is the only layer that catches the event push dropped.
+<div class="vz-row"><b>10:00</b><span class="ch sk">doc deleted at source</span></div>
+<div class="vz-cols">
+  <div class="vz-panel sk g"><h5>Webhook or CDC arrives</h5>
+    <div class="vz-row"><span class="ch sk">event</span><span class="arr sk g"></span><span class="ch sk g">removed in seconds</span></div>
+    <p>the usual path: seconds</p>
+  </div>
+  <div class="vz-panel sk b"><h5>Webhook dropped</h5>
+    <div class="vz-row"><span class="ch sk b">still retrievable</span><span class="arr sk"></span><span class="ch sk g">nightly diff removes it</span></div>
+    <p>the safety net: hours</p>
+  </div>
+</div>
+```
 
 Use push (webhooks or CDC) for freshness and a nightly reconciliation job as a safety net. Webhooks get dropped. Reconciliation finds documents that exist in the index but no longer exist at the source and removes them.
 
@@ -116,7 +150,7 @@ For most teams, HNSW with incremental upserts plus an occasional off-peak `REIND
 
 ## Changing the embedding model: blue/green indexes
 
-Vectors from different embedding models are not comparable. When you upgrade the model (or change chunking), you must re-embed everything. Do it without downtime:
+Vectors from different embedding models are not comparable, and often not even the same size: the open [bge-small-en-v1.5](https://huggingface.co/BAAI/bge-small-en-v1.5) outputs 384 dimensions, OpenAI's [text-embedding-3-small](https://developers.openai.com/api/docs/guides/embeddings) 1,536, and Google's [gemini-embedding-001](https://ai.google.dev/gemini-api/docs/embeddings) 3,072 by default. The same is true when you move between a hosted API and a self-hosted model, or between two versions from one vendor. When you upgrade the model (or change chunking), you must re-embed everything. Do it without downtime:
 
 ```mermaid
 sequenceDiagram
