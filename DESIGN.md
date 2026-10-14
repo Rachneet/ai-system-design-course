@@ -323,13 +323,13 @@ Dark mode swaps every token in place for neutral grays (the `*-dark` tokens): a 
 
 ## Layout
 
-The app is a two-column grid: a sticky 304px index rail on the quiet frame, edged by a Hairline, then the main frame with 28px of breathing room around a single sheet capped at 1120px. Inside a lesson sheet there is one column, up to 980px wide, with 44px 48px 56px of inset. Prose (paragraphs, lists, h3, callouts) holds the 66ch measure; section rules (h2), figures, tables, code, calculators and quizzes use the full width, so the teaching material gets the space. The lesson outline lives in the index rail, nested under the current lesson as a hairline-edged list of its sections; the section in view is marked in ink with a Ballpoint Blue tick, and the rail scrolls itself to keep the current lesson visible. There is no right margin.
+The app is a two-column grid: a sticky 304px index rail on the quiet frame, edged by a Hairline, then the main frame with 28px of breathing room around a single sheet capped at 1120px. Inside a lesson sheet there is one column, up to 980px wide, with 44px 48px 56px of inset. Everything, prose included, uses the full lesson width; the owner prefers text that aligns with the figures and code over a narrow reading column. The lesson outline lives in the index rail, nested under the current lesson as a hairline-edged list of its sections; the section in view is marked in ink with a Ballpoint Blue tick, and the rail scrolls itself to keep the current lesson visible. There is no right margin.
 
 Home uses the same sheet with a pad header strip (Pad, Checked, Next, Total), the cover statement and lede, one primary action, then the weeks as rows: a 120px numeral column beside the week title, blurb, and an auto-filling list of numbered sheets (min 230px per column).
 
 Responsive steps: at 900px and below the rail becomes an off-canvas drawer (min(88vw, 340px)) behind an "Index" button in a sticky top bar on the sheet colour, is visibility-hidden when closed so it cannot take focus, and the sheet goes full bleed with only its bottom edge drawn. Body steps down to 17px and week numerals to 30px inline. Header strips reflow to four, or two, equal cells. Safe-area insets are respected on every edge.
 
-**The Fixed Measure Rule.** Reading text holds at 66ch at every width that can afford it. Wider sheets give the extra width to figures, tables and code, not to line length.
+**The Full Width Rule.** Prose, figures, tables and code share one edge at the full lesson width (capped at 980px), so nothing floats in a narrower column.
 
 ## Elevation & Depth
 

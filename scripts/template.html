@@ -5,7 +5,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=JetBrains+Mono:wght@400;600&family=Kalam:wght@400;700&display=swap">
 <style>
 /* Layout: a plain neutral frame (index rail, outer margin); each lesson is a numbered worksheet on a white sheet
-   with a 66ch reading column; figures, tables and code use the full width. The lesson outline lives in the index
+   with text, figures, tables and code all using the full lesson width. The lesson outline lives in the index
    rail under the current lesson. High contrast first: no textures behind text. */
 :root {
   --pad: #f2f3f5;          /* page frame: plain neutral, no texture */
@@ -36,7 +36,7 @@
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --cell: 18px;
   --rail: 304px;
-  --measure: 66ch;
+  --measure: none; /* text runs the full lesson width (owner preference) */
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -235,7 +235,7 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
 .w-meter i.c { background: var(--vz-compute); }
 
 /* Callouts: each type is told apart by its mark shape, set before the label. */
-.callout { margin: 1.6em 0; padding: 14px 18px 14px 18px; border: 1px solid var(--ink); background: var(--sheet); max-width: calc(var(--measure) + 40px); }
+.callout { margin: 1.6em 0; padding: 14px 18px 14px 18px; border: 1px solid var(--ink); background: var(--sheet); }
 .callout .label { display: flex; align-items: center; gap: 9px; font: 700 13px var(--font-display); margin-bottom: 4px; }
 .callout .label::before { content: ""; flex: none; width: 12px; height: 12px; background: var(--ink); }
 .callout .label + p { margin-top: 2px; }
