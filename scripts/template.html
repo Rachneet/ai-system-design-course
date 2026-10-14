@@ -373,7 +373,7 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
     <span id="topTally"></span>
   </header>
   <nav class="rail" id="rail" aria-label="Course index">
-    <a class="pad-title" href="#home"><b>AI System Design</b><span>A free, hands-on course for engineers</span></a>
+    <a class="pad-title" href="#home"><b>AI System Design</b></a>
     <label for="q" class="search-label">Search the course</label>
     <input class="search" id="q" type="search" placeholder="Search the course" autocomplete="off">
     <div class="tally"><span>Lessons done</span><b id="tally"></b></div>
@@ -709,7 +709,6 @@ function renderHome() {
     </section>
     <div class="weeks">${[0, 1, 2, 3, 4, 5, 6].map(week).join("")}</div>
     <section class="library"><h2>Library</h2><ul>${extras}</ul></section>
-    <p class="note">An independent, original course. Its weekly topics follow the public outline of paid AI system design cohorts so anyone can study the same ground for free; none of their material is reproduced. Your ticks are saved only in this browser.</p>
   </div></div>`;
 }
 
