@@ -42,6 +42,7 @@ any Anthropic SDK at it:
 
 ```python
 import anthropic
+
 client = anthropic.Anthropic(base_url="http://localhost:8000", api_key="sbk_...")
 ```
 
