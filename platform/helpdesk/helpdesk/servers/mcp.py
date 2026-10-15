@@ -78,12 +78,14 @@ class AssertionVerifier:
         self.jwks_url, self.issuer = jwks_url, issuer
         self.client = httpx.AsyncClient(transport=transport, timeout=10)
         self.keys: dict[str, object] = {}
-        self.fetched_at = 0.0
+        self.fetched_at: float | None = None  # monotonic time counts from boot
         self.lock = asyncio.Lock()
 
     async def _fetch(self) -> None:
         async with self.lock:
-            if time.monotonic() - self.fetched_at < 5:  # at most one refetch per 5 s, however many bad kids arrive
+            if (
+                self.fetched_at is not None and time.monotonic() - self.fetched_at < 5
+            ):  # at most one refetch per 5 s, however many bad kids arrive
                 return
             resp = await self.client.get(self.jwks_url)
             resp.raise_for_status()

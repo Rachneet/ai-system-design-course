@@ -14,6 +14,7 @@ from typing import Literal
 
 import jwt
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from psycopg import sql
 from pydantic import BaseModel, ConfigDict, Field
 
 from . import evidence, finops
@@ -291,10 +292,10 @@ async def purge(request: Request, _: None = ADMIN):
     for name in request.app.state.roster.tenants:
         async with tenant(request.app.state.pool, name) as c:
             for table, days in cfg.retention_days.items():
-                cur = await c.execute(
-                    f"DELETE FROM {table} WHERE {column[table]} < now() - make_interval(days => %s)",
-                    (days,),
+                query = sql.SQL("DELETE FROM {} WHERE {} < now() - make_interval(days => %s)").format(
+                    sql.Identifier(table), sql.Identifier(column[table])
                 )
+                cur = await c.execute(query, (days,))
                 await c.execute(
                     "INSERT INTO purge_runs (tenant, table_name, older_than_days, deleted) VALUES (%s, %s, %s, %s)",
                     (name, table, days, cur.rowcount),
