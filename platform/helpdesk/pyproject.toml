@@ -1,0 +1,55 @@
+[project]
+name = "helpdesk"
+version = "0.1.0"
+description = "Helpdesk OS: a multi-tenant support platform whose agents run on Switchboard, Atlas and Checkpoint."
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.20.0",
+    "fastapi>=0.143.1",
+    "httpx>=0.28",
+    "prometheus-client>=0.26.0",
+    "psycopg[binary,pool]>=3.3.6",
+    "pydantic-settings>=2.16.0",
+    "pyjwt[crypto]>=2.10",
+    "pyyaml>=6.0.3",
+    "sqlalchemy>=2.1.4",
+    "structlog>=26.1.0",
+    "uvicorn[standard]>=0.54.0",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint.isort]
+known-third-party = ["switchboard", "atlas", "checkpoint"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Header", "fastapi.Query"]
+
+[dependency-groups]
+dev = [
+    "bandit>=1.9.4",
+    "pgserver>=0.1.4",
+    "pip-audit>=2.10.1",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "ruff>=0.17.0",
+]
+# The platform tests run the real Switchboard, Atlas and Checkpoint in process (tests/platform.py puts them on
+# sys.path); these are their runtime dependencies that Helpdesk itself does not need.
+platform = [
+    "cedarpy>=4.12.2",
+    "jsonschema>=4.25",
+    "opentelemetry-exporter-otlp-proto-http>=1.45.1",
+    "opentelemetry-sdk>=1.45.1",
+    "python-multipart>=0.0.20",
+]
+
+[tool.uv]
+default-groups = ["dev", "platform"]

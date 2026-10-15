@@ -1,0 +1,7 @@
+# Every model choice in Helpdesk OS. Values are Switchboard model names, so the provider behind each is
+# Switchboard's business (SWITCHBOARD_CHAT_MODELS). To run the same eval suites on a second model, copy this file,
+# change the names, and point HELPDESK_MODELS_FILE at the copy.
+
+[tiers]
+small = "helpdesk-small"   # triage: short classification, cheap and fast
+mid = "helpdesk-mid"       # specialists: planning and tool use

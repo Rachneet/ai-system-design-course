@@ -1,0 +1,84 @@
+# The agents. Each is published to Atlas as an A2A agent card, gets a Switchboard app (one team per agent) and a
+# tenant-bound Checkpoint identity. `skill` names a package in skills/ that holds the agent's instructions.
+
+[tenants.employee]
+name = "Employee desk"
+triage = "emp-triage"
+
+[tenants.customer]
+name = "Customer desk"
+triage = "cust-triage"
+
+[agents.emp-triage]
+tenant = "employee"
+tier = "small"
+skill = "employee-triage"
+handoffs = ["it-access", "hr-policy"]
+description = "Routes employee requests to IT access or HR policy."
+
+[agents.it-access]
+tenant = "employee"
+tier = "mid"
+skill = "it-access"
+description = "Unlocks the requester's own account and grants group access, with approval for sensitive groups."
+
+[agents.hr-policy]
+tenant = "employee"
+tier = "mid"
+skill = "hr-policy"
+description = "Answers HR policy questions from the knowledge base. Read-only; makes no decisions about people."
+
+[agents.cust-triage]
+tenant = "customer"
+tier = "small"
+skill = "customer-triage"
+handoffs = ["billing", "returns"]
+description = "Routes customer requests to billing or returns."
+
+[agents.billing]
+tenant = "customer"
+tier = "mid"
+skill = "billing"
+description = "Answers order and billing questions and refunds within limits; larger refunds wait for a person."
+
+[agents.returns]
+tenant = "customer"
+tier = "mid"
+skill = "returns"
+description = "Starts returns for orders inside the return window."
+
+# Risk assessments per agent: engineering documents written to help counsel decide, not legal opinions.
+# NIST AI 600-1 names the generative AI risks each agent's controls address.
+
+[risk.emp-triage]
+tier = "limited"
+note = "Routes requests; takes no action and makes no decision about the employee. AI disclosure shown."
+nist_ai_600_1 = ["Human-AI Configuration", "Confabulation"]
+
+[risk.it-access]
+tier = "limited"
+note = "Changes the requester's own account only (Cedar and the IdP both enforce it); sensitive groups need a person."
+nist_ai_600_1 = ["Information Security", "Human-AI Configuration", "Value Chain and Component Integration"]
+
+[risk.hr-policy]
+tier = "limited"
+note = """Explains written HR policy from the knowledge base and has no write tools (proven by policy tests). It is
+not intended to make or support decisions about recruitment, terms of work, promotion, termination, task allocation
+or performance, the uses listed in Annex III point 4 of the EU AI Act; questions asking for such a decision are
+escalated to HR staff. Counsel to confirm the classification."""
+nist_ai_600_1 = ["Confabulation", "Harmful Bias and Homogenization", "Data Privacy"]
+
+[risk.cust-triage]
+tier = "limited"
+note = "Routes requests; takes no action. AI disclosure shown to customers."
+nist_ai_600_1 = ["Human-AI Configuration", "Information Integrity"]
+
+[risk.billing]
+tier = "limited"
+note = "Refunds up to 50 EUR alone, up to 500 EUR after a person approves, never above; only the customer's own orders."
+nist_ai_600_1 = ["Information Security", "Confabulation", "Human-AI Configuration"]
+
+[risk.returns]
+tier = "limited"
+note = "Starts returns inside the 30-day window for the customer's own orders; cannot refund."
+nist_ai_600_1 = ["Information Security", "Confabulation"]
