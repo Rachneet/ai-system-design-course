@@ -1,38 +1,38 @@
 ---
 name: AI System Design
-description: A free course reader set as a stack of numbered engineering worksheets, one sheet per lesson, on a plain high-contrast frame.
+description: A free course reader set for calm, distraction-free reading, one quiet column per lesson beside a soft index rail.
 colors:
-  pad: "#f2f3f5"
-  pad-major: "#b9bec7"
-  sheet: "#ffffff"
-  box: "#f4f5f7"
-  ink: "#111418"
-  ink-2: "#474e5a"
-  rule: "#d9dce2"
   pen: "#1f4f9c"
   pen-soft: "#dbe5f4"
   red: "#b8352a"
+  sheet: "#ffffff"
+  pad: "#f7f8fa"
+  pad-major: "#b9bec7"
+  box: "#f4f6f8"
+  ink: "#1b1f24"
+  ink-2: "#57606a"
+  rule: "#e4e7eb"
   code-str: "#1d6b3a"
   code-com: "#5f6672"
   code-num: "#8a4b12"
-  pad-dark: "#0d0f12"
-  pad-major-dark: "#4a505b"
-  sheet-dark: "#16181c"
-  box-dark: "#1e2126"
-  ink-dark: "#eceef1"
-  ink-2-dark: "#b0b6c0"
-  rule-dark: "#2e323a"
-  pen-dark: "#93b4ef"
-  pen-soft-dark: "#22324c"
-  red-dark: "#f07a6a"
-  code-str-dark: "#9fd3a8"
-  code-com-dark: "#8a919c"
-  code-num-dark: "#e3b07a"
   vz-compute: "#2a5db0"
   vz-memory: "#6c4aa6"
   vz-good: "#23784a"
   vz-warn: "#a8650f"
   vz-bad: "#b3362b"
+  pen-dark: "#93b4ef"
+  pen-soft-dark: "#22324c"
+  red-dark: "#f07a6a"
+  sheet-dark: "#16181c"
+  pad-dark: "#0d0f12"
+  pad-major-dark: "#4a505b"
+  box-dark: "#1e2126"
+  ink-dark: "#eceef1"
+  ink-2-dark: "#b0b6c0"
+  rule-dark: "#2e323a"
+  code-str-dark: "#9fd3a8"
+  code-com-dark: "#8a919c"
+  code-num-dark: "#e3b07a"
   vz-compute-dark: "#8db2f2"
   vz-memory-dark: "#c0a6f0"
   vz-good-dark: "#7fcf9f"
@@ -40,357 +40,440 @@ colors:
   vz-bad-dark: "#f08a7e"
 typography:
   display:
-    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
-    fontSize: "clamp(36px, 4.4vw, 60px)"
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "clamp(32px, 4vw, 46px)"
     fontWeight: 700
-    lineHeight: 1
-    letterSpacing: "-0.02em"
+    lineHeight: 1.1
+    letterSpacing: "-0.022em"
   headline:
-    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
-    fontSize: "clamp(34px, 4.4vw, 52px)"
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "clamp(30px, 3.6vw, 40px)"
     fontWeight: 700
-    lineHeight: 1.12
-    letterSpacing: "-0.02em"
-  numeral:
-    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
-    fontSize: "40px"
-    fontWeight: 700
-    lineHeight: 1
+    lineHeight: 1.2
+    letterSpacing: "-0.022em"
   numeral-compact:
-    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "30px"
-    fontWeight: 700
-    lineHeight: 1
+    fontWeight: 650
+    lineHeight: 1.2
   title:
-    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
-    fontSize: "28px"
-    fontWeight: 700
-    lineHeight: 1.12
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "25px"
+    fontWeight: 650
+    lineHeight: 1.2
+    letterSpacing: "-0.018em"
+  numeral:
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "22px"
+    fontWeight: 650
+    lineHeight: 1.2
+  title-map:
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "21px"
+    fontWeight: 650
+    lineHeight: 1.2
     letterSpacing: "-0.01em"
   title-week:
-    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
-    fontSize: "25px"
-    fontWeight: 700
-    lineHeight: 1.12
-  title-sm:
-    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
-    fontSize: "21px"
-    fontWeight: 700
-    lineHeight: 1.12
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "20px"
+    fontWeight: 650
+    lineHeight: 1.2
+    letterSpacing: "-0.01em"
+  subtitle:
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "19px"
+    fontWeight: 600
+    lineHeight: 1.2
+    letterSpacing: "-0.01em"
   lede:
-    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
-    fontSize: "20.5px"
-    fontWeight: 400
-    lineHeight: 1.55
-  body:
-    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
-    fontSize: "18px"
-    fontWeight: 400
-    lineHeight: 1.68
-  body-compact:
-    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
-    fontSize: "17px"
-    fontWeight: 400
-    lineHeight: 1.68
-  blurb:
-    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
-    fontSize: "16.5px"
-    fontWeight: 400
-    lineHeight: 1.68
-  worked:
-    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
-    fontSize: "16.5px"
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "19px"
     fontWeight: 400
     lineHeight: 1.6
-    fontFeature: "tnum"
+  body:
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "17px"
+    fontWeight: 400
+    lineHeight: 1.7
+    fontFeature: "\"cv11\", \"ss01\""
   option:
-    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "16px"
     fontWeight: 400
     lineHeight: 1.45
-  ui:
-    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
-    fontSize: "15px"
-    fontWeight: 600
-    lineHeight: 1.35
-  label:
-    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
-    fontSize: "13px"
-    fontWeight: 700
-    lineHeight: 1.35
-  field-label:
-    fontFamily: "Source Sans 3, Source Sans Pro, Helvetica Neue, Arial, sans-serif"
-    fontSize: "11px"
-    fontWeight: 400
-    letterSpacing: "0.02em"
-  number:
-    fontFamily: "Source Code Pro, ui-monospace, SF Mono, Menlo, Consolas, monospace"
-    fontSize: "12px"
-    fontWeight: 600
-    fontFeature: "tnum"
-  code:
-    fontFamily: "Source Code Pro, ui-monospace, SF Mono, Menlo, Consolas, monospace"
-    fontSize: "13.5px"
-    fontWeight: 400
-    lineHeight: 1.6
-  hand:
-    fontFamily: "Kalam, Comic Neue, Segoe Print, cursive"
+  worked:
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
     fontSize: "16px"
     fontWeight: 400
+    lineHeight: 1.65
+    fontFeature: "tnum"
+  blurb:
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "15.5px"
+    fontWeight: 400
+    lineHeight: 1.7
+  ui:
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "15px"
+    fontWeight: 600
+    lineHeight: 1.45
+  small:
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "14.5px"
+    fontWeight: 400
+    lineHeight: 1.5
+  rail:
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "14px"
+    fontWeight: 400
+    lineHeight: 1.4
+  meta:
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "13.5px"
+    fontWeight: 400
+    lineHeight: 1.7
+  label:
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "13px"
+    fontWeight: 600
     lineHeight: 1.3
-  hand-title:
-    fontFamily: "Kalam, Comic Neue, Segoe Print, cursive"
-    fontSize: "17px"
+  caption-sm:
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "12.5px"
+    fontWeight: 500
+    lineHeight: 1.4
+  number:
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "12px"
+    fontWeight: 400
+    fontFeature: "tnum"
+  tag:
+    fontFamily: "Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+    fontSize: "11px"
+    fontWeight: 400
+  code:
+    fontFamily: "JetBrains Mono, ui-monospace, SF Mono, Menlo, Consolas, monospace"
+    fontSize: "13.5px"
+    fontWeight: 400
+    lineHeight: 1.65
+  code-input:
+    fontFamily: "JetBrains Mono, ui-monospace, SF Mono, Menlo, Consolas, monospace"
+    fontSize: "15px"
+    fontWeight: 400
+  readout:
+    fontFamily: "JetBrains Mono, ui-monospace, SF Mono, Menlo, Consolas, monospace"
+    fontSize: "22px"
     fontWeight: 700
+    fontFeature: "tnum"
   hand-big:
     fontFamily: "Kalam, Comic Neue, Segoe Print, cursive"
     fontSize: "30px"
     fontWeight: 700
     lineHeight: 1.1
+  hand-title:
+    fontFamily: "Kalam, Comic Neue, Segoe Print, cursive"
+    fontSize: "17px"
+    fontWeight: 700
+  hand:
+    fontFamily: "Kalam, Comic Neue, Segoe Print, cursive"
+    fontSize: "16px"
+    fontWeight: 400
+    lineHeight: 1.3
+  hand-chip:
+    fontFamily: "Kalam, Comic Neue, Segoe Print, cursive"
+    fontSize: "15px"
+    fontWeight: 400
+  hand-note:
+    fontFamily: "Kalam, Comic Neue, Segoe Print, cursive"
+    fontSize: "14.5px"
+    fontWeight: 400
 rounded:
   none: "0px"
   focus: "2px"
+  tick: "3px"
+  chip: "4px"
+  control: "6px"
+  field: "8px"
+  block: "10px"
+  panel: "12px"
 spacing:
   rail: "304px"
-  measure: "980px"
-  gutter: "56px"
+  column: "760px"
   frame: "28px"
-  sheet-inset: "44px 48px 56px"
+  frame-phone: "16px"
+  page-block: "40px 96px"
+  sign-off-gap: "56px"
 components:
   button-primary:
-    backgroundColor: "{colors.sheet}"
-    textColor: "{colors.ink}"
+    backgroundColor: "{colors.ink}"
+    textColor: "{colors.sheet}"
     typography: "{typography.ui}"
-    rounded: "{rounded.none}"
-    padding: "12px 18px"
+    rounded: "{rounded.field}"
+    padding: "11px 18px"
   button-primary-hover:
-    backgroundColor: "{colors.pen-soft}"
-    textColor: "{colors.ink}"
+    backgroundColor: "{colors.pen}"
+    textColor: "{colors.sheet}"
   button-mark:
     backgroundColor: "{colors.sheet}"
     textColor: "{colors.ink}"
     typography: "{typography.ui}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.field}"
     padding: "9px 14px"
   button-mark-hover:
     backgroundColor: "{colors.pen-soft}"
   button-tool:
     backgroundColor: "{colors.sheet}"
-    textColor: "{colors.ink}"
-    rounded: "{rounded.none}"
-    padding: "6px 10px"
+    textColor: "{colors.ink-2}"
+    typography: "{typography.caption-sm}"
+    rounded: "{rounded.control}"
+    padding: "5px 10px"
   button-tool-hover:
     backgroundColor: "{colors.box}"
   input-search:
     backgroundColor: "{colors.sheet}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.none}"
-    padding: "9px 11px"
-  header-strip-cell:
+    typography: "{typography.rail}"
+    rounded: "{rounded.field}"
+    padding: "8px 11px"
+  nav-item:
+    textColor: "{colors.ink}"
+    typography: "{typography.rail}"
+    rounded: "{rounded.control}"
+    padding: "5px 8px 5px 4px"
+  nav-item-current:
     backgroundColor: "{colors.sheet}"
     textColor: "{colors.ink}"
-    typography: "{typography.ui}"
-    padding: "8px 14px"
+  lab-tag:
+    textColor: "{colors.ink-2}"
+    typography: "{typography.tag}"
+    rounded: "{rounded.chip}"
+    padding: "0 5px"
+  tick-box:
+    backgroundColor: "{colors.sheet}"
+    rounded: "{rounded.tick}"
+    size: "14px"
   callout:
-    backgroundColor: "{colors.sheet}"
+    backgroundColor: "{colors.box}"
     textColor: "{colors.ink}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.block}"
     padding: "14px 18px"
   callout-numbers:
-    backgroundColor: "{colors.sheet}"
+    backgroundColor: "{colors.box}"
     textColor: "{colors.ink}"
     typography: "{typography.worked}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.block}"
     padding: "14px 18px"
   code-block:
     backgroundColor: "{colors.box}"
     textColor: "{colors.ink}"
     typography: "{typography.code}"
-    rounded: "{rounded.none}"
+    rounded: "{rounded.block}"
     padding: "16px 18px"
+  code-inline:
+    backgroundColor: "{colors.box}"
+    rounded: "{rounded.chip}"
+    padding: "0.12em 0.36em"
   figure-frame:
     backgroundColor: "{colors.sheet}"
     textColor: "{colors.ink-2}"
-    rounded: "{rounded.none}"
-    padding: "18px"
+    rounded: "{rounded.block}"
+    padding: "16px"
+  quiz:
+    backgroundColor: "{colors.sheet}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.panel}"
   quiz-option:
     backgroundColor: "transparent"
     textColor: "{colors.ink}"
     typography: "{typography.option}"
+    rounded: "{rounded.field}"
     padding: "8px 10px"
   quiz-option-hover:
     backgroundColor: "{colors.box}"
-  tick-box:
+  calculator:
     backgroundColor: "{colors.sheet}"
-    size: "14px"
-  nav-item:
-    textColor: "{colors.ink}"
-    padding: "6px 6px 6px 2px"
-  nav-item-current:
+    rounded: "{rounded.panel}"
+  sign-off:
+    backgroundColor: "{colors.box}"
+    textColor: "{colors.ink-2}"
+    rounded: "{rounded.panel}"
+    padding: "16px 18px"
+  pager-link:
     backgroundColor: "{colors.sheet}"
     textColor: "{colors.ink}"
+    rounded: "{rounded.block}"
+    padding: "14px 16px"
+  pager-link-hover:
+    backgroundColor: "{colors.box}"
 ---
 
 # Design System: AI System Design
 
 ## Overview
 
-**Creative North Star: "The Worksheet"**
+**Creative North Star: "The Quiet Page"**
 
-Each lesson is one numbered engineering worksheet: a white sheet outlined in near-black ink, opened by a ruled header strip, and read in a calm serif column. The sheets sit on a plain, quiet neutral frame (the index rail and the outer margin) that recedes so the sheet reads first. Everything on the sheet is drawn the way a careful engineer would draw it by hand: hairline rules, tick boxes, boxed answers, numbered figures, blue pen for links and marks, and a single red mark for where you are and what comes next.
+Each lesson is one calm page of prose: a single centered column on white, opened by a quiet line of facts (week, lesson number, minutes) and a plain, heavy title. Nothing frames the text. The index rail sits to the left as a soft gray panel that holds the course, the reader's progress, and the outline of the lesson being read, so the page itself carries nothing but the lesson.
 
-Legibility comes before atmosphere. Text sits on flat, untextured surfaces at high contrast: near-black ink on white for reading, and a dark secondary gray that still clears AA comfortably on the sheet, the frame, and the answer boxes. Nothing patterned, gradiented, or tinted ever sits behind text. This holds everywhere, including the worked-numbers callout.
+The system was rebuilt at the owner's request because the earlier worksheet look (black frames, ruled header strips, a second display face) felt heavy and cluttered. What remains is subtraction: one family, one accent, soft fills and hairlines instead of outlines, and a small set of gentle corners. Hierarchy comes from size and weight. The only expressive material left is the hand-drawn sketch figures, which keep their rough.js strokes and their fixed diagram inks.
 
-Density is moderate and steady. The reading column is fixed, the furniture around it is compact and set in a narrow grotesque, and numbers are set in mono or tabular figures so tallies line up. Surfaces are flat inks on paper, separated by rules rather than by depth.
+Legibility leads. Text sits on flat white or a near-white fill, never on a pattern or an image; secondary text is a gray that clears AA on every surface it uses.
 
 **Key Characteristics:**
-- A plain neutral frame and a white sheet; no textures anywhere.
-- Near-black ink, blue ballpoint for links and marks, one reserved red.
-- Square corners and 1px rules everywhere; state shown by mark shape.
-- Source Sans 3 (Coursera's typeface) for structure and reading, Source Code Pro for numbers and code, Kalam only inside diagrams.
-- Numbered sheets and numbered figures; the lesson outline in the index rail.
+- White page, quiet #f7f8fa index rail, no textures anywhere.
+- Inter for headings, interface and reading; JetBrains Mono for code; Kalam only inside sketch diagrams.
+- One centered 760px column shared by text, tables, code and figures.
+- No boxed strips, no heading rules, no black frames; soft fills, hairlines, small radii.
+- One accent (Ballpoint Blue) for links, focus and marks; a solid ink primary button.
+- Hand-drawn sketch figures with one meaning per ink.
+
+## Reading principles
+
+These are the rules the reader follows. Every new surface is checked against them before anything else in this file.
+
+- **One family.** Inter sets headings, interface and body. Mono appears only for code and calculator values; the hand font appears only inside sketch diagrams.
+- **Body at 16 to 18px, line height 1.6 to 1.75.** Lesson body is 17px at 1.7 on every width.
+- **About 65 to 80 characters per line, with figures on the same edge.** Text and figures share one column, so every left and right edge lines up. The current column (760px at 17px Inter) sets about 94 characters on lesson prose, which is above this range; the rule stands and the column width is the open item, not the rule.
+- **Hierarchy from size and weight, not from boxes or rules.** Headings are larger and heavier; they carry no underline, overline, frame or fill.
+- **At most one accent colour.** Ballpoint Blue is the accent. The diagram inks belong to figures and calculator readouts only; Margin Red is a small position mark, not a second accent.
+- **Secondary text at AA contrast.** Secondary Ink is about 6.4:1 on white, 5.9:1 on the soft fill and 6.0:1 on the rail; in dark it is about 8.7:1 on the page.
+- **Generous vertical space between sections.** Section headings open with 2.4em above them; the sign-off sits 56px below the lesson.
+- **No chrome that does not help the reader.** Every box, line or label must carry information or an action. If it only decorates, it goes.
 
 ## Colors
 
-A cool, near-neutral palette with near-black ink, one blue pen, and one red reserved for position.
+A cool near-neutral palette: near-black ink on white, one blue accent, one small red mark, and a fixed set of diagram inks.
 
 ### Primary
-- **Ballpoint Blue** (pen): links, focus rings, drawn tick marks, the correct-answer outline in quizzes, and keyword colour in code. It is the hand that marks the paper.
-- **Pale Ballpoint Wash** (pen-soft): text selection and the hover fill on pressable controls (primary action, check-this-sheet, copy).
+- **Ballpoint Blue** (pen): the one accent. Links, focus outlines, drawn tick marks, the current outline entry's marker, the correct-answer outline in quizzes, the primary button's hover fill, and code keywords.
+- **Pale Ballpoint Wash** (pen-soft): text selection and the hover fill on the Mark as done and Copy buttons.
 
 ### Secondary
-- **Margin Red** (red): reserved for "you are here" and the single next action. It appears as the current sheet number and its underline in the index, the next-up sheet number on home, the underline on the Next link in the pad strip and the pager, the 3px underside rule of the primary action, and the text caret in inputs.
+- **Margin Red** (red): a position mark, not an accent. It colours only the current lesson's number in the rail, the next-up lesson's number on home, and the text caret in inputs.
 
 ### Neutral
-- **Quiet Frame** (pad): the plain page background behind every sheet and the index rail.
-- **Frame Line** (pad-major): the default thin scrollbar thumb.
-- **White Sheet** (sheet): the worksheet surface, header strip, buttons, search field, figure frames, and every callout.
-- **Answer Box** (box): code blocks, inline code, table headers, quiz header, sign-off strip, and quiet hover fills.
-- **Ink** (ink): body text, headings, sheet outlines, and every structural 1px border.
-- **Secondary Ink** (ink-2): secondary text, ledes, field labels, figure captions, mono numbers, and the code block border. It is deliberately dark (about 8:1 on the sheet, 7.5:1 on the frame).
-- **Hairline** (rule): internal dividers inside strips, tables, lists, and quizzes, and the rail's edge against the frame.
-- **Code inks** (code-str, code-com, code-num): string, comment, and number/title colours for highlighted code; keywords reuse Ballpoint Blue.
+- **White Page** (sheet): the reading page, buttons, the search field, quiz and calculator bodies, Mermaid figure frames, and the current rail row.
+- **Quiet Rail** (pad): the index rail panel.
+- **Rail Scroll Line** (pad-major): the default thin scrollbar thumb.
+- **Soft Fill** (box): code blocks, inline code, callouts, the sign-off, and quiet hover fills.
+- **Ink** (ink): body text, headings, and the primary button's fill.
+- **Secondary Ink** (ink-2): the meta line, ledes, captions, labels, counts, rail outline entries, and secondary copy.
+- **Hairline** (rule): every divider and border: the rail edge, table rows, quiz and calculator edges, pager links, figure frames, the outline's left edge, and the meta line's separator dots.
+- **Code inks** (code-str, code-com, code-num): strings, comments, numbers and titles in highlighted code; keywords use Ballpoint Blue.
+
+### Diagram inks
+- **Compute** (vz-compute), **Memory** (vz-memory), **Win** (vz-good), **Cost** (vz-warn), **Waste** (vz-bad): one meaning each in every sketch figure and calculator. Win and Waste also colour calculator results that meet or miss a target, and Cost and Ballpoint Blue tint the Watch out and Design rule callouts.
 
 ### Dark theme
-Dark mode swaps every token in place for neutral grays (the `*-dark` tokens): a near-black frame, a dark gray sheet, a slightly lighter answer box, off-white ink, light gray secondary ink, a lightened pen and a lightened red. It follows the system setting unless the reader picks light or dark explicitly. Contrast holds in dark too (ink about 15:1, secondary ink about 8.7:1 on the sheet).
+Every token swaps in place for its `*-dark` value: a near-black rail, a dark gray page, a slightly lighter soft fill, off-white ink, light gray secondary ink, and lightened accent, red and diagram inks. It follows the system setting unless the reader picks light or dark.
 
 ### Named Rules
-**The Clear Ground Rule.** Text always sits on a flat, solid surface at high contrast. No grids, patterns, gradients, tints, or images behind text, on the frame, the sheet, or any callout. Body text stays near-black on white; secondary text never drops below the Secondary Ink value.
+**The Clear Ground Rule.** Text always sits on flat white, the rail gray, or the soft fill. No grids, patterns, gradients, or images behind text.
 
-**The One Red Rule.** Red marks position and the next step, nothing else. Never use it for errors, emphasis, decoration, or a second action on the same screen.
-
-**The Ink Structure Rule.** Structural edges (sheet, strip, table, figure, callout, quiz, pager) are Ink; dividers inside them are Hairline. Colour never separates surfaces on its own.
+**The One Accent Rule.** Ballpoint Blue is the only interface accent. Diagram inks stay inside figures, calculators and the two tinted callouts; Margin Red marks position and nothing else.
 
 ## Typography
 
-**Display Font:** Source Sans 3, the open successor of Source Sans Pro, Coursera's brand typeface (with Helvetica Neue, Arial)
-**Body Font:** Source Sans 3 at 18px, 1.6 line height
-**Label/Mono Font:** Source Code Pro (with ui-monospace, SF Mono, Menlo, Consolas)
+**Display Font:** Inter (with system-ui, -apple-system, Segoe UI, Roboto)
+**Body Font:** Inter at 17px, 1.7 line height, with the cv11 and ss01 alternates
+**Label/Mono Font:** JetBrains Mono (with ui-monospace, SF Mono, Menlo, Consolas) for code and calculator values; Kalam for sketch diagrams only
 
-**Character:** A condensed, heavy engineering grotesque does the labelling and structure, the way a worksheet's printed furniture would; a warm book serif carries the long reading. Mono is reserved for anything counted.
+**Character:** One neutral, highly legible sans does everything; weight (400 to 700), size and slight negative tracking on large sizes make the hierarchy. Mono is a tool for code, not a voice.
 
 ### Hierarchy
-- **Display** (800, clamp(36px, 4.4vw, 60px), 1, width 72%): the home cover statement only, capped at 24ch and balanced.
-- **Headline** (800, clamp(34px, 4.4vw, 52px), 1.12, width 82%): the sheet title at the top of each lesson.
-- **Numeral** (800, 40px, 1, width 70%): week labels in the home sheet list.
-- **Numeral Compact** (800, 30px): the same week label, inline, at phone width.
-- **Title** (750, 28px, width 88%): lesson section headings, each opened by a full-width Ink rule above it.
-- **Week Title** (750, 25px, width 86%): home week titles and the Library heading.
-- **Title Small** (700, 21px, width 92%): subsections.
-- **Lede** (400, 20.5px, 1.55): the summary under a title, in Secondary Ink; 21px at 54ch on home.
-- **Body** (400, 18px, 1.68): reading text across the full lesson width (up to 980px).
-- **Body Compact** (17px): body at phone width; also the size of minor headings (h4) and Library entry titles.
-- **Blurb** (Source Sans 3 400, 16.5px): the week blurb under each home week title, at 62ch in Secondary Ink.
-- **Worked** (Source Sans 3 400, 16.5px, 1.6, tabular): the text of the worked-numbers callout.
-- **Option** (Source Sans 3 400, 16px, 1.45): quiz answer options. The primary action's label uses 16px Source Sans 3 700.
-- **UI** (600, 15px): header strip values, buttons, tables, sign-off text.
-- **Label** (700, 13px): callout labels, table headers, figure captions.
-- **Field Label** (400, 11px, 0.02em): the small name above each header strip value, in sentence case.
-- **Number** (mono 600, 12px, tabular): sheet numbers, counts, tallies, figure numbers.
-- **Code** (mono 400, 13.5px, 1.6): code blocks.
+- **Display** (700, clamp(32px, 4vw, 46px), 1.1): the home cover title.
+- **Headline** (700, clamp(30px, 3.6vw, 40px), 1.2): the lesson title.
+- **Title** (650, 25px): lesson section headings (h2), 2.4em of space above, no rule.
+- **Numeral** (650, 22px): week labels on home; **Numeral Compact** (30px) at phone width.
+- **Title Map** (650, 21px) and **Title Week** (650, 20px): home section, week and Library headings.
+- **Subtitle** (600, 19px): lesson subsections (h3). Minor headings (h4) use body size.
+- **Lede** (400, 19px, 1.6): the summary under a title, in Secondary Ink.
+- **Body** (400, 17px, 1.7): all reading text.
+- **Option** and **Worked** (16px): quiz answers; the worked-numbers callout with tabular figures.
+- **Blurb** (15.5px): week blurbs, map intro, quiz explanations, Library titles.
+- **UI** (600, 15px): buttons, quiz and calculator heads, sign-off text; tables use 15px at 400.
+- **Small** (14.5px): home lesson lists, Library descriptions, notes.
+- **Rail** (14px, 1.4): the index rail and search.
+- **Meta** (13.5px): the meta line, search result details, and code blocks' size.
+- **Label** (600, 13px): callout labels, table headers, rail group heads; figure captions and outline entries use 13px at 400.
+- **Caption Small** (500, 12.5px), **Number** (12px, tabular), **Tag** (11px): tool buttons and pager labels, lesson numbers, the lab tag.
+- **Code** (JetBrains Mono 13.5px, 1.65); **Code Input** (15px) for calculator fields; **Readout** (700, 22px, tabular) for calculator results.
+- **Hand** (Kalam 16px, 1.3), **Hand Title** (700, 17px), **Hand Big** (700, 30px), **Hand Chip** (15px), **Hand Note** (14.5px): sketch figures only.
 
 ### Named Rules
-**The Counted Things Rule.** Anything counted (sheet numbers, tallies, scores, worked numbers, figure numbers) is set in mono or with tabular figures, zero padded to two digits where it is a sheet number.
+**The One Family Rule.** Inter carries every heading, control and paragraph. A second family never enters for emphasis or display.
 
-**The One Family Rule.** Source Sans 3 carries headings, interface and reading text; weight and size make the hierarchy, not a second family. Mono is for code and counted numbers; the hand font is for diagrams only.
+**The Counted Things Rule.** Counts, tallies, scores, lesson numbers and calculator results use tabular figures so columns line up.
 
 ## Layout
 
-The app is a two-column grid: a sticky 304px index rail on the quiet frame, edged by a Hairline, then the main frame with 28px of breathing room around a single sheet capped at 1120px. Inside a lesson sheet there is one column, up to 980px wide, with 44px 48px 56px of inset. Everything, prose included, uses the full lesson width; the owner prefers text that aligns with the figures and code over a narrow reading column. The lesson outline lives in the index rail, nested under the current lesson as a hairline-edged list of its sections; the section in view is marked in ink with a Ballpoint Blue tick, and the rail scrolls itself to keep the current lesson visible. There is no right margin.
+A two-column grid: a sticky 304px index rail with a Hairline right edge, then the main area with 28px side padding and 40px above, 96px below. Inside it sits one centered column, 760px wide, shared by the meta line, title, prose, tables, code, callouts and figures, so every edge lines up. There is no right margin. The lesson outline lives in the rail, nested under the current lesson behind a Hairline left edge; the section in view is set in Ink at 600 with a short Ballpoint Blue marker.
 
-Home uses the same sheet with a pad header strip (Pad, Checked, Next, Total), the cover statement and lede, one primary action, then the weeks as rows: a 120px numeral column beside the week title, blurb, and an auto-filling list of numbered sheets (min 230px per column).
+Home uses the same column: a meta line, the cover title and lede, one primary button, the five-lab sketch map, then each week as a row (a 96px numeral column beside the title, blurb, and an auto-filling list of lessons, at least 200px per column), separated by Hairlines.
 
-Responsive steps: at 900px and below the rail becomes an off-canvas drawer (min(88vw, 340px)) behind an "Index" button in a sticky top bar on the sheet colour, is visibility-hidden when closed so it cannot take focus, and the sheet goes full bleed with only its bottom edge drawn. Body steps down to 17px and week numerals to 30px inline. Header strips reflow to four, or two, equal cells. Safe-area insets are respected on every edge.
+At 900px and below the rail becomes an off-canvas drawer (min(88vw, 340px)) behind an Index button in a sticky top bar, hidden from focus when closed, and the column runs edge to edge with 16px insets (more where safe-area insets require). Body stays at 17px.
 
-**The Full Width Rule.** Prose, figures, tables and code share one edge at the full lesson width (capped at 980px), so nothing floats in a narrower column.
+**The Shared Edge Rule.** Prose, tables, code and figures share the one 760px column. Nothing is pulled into a narrower or wider measure of its own.
 
 ## Elevation & Depth
 
-The system is flat. Depth is conveyed only by a white sheet sitting on the quiet frame and by drawing edges with 1px Ink lines. There is no cast shadow vocabulary. Inset box shadows appear only as drawn rules: the 3px red underside of the primary action and the inner second line of the design rule callout. The scrim behind the open phone drawer is a flat translucent wash.
+Flat. The page is white, the rail is a slightly darker gray, and soft fills set blocks apart. There are no cast shadows. Box shadows appear only as drawn lines: the 1px Hairline ring on the current rail row and the 2px Ballpoint Blue marker on the current outline entry. The scrim behind the phone drawer is a flat translucent wash.
 
-**The Paper Not Glass Rule.** Surfaces sit on the page; they do not hover above it. Use a rule, a fill change to Answer Box, or a heavier border to separate, never a blur shadow, gradient fill, or translucency on content.
+**The Flat Page Rule.** Separate with a soft fill or a Hairline, never with a blur shadow, gradient or translucency on content.
 
 ## Shapes
 
-Every container is square: zero radius on sheets, buttons, inputs, callouts, code, tables, and figures. The only round forms are marks: the hollow circle that labels a tip and the 2px softening on the focus outline. Borders are 1px by default; 1.5px is reserved for things the reader presses or ticks (the primary action, check-this-sheet button, tick boxes, boxed worked numbers) and for the open drawer's edge. A dashed border marks the design review question callout; a dotted Hairline separates sheet rows on home.
+Corners are small and graded by size: 2px on the focus outline, 3px on tick boxes, 4px on inline code and the lab tag, 6px on rail rows and tool buttons, 8px on the search field, primary and mark buttons and quiz options, 10px on code blocks, callouts, figure frames and pager links, 12px on quizzes, calculators and the sign-off. Borders are 1px Hairlines; a dashed Hairline marks the design review question callout. The only round form is the tip callout's dot.
 
-**The Mark Shape Rule.** State and type are told apart by shape, never colour alone: a drawn tick for done, a struck cross and strikethrough for a wrong answer, and a distinct drawn shape (solid square, triangle, hollow circle, short dash, double bar) before each callout label.
+**The Mark Shape Rule.** Type and state are told apart by shape, not colour alone: a drawn tick for done, a struck cross and strikethrough for a wrong answer, and a distinct small mark before each callout label (square, triangle, dot, dash, double bar).
 
 ## Components
 
-### Sketch figures and calculators
-- **Sketch figure** (`viz` block): HTML lays out panels, chips, bars, cell grids and arrows so the figure reflows on phones; rough.js then draws hand-drawn outlines and hatched fills over it, seeded so the drawing is identical on every load. Labels are Kalam (hand). Lesson text never uses the hand font.
-- **Diagram inks:** one meaning each, in every figure: compute or prefill (vz-compute, blue), memory or decode (vz-memory, violet), a win (vz-good, green), a cost (vz-warn, amber), waste or failure (vz-bad, red, cross-hatched when it is pure waste). Chips with text get a solid 15% tint, never hatching behind words.
-- **Mermaid flowcharts** use Mermaid's hand-drawn look in the same font and inks, rendered after the font loads so labels are measured correctly.
-- **Calculators** (`widget` block): a bordered box with an Answer Box header, numeric inputs in mono, results as bordered cells (green when a target is met, red when not), one meter, and a one-paragraph explanation of the formula.
-- Every figure carries a numbered caption, and every number in it links to its source under the drawing.
-
 ### Buttons
-- **Shape:** square (0px), Ink border.
-- **Primary (the next action):** ink on sheet with a 1.5px Ink border and a 3px Margin Red rule along its underside, 16px/700 Source Sans 3, 12px 18px padding. One per screen, on home only. Hover fills with Pale Ballpoint Wash; active presses down 1px.
-- **Check this sheet:** the same ink-on-sheet form without the red rule, carrying a tick box before its label; pressed state is announced with aria-pressed and the tick draws in over 420ms.
-- **Tool:** compact 1px bordered sheet buttons (Theme, Clear ticks, Index, Copy) at 12 to 12.5px/600; hover fills with Answer Box. Destructive tools arm on first click and confirm on the second.
+- **Primary:** solid Ink with White Page text, 600 15px, 11px 18px padding, 8px corners. One per screen, on home only. Hover turns Ballpoint Blue; active presses down 1px.
+- **Mark as done:** White Page with a Hairline border, 8px corners, 9px 14px padding, a tick box before the label; hover lays the Pale Ballpoint Wash. The tick draws in over 420ms.
+- **Tool:** Theme, Reset progress, Index and Copy: White Page, Hairline border, 6px corners, 500 12px to 12.5px Secondary Ink; hover lays the soft fill.
 
 ### Chips
-- **Lab tag:** lowercase mono "lab" at 10.5px inside a 1px Secondary Ink box, set after a sheet title.
+- **Lab tag:** lowercase "lab" at 11px Secondary Ink on a 6% ink wash with 4px corners, after a lesson title.
 
 ### Cards / Containers
-- **Sheet:** White Sheet fill, 1px Ink outline, square, opened by a header strip of ruled cells (field label over value), cells divided by Hairlines and the strip closed by an Ink rule.
-- **Callouts:** five types, all on plain White Sheet, 1px Ink border, 14px 18px padding, capped at the measure plus 40px. Design rule adds an inner second line; watch out uses a triangle mark; tip a hollow circle; design review question a dashed border and short dash mark; worked numbers uses a Secondary Ink border, Worked type, a double-bar mark, and each result boxed in mono with a 1.5px Ink border. No callout carries a texture.
-- **Sign-off strip:** Answer Box fill with the check button and a one-line instruction.
-- **Pager:** two Ink-ruled cells; the Next title is underlined in Margin Red.
+- **Callouts:** soft fill, 10px corners, 14px 18px padding, no border. A 600 13px Secondary Ink label leads, preceded by its mark. Design rule takes a 7% Ballpoint Blue wash; Watch out a 9% Cost wash; Tip a green dot; Design review question sits on white with a dashed Hairline; Worked numbers uses Worked type.
+- **Code:** soft fill, 10px corners, 16px 18px padding, with a small Copy tool at the top right.
+- **Sign-off:** soft fill, 12px corners, the Mark as done button beside one line of instruction, 56px below the lesson.
+- **Pager:** two cells; links carry a Hairline border and 10px corners, hover lays the soft fill.
 
 ### Inputs / Fields
-- **Search:** square, 1px Ink border on White Sheet, 15px Source Sans 3, red caret; focus draws the 2px Ballpoint Blue outline at a 2px offset. "/" focuses it from anywhere.
+- **Search:** White Page, Hairline border, 8px corners, 14px Inter, red caret; focus draws the 2px Ballpoint Blue outline at a 2px offset.
 
 ### Navigation
-- **Index rail:** grouped by week under an Ink-ruled group head with a mono count. Each row is a tick box, a mono sheet number, and the title. Hover lays a 70% sheet wash; the current sheet sits on White Sheet with its number in Margin Red and its title underlined in red. The rail scrollbar has a solid sheet track and a Secondary Ink thumb so position is easy to read.
-- **Margin index:** numbered section links and a numbered "Figures" list that scroll smoothly to their target.
+- **Index rail:** the course title, search, a progress tally, then weeks under 600 13px group heads with a count. Each row is a tick box, a lesson number and the title, 6px corners; hover lays a 5% ink wash. The current row sits on White Page with a Hairline ring, its number in Margin Red, its title at 600, and the lesson outline nested beneath it.
+- **Meta line:** one line of 13.5px Secondary Ink facts above the title (week, lesson n of N, minutes, done), separated by Hairline dots. It is metadata, never a category label.
 
-### Figures
-- Numbered like plates ("Fig. 3.2" for the second figure on sheet 03), framed in 1px Ink on White Sheet, drawn in the sheet's own inks (diagram nodes on sheet, lines in Secondary Ink, clusters on Answer Box). Wide figures keep at least 80% of their natural width and scroll sideways rather than shrink, with a visible scrollbar and a caption hint "Scroll sideways for the full figure."
+### Sketch figures
+- HTML lays out panels, chips, bars, cell grids and arrows so figures reflow on phones; rough.js draws seeded hand-drawn outlines and hatched fills over them. Labels are Kalam. Chips with text get a solid 15% ink tint, never hatching behind words. Mermaid diagrams use the hand-drawn look in the same font and inks inside a Hairline frame with 10px corners, and scroll sideways rather than shrink.
+- Every figure carries a numbered caption ("Fig. 3.2") in 13px Secondary Ink.
 
-### Quiz
-- An Ink-bordered box with an Answer Box header ("Check yourself" and a mono score). Options are Option-type rows with a tick box; after answering, the correct option gains a Ballpoint Blue outline and a drawn tick, a wrong pick is crossed and struck through, and a short explanation follows in Secondary Ink.
+### Quiz and calculators
+- **Quiz:** Hairline border, 12px corners, a 600 15px head ("Check yourself" and a tabular score). Options are 8px-cornered rows with a tick box; the correct answer gains a Ballpoint Blue outline and a drawn tick, a wrong pick is crossed and struck through, and a short explanation follows in Secondary Ink.
+- **Calculator:** Hairline border, 12px corners, a 600 15px head, mono inputs, results as 22px mono readouts (Win or Waste when a target is met or missed), one meter, and a one-paragraph note.
 
 ## Do's and Don'ts
 
 ### Do:
-- **Do** keep every surface flat and solid: quiet frame, white sheet, Answer Box. Text always sits on one of them.
-- **Do** keep body text Ink on White Sheet and secondary text no lighter than Secondary Ink.
-- **Do** draw every edge as a 1px Ink or Hairline rule, and keep corners square.
-- **Do** number things: sheets (two digits), sections in the margin, figures per sheet.
-- **Do** keep figures inline at a legible size and let wide ones scroll with a caption hint.
-- **Do** set every count in mono or tabular figures.
+- **Do** set everything in Inter, with body at 17px and 1.7 line height.
+- **Do** keep text, tables, code and figures on the one 760px column.
+- **Do** make hierarchy with size and weight alone.
+- **Do** use the soft fill or a Hairline to set a block apart, with a radius from the 2, 3, 4, 6, 8, 10, 12px scale.
+- **Do** keep secondary text at Secondary Ink or darker.
 - **Do** give every new state a distinct mark shape before giving it a colour.
-- **Do** swap tokens in place for dark mode, using the neutral gray `*-dark` values.
+- **Do** swap tokens in place for dark mode using the `*-dark` values.
 
 ### Don't:
-- **Don't** put grids, patterns, gradients, tinted washes, or images behind text anywhere, including callouts and the frame.
-- **Don't** tint the frame or sheet with a hue; the neutrals stay near-gray.
-- **Don't** use Margin Red for anything other than the current position and the single next action.
+- **Don't** put a rule, border or fill on a heading.
+- **Don't** frame content in black or Ink outlines.
+- **Don't** add a second family for display, labels or emphasis.
+- **Don't** put a small uppercase label or category kicker above a heading; the meta line holds facts only.
+- **Don't** add a second interface accent; diagram inks stay in figures and calculators, and Margin Red marks position only.
 - **Don't** use blur shadows, gradients, or translucent content surfaces.
-- **Don't** round containers; circles belong to marks only.
-- **Don't** set reading prose in Source Sans 3, or narrow prose into a column that no longer lines up with the figures.
-- **Don't** put small uppercase labels above headings; the only small labels are the field names inside header strip cells.
-- **Don't** turn the home into a card grid; sheets are listed as numbered rows.
+- **Don't** add a right margin, sidebar or panel beside the reading column.
