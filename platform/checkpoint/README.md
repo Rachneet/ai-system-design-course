@@ -13,7 +13,7 @@ what comes back. Part of the enterprise track of the [AI System Design Course](.
 | Catalog | Only Atlas-approved servers on HTTPS; tools namespaced `server__tool`; refreshed on a TTL |
 | Agent identity | Each agent has its own token; approvers have separate tokens and cannot call tools |
 | User identity | The user's JWT (`X-User-Token`), verified with a shared secret in development or your IdP's JWKS |
-| Policy | Cedar: default deny, forbid wins, decisions name their policies; `@approval("required")` holds a call for a person |
+| Policy | Cedar: default deny, forbid wins, decisions name their policies; `@approval("required")` holds a call for a person; a forbid that fails to evaluate denies, and evaluation errors are logged |
 | Approvals | Bound to agent, user, tool and exact arguments; single use; approver API |
 | Upstream identity | RS256 assertion (`sub` user, `act.sub` agent, `aud` server, 60 s) verifiable at `/.well-known/jwks.json`; server credentials stay in Checkpoint |
 | Output | Hidden Unicode removed, secrets redacted, instruction-like text marked as data, flags in `_meta` |
@@ -79,9 +79,9 @@ bearer token and the user's JWT in `X-User-Token`. Approvers use `GET /approvals
 
 ## Tests
 
-`uv run pytest` runs 9 tests (8 end to end and a migration round trip) against a real Postgres, a mock Atlas, a modern MCP server and an
+`uv run pytest` runs 12 tests (8 end to end, 3 policy unit tests and a migration round trip) against a real Postgres, a mock Atlas, a modern MCP server and an
 initialize-era one: transport rules, catalog filtering, assertions verified against the published JWKS, Cedar
-denials with reasons, single-use approvals bound to arguments, output scanning, `x-mcp-header` handling in both
+denials with reasons, forbids that fail closed when they cannot evaluate, single-use approvals bound to arguments, output scanning, `x-mcp-header` handling in both
 directions, rate limits, forged user tokens, the decision log and refusal of a broken policy file. CI adds ruff,
 bandit, pip-audit, an image build with Trivy and an SBOM, and a container smoke test.
 

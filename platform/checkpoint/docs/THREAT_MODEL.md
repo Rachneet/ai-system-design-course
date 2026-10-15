@@ -16,6 +16,7 @@ The gateway exists because agents read untrusted text: a prompt-injected agent w
 | **Denial of service** | A looping agent hammers a tool | Per-agent, per-tool token buckets | `test_rate_limits_and_bad_user_tokens` |
 | **Elevation of privilege** | An injected agent calls a tool it should not | Default-deny Cedar; tools hidden from `tools/list` unless permitted; only Atlas-approved, HTTPS servers exist | `test_agents_see_only_tools_*`, `test_policy_denies_with_reasons` |
 | Bad policy rollout | A typo opens everything | A policy that does not parse never replaces the running one | `test_decisions_are_logged_and_bad_policies_never_load` |
+| A forbid that errors | `context.args.amount > 2000` on a call without `amount`: Cedar skips the forbid and the call is allowed | Any forbid that fails to evaluate turns an allow into a deny; every evaluation error is in the decision log and a metric | `test_a_forbid_that_cannot_evaluate_fails_closed` |
 
 ## Residual risks
 - Output scanning is a tripwire; least-privilege policies and approvals carry the weight (see the course's

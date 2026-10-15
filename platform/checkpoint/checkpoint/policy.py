@@ -6,12 +6,18 @@ Action::"list" (the tool appears in tools/list) and Action::"call". The request 
 
 A permit annotated @approval("required") allows the call only after a person approves that exact call.
 Every decision names the policies that produced it, by their @id annotation, for the audit log.
+
+Cedar skips a policy whose condition fails to evaluate (a missing attribute, a type error). For a permit that
+fails closed; for a forbid it would fail open, so an allow is turned into a deny when any forbid errored.
 """
 
 import json
+import re
 from dataclasses import dataclass, field
 
 import cedarpy
+
+ERRORED = re.compile(r"policy `([^`]+)`")
 
 
 class PolicyError(ValueError):
@@ -33,7 +39,9 @@ class Policy:
         except ValueError as e:  # cedarpy reports parse errors as ValueError
             raise PolicyError(f"policies do not parse: {e}") from None
         self.text = text
-        self.annotations = {pid: p.get("annotations", {}) for pid, p in parsed.get("staticPolicies", {}).items()}
+        static = parsed.get("staticPolicies", {})
+        self.annotations = {pid: p.get("annotations", {}) for pid, p in static.items()}
+        self.forbids = {pid for pid, p in static.items() if p.get("effect") == "forbid"}
 
     def name(self, pid: str) -> str:
         return self.annotations.get(pid, {}).get("id", pid)
@@ -47,8 +55,11 @@ class Policy:
         }
         r = cedarpy.is_authorized(req, self.text, [])
         reasons = list(r.diagnostics.reasons)
-        errors = [str(e) for e in r.diagnostics.errors]
+        errors = [ERRORED.sub(lambda m: f"policy `{self.name(m[1])}`", str(e)) for e in r.diagnostics.errors]
         if not r.allowed:
             return Decision(False, policies=[self.name(p) for p in reasons], errors=errors)
+        broken = [p for e in r.diagnostics.errors for p in ERRORED.findall(str(e)) if p in self.forbids]
+        if broken:
+            return Decision(False, policies=[self.name(p) for p in broken], errors=errors)
         approval = any(self.annotations.get(p, {}).get("approval") == "required" for p in reasons)
         return Decision(True, approval, [self.name(p) for p in reasons], errors)

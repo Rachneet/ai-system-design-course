@@ -141,8 +141,14 @@ async def test_decisions_are_logged_and_bad_policies_never_load(gw, tmp_path):
     a = await agent(gw)
     await call(gw, a, "payments__refund", {"amount": 50, "customer_id": "c1"}, user_token("u1"))
     await call(gw, a, "payments__refund", {"amount": 50, "customer_id": "u1"}, user_token("u1"))
+    await call(gw, a, "payments__refund", {"customer_id": "c1"}, user_token("u1"))  # no amount: conditions error
     log = (await gw.get("/admin/decisions", headers=ADMIN)).json()["decisions"]
-    assert [(d["decision"], d["policies"]) for d in log] == [("deny", ["no-self-refund"]), ("allow", ["refunds-small"])]
+    assert [(d["decision"], d["policies"]) for d in log] == [
+        ("deny", []),
+        ("deny", ["no-self-refund"]),
+        ("allow", ["refunds-small"]),
+    ]
+    assert any("refunds-small" in e and "amount" in e for e in log[0]["errors"]) and not log[1]["errors"]
     gw.app.state.settings.policy_file = str(tmp_path / "broken.cedar")
     (tmp_path / "broken.cedar").write_text("permit(principal,")
     assert (await gw.post("/admin/policy/reload", headers=ADMIN)).status_code == 422

@@ -41,15 +41,30 @@ def args_digest(tool: str, args: dict) -> str:
     return hashlib.sha256(json.dumps([tool, args], sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
-async def record(pool, agent: Agent, user: User | None, action, tool, decision, policies=(), flags=(), started=None):
+async def record(
+    pool, agent: Agent, user: User | None, action, tool, decision, policies=(), flags=(), started=None, errors=()
+):
     latency = int((time.perf_counter() - started) * 1000) if started else None
     async with pool.connection() as c:
         await c.execute(
-            "INSERT INTO decisions (agent_id, user_id, action, tool, decision, policies, flags, latency_ms) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
-            (agent.id, user.id if user else None, action, tool, decision, list(policies), list(flags), latency),
+            "INSERT INTO decisions (agent_id, user_id, action, tool, decision, policies, flags, latency_ms, errors) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+            (
+                agent.id,
+                user.id if user else None,
+                action,
+                tool,
+                decision,
+                list(policies),
+                list(flags),
+                latency,
+                list(errors),
+            ),
         )
     metrics.decisions.labels(action=action, decision=decision).inc()
+    if errors:
+        metrics.policy_errors.inc(len(errors))
+        log.warning("policy_errors", agent=agent.id, tool=tool, decision=decision, errors=list(errors))
 
 
 def context(user: User | None, args: dict, server: str) -> dict:
@@ -142,14 +157,26 @@ async def call_tool(request: Request, rid, params: dict, agent: Agent, user: Use
 
     decision = state.policy.decide(agent.id, "call", name, context(user, args, server.name))
     if not decision.allowed:
-        await record(state.pool, agent, user, "call", name, "deny", decision.policies, started=started)
+        await record(
+            state.pool, agent, user, "call", name, "deny", decision.policies, started=started, errors=decision.errors
+        )
         why = f" by {', '.join(decision.policies)}" if decision.policies else " (no policy permits it)"
         return tool_error(rid, f"Denied{why}. Do not retry; explain to the user that this action is not allowed.")
 
     if decision.needs_approval:
         held = await approval_gate(state.pool, rid, params, agent, user, name, args, decision.policies)
         if held is not None:
-            await record(state.pool, agent, user, "call", name, "hold", decision.policies, started=started)
+            await record(
+                state.pool,
+                agent,
+                user,
+                "call",
+                name,
+                "hold",
+                decision.policies,
+                started=started,
+                errors=decision.errors,
+            )
             return held
 
     upstream_tool = name.split(SEP, 1)[1]
@@ -172,7 +199,7 @@ async def call_tool(request: Request, rid, params: dict, agent: Agent, user: Use
     for f in flags:
         metrics.flags.labels(flag=f).inc()
     outcome = "approved" if decision.needs_approval else "allow"
-    await record(state.pool, agent, user, "call", name, outcome, decision.policies, flags, started=started)
+    await record(state.pool, agent, user, "call", name, outcome, decision.policies, flags, started, decision.errors)
     response = mcp.result(rid, cleaned)
     if flags:
         response["result"]["_meta"]["io.checkpoint/flags"] = flags
