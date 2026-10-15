@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     assertion_private_key: str = Field(default="", repr=False)  # PEM; generated per process if empty (dev only)
     assertion_ttl_s: int = 60
 
+    # Approvals: a pending request lapses after this long; an approval must be used within the second window
+    approval_pending_ttl_s: int = 1800
+    approval_use_ttl_s: int = 300
+
     calls_per_minute: int = 60  # per agent and tool
     allowed_origins: list[str] = []  # browser Origins allowed to call /mcp; empty = none (server-to-server only)
 

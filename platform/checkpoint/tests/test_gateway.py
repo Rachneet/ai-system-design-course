@@ -155,3 +155,34 @@ async def test_decisions_are_logged_and_bad_policies_never_load(gw, tmp_path):
     assert (await call(gw, a, "payments__refund", {"amount": 50, "customer_id": "c1"}, user_token("u1"))).json()[
         "result"
     ].get("isError") is not True
+
+
+async def lapse(gw, approval_id):
+    async with gw.app.state.pool.connection() as c:
+        await c.execute("UPDATE approvals SET expires_at = now() - interval '1 second' WHERE id = %s", (approval_id,))
+
+
+async def test_approvals_expire_and_nobody_approves_their_own_request(gw):
+    a = await agent(gw)
+    approver = await agent(gw, "finance-lead", role="approver")
+    args, user = {"amount": 900, "customer_id": "c7"}, user_token("u1")
+    first = (await call(gw, a, "payments__refund", args, user)).json()["result"]["structuredContent"]
+    assert first["expiresAt"]
+    await lapse(gw, first["approvalId"])  # nobody decided in time
+    assert (await gw.get("/approvals", headers=approver)).json()["approvals"] == []
+    late = await gw.post(f"/approvals/{first['approvalId']}/decision", json={"decision": "approve"}, headers=approver)
+    assert late.status_code == 409 and "expired" in late.text
+
+    second = (await call(gw, a, "payments__refund", args, user)).json()["result"]["structuredContent"]
+    assert second["approvalId"] != first["approvalId"] and second["status"] == "pending"
+    ok = await gw.post(f"/approvals/{second['approvalId']}/decision", json={"decision": "approve"}, headers=approver)
+    assert ok.status_code == 200
+    await lapse(gw, second["approvalId"])  # approved, but not used in time
+    stale = await call(gw, a, "payments__refund", args, user, {"io.checkpoint/approvalId": second["approvalId"]})
+    assert stale.json()["result"]["isError"] and stale.json()["result"]["structuredContent"]["status"] == "pending"
+    assert not any(s["body"].get("method") == "tools/call" for s in mock_servers.seen)  # no refund ever ran
+
+    self_approver = await agent(gw, "u1", role="approver")  # the approver is the user the agent acts for
+    pending = (await gw.get("/approvals", headers=self_approver)).json()["approvals"][0]
+    own = await gw.post(f"/approvals/{pending['id']}/decision", json={"decision": "approve"}, headers=self_approver)
+    assert own.status_code == 403

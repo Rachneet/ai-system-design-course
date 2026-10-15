@@ -46,13 +46,21 @@ async def jwks(request: Request):
     return request.app.state.signer.jwks()
 
 
+async def expire(c) -> None:
+    """Lapse requests nobody decided in time and approvals nobody used in time."""
+    await c.execute(
+        "UPDATE approvals SET status = 'expired' WHERE status IN ('pending', 'approved') AND expires_at <= now()"
+    )
+
+
 @router.get("/approvals", tags=["approvals"])
 async def list_approvals(request: Request, status: str = "pending", who: Agent = APPROVER):
     async with request.app.state.pool.connection() as c:
+        await expire(c)
         rows = await (
             await c.execute(
-                "SELECT id, agent_id, user_id, tool, args, status, policies, requested_at, decided_by, decided_at, note "
-                "FROM approvals WHERE status = %s ORDER BY requested_at LIMIT 200",
+                "SELECT id, agent_id, user_id, tool, args, status, policies, requested_at, decided_by, decided_at, "
+                "note, expires_at FROM approvals WHERE status = %s ORDER BY requested_at LIMIT 200",
                 (status,),
             )
         ).fetchall()
@@ -67,16 +75,25 @@ class DecisionIn(Strict):
 @router.post("/approvals/{approval_id}/decision", tags=["approvals"])
 async def decide(approval_id: int, body: DecisionIn, request: Request, who: Agent = APPROVER):
     status = "approved" if body.decision == "approve" else "rejected"
+    use_s = request.app.state.settings.approval_use_ttl_s
     async with request.app.state.pool.connection() as c:
+        await expire(c)
+        found = await (
+            await c.execute("SELECT status, user_id FROM approvals WHERE id = %s", (approval_id,))
+        ).fetchone()
+        if found and found["user_id"] == who.id:
+            raise HTTPException(403, "you cannot decide a request made on your own behalf")
         row = await (
             await c.execute(
-                "UPDATE approvals SET status = %s, decided_by = %s, decided_at = now(), note = %s "
-                "WHERE id = %s AND status = 'pending' RETURNING id, status, tool, user_id",
-                (status, who.id, body.note, approval_id),
+                "UPDATE approvals SET status = %s, decided_by = %s, decided_at = now(), note = %s, "
+                "expires_at = CASE WHEN %s = 'approved' THEN now() + make_interval(secs => %s) ELSE expires_at END "
+                "WHERE id = %s AND status = 'pending' RETURNING id, status, tool, user_id, expires_at",
+                (status, who.id, body.note, status, use_s, approval_id),
             )
         ).fetchone()
     if not row:
-        raise HTTPException(409, "not pending (already decided, used, or unknown)")
+        lapsed = found and found["status"] == "expired"
+        raise HTTPException(409, "expired" if lapsed else "not pending (already decided, used, or unknown)")
     return row
 
 

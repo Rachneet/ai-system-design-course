@@ -23,6 +23,7 @@ from fastapi.responses import JSONResponse, Response
 from psycopg.types.json import Jsonb
 
 from . import mcp, metrics
+from .api import expire
 from .catalog import SEP
 from .identity import Agent, User, resolve
 from .scan import scan_result
@@ -164,7 +165,7 @@ async def call_tool(request: Request, rid, params: dict, agent: Agent, user: Use
         return tool_error(rid, f"Denied{why}. Do not retry; explain to the user that this action is not allowed.")
 
     if decision.needs_approval:
-        held = await approval_gate(state.pool, rid, params, agent, user, name, args, decision.policies)
+        held = await approval_gate(state, rid, params, agent, user, name, args, decision.policies)
         if held is not None:
             await record(
                 state.pool,
@@ -206,18 +207,19 @@ async def call_tool(request: Request, rid, params: dict, agent: Agent, user: Use
     return response
 
 
-async def approval_gate(pool, rid, params, agent: Agent, user: User | None, name, args, policies) -> dict | None:
-    """None lets the call through (a matching approval was found and consumed); otherwise a held result."""
+async def approval_gate(state, rid, params, agent: Agent, user: User | None, name, args, policies) -> dict | None:
+    """None lets the call through (a matching, unexpired approval was found and consumed); otherwise a held result."""
     if user is None:
         return tool_error(rid, "This action needs a person's approval, which requires a signed-in user.")
     digest = args_digest(name, args)
     approval_id = (params.get("_meta") or {}).get(APPROVAL_KEY)
-    async with pool.connection() as c, c.transaction():
+    async with state.pool.connection() as c, c.transaction():
+        await expire(c)
         if approval_id is not None:
             used = await (
                 await c.execute(
                     "UPDATE approvals SET status = 'used', used_at = now() WHERE id = %s AND status = 'approved' "
-                    "AND agent_id = %s AND user_id = %s AND args_digest = %s RETURNING id",
+                    "AND agent_id = %s AND user_id = %s AND args_digest = %s AND expires_at > now() RETURNING id",
                     (approval_id, agent.id, user.id, digest),
                 )
             ).fetchone()
@@ -225,22 +227,26 @@ async def approval_gate(pool, rid, params, agent: Agent, user: User | None, name
                 return None
         row = await (
             await c.execute(
-                "SELECT id, status FROM approvals WHERE agent_id = %s AND user_id = %s AND args_digest = %s "
-                "AND status IN ('pending', 'approved') ORDER BY id DESC LIMIT 1",
+                "SELECT id, status, expires_at FROM approvals WHERE agent_id = %s AND user_id = %s "
+                "AND args_digest = %s AND status IN ('pending', 'approved') ORDER BY id DESC LIMIT 1",
                 (agent.id, user.id, digest),
             )
         ).fetchone()
         if not row:
             row = await (
                 await c.execute(
-                    "INSERT INTO approvals (agent_id, user_id, tool, args, args_digest, status, policies) "
-                    "VALUES (%s, %s, %s, %s, %s, 'pending', %s) RETURNING id, status",
-                    (agent.id, user.id, name, Jsonb(args), digest, policies),
+                    "INSERT INTO approvals (agent_id, user_id, tool, args, args_digest, status, policies, expires_at) "
+                    "VALUES (%s, %s, %s, %s, %s, 'pending', %s, now() + make_interval(secs => %s)) "
+                    "RETURNING id, status, expires_at",
+                    (agent.id, user.id, name, Jsonb(args), digest, policies, state.settings.approval_pending_ttl_s),
                 )
             ).fetchone()
-    status = row["status"]
+    status, expires = row["status"], row["expires_at"].isoformat()
     text = (
-        f"This call needs a person's approval (request {row['id']}, {status}). Tell the user it is waiting for "
-        f'approval. Once approved, repeat the identical call with _meta {{"{APPROVAL_KEY}": {row["id"]}}}.'
+        f"This call needs a person's approval (request {row['id']}, {status}, expires {expires}). Tell the user it "
+        f"is waiting for approval. Once approved, repeat the identical call with _meta "
+        f'{{"{APPROVAL_KEY}": {row["id"]}}}. If it expires, the same call makes a new request.'
     )
-    return tool_error(rid, text, {"structuredContent": {"approvalId": row["id"], "status": status}})
+    return tool_error(
+        rid, text, {"structuredContent": {"approvalId": row["id"], "status": status, "expiresAt": expires}}
+    )

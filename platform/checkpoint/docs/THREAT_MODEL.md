@@ -10,6 +10,8 @@ The gateway exists because agents read untrusted text: a prompt-injected agent w
 | Spoofing Checkpoint to a server | A server accepts any caller | Signed assertion with audience and 60 s expiry; JWKS published | `test_allowed_call_reaches_a_legacy_server_with_a_verifiable_assertion` |
 | **Tampering** in transit | Header says one tool, body calls another | Every mirrored header checked against the body | `test_transport_rules_are_enforced`, `test_tool_output_is_scanned_*` |
 | Tampering with an approval | Approve a $900 refund, then send $1,900 | Approval bound to agent, user, tool and argument digest; single use | `test_large_refunds_wait_for_a_person_*` |
+| A stale approval | A request approved last week is replayed today, after the facts changed | Pending requests lapse (30 min), approvals must be used within 5 min; lapsed rows become `expired` | `test_approvals_expire_*` |
+| Self-approval | An approver approves a refund to themselves | An approver whose id is the request's user is refused | `test_approvals_expire_and_nobody_approves_*` |
 | **Repudiation** | "The agent did that on its own" | Every decision logged with agent, user, tool, outcome, policies and latency | `test_decisions_are_logged_*` |
 | **Information disclosure** via tool output | A page tells the agent to email data out | Instruction-like text marked, hidden Unicode stripped, secrets redacted | `test_tool_output_is_scanned_*` |
 | Disclosure of credentials | Agent learns a service key | Server credentials stay in Checkpoint; agents get none | `test_allowed_call_*` |
