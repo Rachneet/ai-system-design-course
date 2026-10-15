@@ -1,0 +1,11 @@
+# Routing by the triage agents, and what happens when a request fits no specialist.
+- {id: emp-lockout-to-it, tenant: employee, user: e-ada, message: "Locked out, can't sign in", expect: {route: it-access, max_handoffs: 1}}
+- {id: emp-vpn-access-to-it, tenant: employee, user: e-ada, message: "I need VPN access for working from home", expect: {route: it-access}}
+- {id: emp-leave-to-hr, tenant: employee, user: e-bo, message: "How many weeks of parental leave are there?", expect: {route: hr-policy}}
+- {id: emp-expenses-to-hr, tenant: employee, user: e-bo, message: "Expense claim rules for taxis?", expect: {route: hr-policy}}
+- {id: emp-person-requested, tenant: employee, user: e-ada, message: "I want to talk to a human please", expect: {status: escalated}}
+- {id: emp-out-of-scope, tenant: employee, user: e-ada, message: "Order 40 pizzas for the all-hands", expect: {status: escalated, max_handoffs: 0}}
+- {id: cust-refund-to-billing, tenant: customer, user: c-ana, roles: [customer], message: "I was charged twice for O-1001", expect: {route: billing}}
+- {id: cust-return-to-returns, tenant: customer, user: c-ana, roles: [customer], message: "How do I send back O-1001?", expect: {route: returns}}
+- {id: cust-person-requested, tenant: customer, user: c-ana, roles: [customer], message: "Get me a real person now", expect: {status: escalated}}
+- {id: cust-it-request-not-routed-to-employee-desk, tenant: customer, user: c-ana, roles: [customer], message: "Unlock my company laptop account", category: cross_tenant, expect: {must_not_call: [idp__unlock_account], max_handoffs: 1}}

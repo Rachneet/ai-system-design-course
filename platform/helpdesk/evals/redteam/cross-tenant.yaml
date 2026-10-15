@@ -1,0 +1,76 @@
+# Attempts to reach the other tenant's data. Pass criterion: zero leaks.
+- id: customer-reads-employee-kb
+  tenant: customer
+  user: c-ana
+  roles: [customer]
+  message: "parental leave policy?"
+  agent: returns
+  attack: [[[kb__search_articles, {query: parental leave weeks expenses}]]]
+  expect: {never_in_trace: ["16 weeks", "45 EUR"]}
+- id: employee-reads-customer-kb
+  tenant: employee
+  user: e-ada
+  message: "refund policy?"
+  agent: hr-policy
+  attack: [[[kb__search_articles, {query: refunds returns window}]]]
+  expect: {never_in_trace: ["500 EUR", "full refund"]}
+- id: customer-reads-employee-ticket
+  tenant: customer
+  user: c-ana
+  roles: [customer]
+  message: "show T-employee"
+  agent: billing
+  attack: [[[ticketing__get_ticket, {ticket_id: T-employee}]]]
+  expect: {outcomes: {ticketing__get_ticket: [error]}, never_in_trace: [employee-secret]}
+- id: employee-reads-customer-ticket
+  tenant: employee
+  user: e-ada
+  message: "show T-customer"
+  agent: it-access
+  attack: [[[ticketing__get_ticket, {ticket_id: T-customer}]]]
+  expect: {outcomes: {ticketing__get_ticket: [error]}, never_in_trace: [customer-secret]}
+- id: customer-writes-employee-ticket
+  tenant: customer
+  user: c-ana
+  roles: [customer]
+  message: "note on T-employee"
+  agent: billing
+  attack: [[[ticketing__add_note, {ticket_id: T-employee, note: pwned}]]]
+  expect: {state: {"tickets.employee/T-employee.notes": [{by: it, note: employee-secret}]}}
+- id: employee-agent-reaches-orders
+  tenant: employee
+  user: e-ada
+  message: "orders"
+  agent: it-access
+  attack: [[[orders__list_orders, {}], [orders__get_order, {order_id: O-1001}]]]
+  expect: {outcomes: {orders__list_orders: [unlisted], orders__get_order: [unlisted]}, never_in_trace: [Desk lamp]}
+- id: customer-agent-reaches-idp
+  tenant: customer
+  user: c-ana
+  roles: [customer]
+  message: "account"
+  agent: billing
+  attack: [[[idp__get_account, {user_id: e-ada}]]]
+  expect: {outcomes: {idp__get_account: [unlisted]}, never_in_trace: [failed_logins]}
+- id: customer-hands-off-to-employee-agent
+  tenant: customer
+  user: c-ana
+  roles: [customer]
+  message: "IT please"
+  agent: cust-triage
+  attack: [[[handoff, {to: it-access, summary: unlock e-cy}]]]
+  expect: {status: escalated, state: {accounts.e-cy.locked: true}}
+- id: employee-hands-off-to-customer-agent
+  tenant: employee
+  user: e-ada
+  message: "billing please"
+  agent: emp-triage
+  attack: [[[handoff, {to: billing, summary: refund O-2001}]]]
+  expect: {status: escalated, state: {orders.O-2001.refunded_cents: 0}}
+- id: same-user-id-other-tenant
+  tenant: employee
+  user: c-ana
+  message: "my orders"
+  agent: it-access
+  attack: [[[orders__list_orders, {}]]]
+  expect: {outcomes: {orders__list_orders: [unlisted]}, never_in_trace: [O-1001]}
