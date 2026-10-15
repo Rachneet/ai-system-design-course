@@ -108,6 +108,7 @@ button { font: inherit; color: inherit; }
 .group > summary::after { content: ""; width: 5px; height: 5px; border: solid var(--ink-2); border-width: 0 1.5px 1.5px 0; transform: translateY(-2px) rotate(45deg); transition: transform .15s; }
 .group[open] > summary::after { transform: translateY(1px) rotate(-135deg); }
 .group-head b { font-weight: 600; font-size: 14px; color: var(--ink); line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.group-head b.span { grid-column: 1 / 3; } /* no number: the label starts where week numbers do */
 .group-head .no { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .group-head small { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .nav { list-style: none; margin: 0 0 8px 30px; padding: 0; } /* lessons sit under the week title, one step in from the week number */
@@ -305,6 +306,8 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
 .sign-off p { margin: 0; flex: 1 1 240px; font-size: 15px; color: var(--ink-2); }
 .mark { display: inline-flex; align-items: center; gap: 10px; border: 1px solid var(--rule); background: var(--sheet); color: var(--ink); padding: 9px 14px; font: 600 15px var(--font-display); cursor: pointer; border-radius: 8px; }
 .mark:hover { background: var(--pen-soft); }
+.mark.primary { background: var(--ink); color: var(--sheet); border-color: var(--ink); }
+.mark.primary:hover { background: var(--pen); border-color: var(--pen); }
 .mark:active { transform: translateY(1px); }
 .pager { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
 .pager a, .pager span { display: grid; gap: 3px; padding: 14px 16px; text-decoration: none; color: var(--ink); font-family: var(--font-display); min-width: 0; }
@@ -324,7 +327,7 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
 .go:hover { background: var(--pen); }
 .go:active { transform: translateY(1px); }
 .resume p { margin: 0; color: var(--ink-2); font-size: 15px; }
-.resume p b { color: var(--ink); font-family: var(--font-mono); font-weight: 600; font-variant-numeric: tabular-nums; }
+.resume p b { color: var(--ink); font-weight: 600; }
 .map { margin-top: 40px; }
 .map h2 { font-size: 21px; font-weight: 650; margin: 0 0 4px; letter-spacing: -0.01em; }
 .map > p { margin: 0 0 14px; color: var(--ink-2); font-size: 15.5px; }
@@ -684,7 +687,7 @@ function renderNav(current) {
   for (const w of Object.keys(g).map(Number).sort((a, b) => a - b)) {
     const items = g[w];
     const count = items.filter(e => done.has(e.id)).length;
-    const label = w >= 1 && w < EXTRA ? `<span class="no">${w}</span><b title="Week ${w}: ${esc(WEEKS[w].title)}">${esc(SHORT_WEEKS[w] || WEEKS[w].title)}</b>` : `<span class="no"></span><b>${groupName(w)}</b>`;
+    const label = w >= 1 && w < EXTRA ? `<span class="no">${w}</span><b title="Week ${w}: ${esc(WEEKS[w].title)}">${esc(SHORT_WEEKS[w] || WEEKS[w].title)}</b>` : `<b class="span">${groupName(w)}</b>`;
     if (TRACKS[w]) html += `<p class="track-label">${TRACKS[w]}</p>`;
     html += `<details class="group" data-w="${w}"${w === here || openWeeks.has(w) ? " open" : ""}><summary class="group-head">${label}<small>${w < EXTRA && count ? `${count}/${items.length}` : ""}</small></summary><ul class="nav">`;
     html += items.map(e => {
@@ -703,6 +706,8 @@ function renderNav(current) {
 function renderHome() {
   const g = weekGroups();
   const next = trackable.find(e => !done.has(e.id)) || trackable[0];
+  const last = store.get("aisd.last", null);
+  const resume = last && byId[last.id] && !done.has(last.id) ? last : null; // where the reader actually stopped
   const n = trackable.filter(e => done.has(e.id)).length;
   const week = w => {
     const items = g[w] || [];
@@ -726,7 +731,8 @@ function renderHome() {
     <h1>Design AI systems that survive production.</h1>
     <p class="lede">Twelve weeks. The first six take one agent from prototype to monitored production service: agents, retrieval, evals, security, deployment and operations. The next six build the platform companies run agents on, ending with coding agents that turn issues into tested, reviewed changes. Free, with tested reference code for every lab.</p>
     <div class="resume">
-      <a class="go" href="#${next.id}">${n ? `Continue: ${esc(next.short || next.title)}` : "Start the course"}</a>
+      ${resume ? `<a class="go" href="#${resume.id}" data-section="${esc(resume.section)}">Continue reading</a><p>${esc(byId[resume.id].short || byId[resume.id].title)}, at <b>${esc(resume.title)}</b></p>`
+        : `<a class="go" href="#${next.id}">${n ? `Continue: ${esc(next.short || next.title)}` : "Start the course"}</a>`}
     </div>
     <section class="map"><h2>One system, built in five labs</h2>
       <p>Every lab adds a layer to Relay, a support agent for an online store, until it is a monitored production service. Use any model provider.</p>
@@ -747,6 +753,19 @@ function renderHome() {
   </div></div>`;
 }
 
+function signOff(e, next) {
+  // One clear action where the lesson ends: mark it done and carry on. Finishing a week gets a plain acknowledgement.
+  const isDone = done.has(e.id);
+  const week = trackable.filter(x => x.week === e.week);
+  const weekDone = isDone && week.every(x => done.has(x.id));
+  const nextUp = next && byId[next.id]?.week < EXTRA ? next : null;
+  const say = weekDone
+    ? `${e.week === 0 ? "Start" : `Week ${e.week}`} complete: all ${week.length} lessons done.${nextUp && nextUp.week !== e.week ? ` Next up: ${esc(nextUp.week === 0 ? "Start" : `Week ${nextUp.week}, ${WEEKS[nextUp.week].title}`)}.` : ""} Click Done to undo.`
+    : isDone ? "Marked as done. Click again to undo."
+    : "Mark it done once you can answer the self-check questions without looking back.";
+  return `<div class="sign-off">${!isDone && nextUp ? `<button class="mark primary" id="doneNext" type="button">Mark done and continue</button>` : ""}<button class="mark" id="doneBtn" type="button" aria-pressed="${isDone}">${tickBox(isDone, justTicked === e.id)}${isDone ? "Done" : "Mark as done"}</button><p id="signSay">${say}</p></div>`;
+}
+
 function renderEntry(e) {
   quizCount = 0; figCount = 0;
   const idx = COURSE.indexOf(e);
@@ -764,7 +783,7 @@ function renderEntry(e) {
     <h1>${esc(e.title)}</h1>
     ${e.summary ? `<p class="lede">${esc(e.summary)}</p>` : ""}
     <div class="body">${body}</div>
-    ${tracked ? `<div class="sign-off"><button class="mark" id="doneBtn" type="button" aria-pressed="${done.has(e.id)}">${tickBox(done.has(e.id), justTicked === e.id)}${done.has(e.id) ? "Done" : "Mark as done"}</button><p>${done.has(e.id) ? "Marked as done. Click again to undo." : "Mark it done once you can answer the self-check questions without looking back."}</p></div>` : ""}
+    ${tracked ? signOff(e, next) : ""}
     <nav class="pager" aria-label="Lessons">${prev ? `<a class="prev" href="#${prev.id}"><small>${nextLabel(prev)}</small><b>${esc(prev.title)}</b></a>` : "<span></span>"}${next ? `<a class="next" href="#${next.id}"><small>Next: ${nextLabel(next)}</small><b>${esc(next.title)}</b></a>` : ""}</nav>
   </article></div></div>`;
 }
@@ -795,7 +814,16 @@ function enhance(root, e) {
       why.innerHTML = (pick === ans ? "<strong>Correct.</strong> " : "<strong>Not quite.</strong> ") + marked.parseInline(q.dataset.why);
       q.appendChild(why);
       qz.querySelector("[data-score]").textContent = answered === total ? `${right} of ${total} correct` : `${answered} of ${total} answered`;
+      const say = document.getElementById("signSay");
+      if (answered === total && say && !done.has(e.id)) say.textContent = right === total
+        ? `All ${total} self-check answers correct. A good moment to mark this lesson done.`
+        : `${right} of ${total} correct. Reread the sections behind the misses, then mark this lesson done.`;
     }));
+  });
+  root.querySelector("#doneNext")?.addEventListener("click", () => {
+    done.add(e.id); store.set("aisd.done", [...done]);
+    const idx = trackable.indexOf(e);
+    location.hash = trackable[idx + 1]?.id || "home";
   });
   const doneBtn = root.querySelector("#doneBtn");
   if (doneBtn) doneBtn.addEventListener("click", () => {
@@ -848,6 +876,7 @@ function mountOutline() {
     const a = cur && links[cur.id];
     if (!a) return mark.classList.remove("on");
     a.classList.add("on");
+    store.set("aisd.last", { id: (location.hash || "#").slice(1), section: cur.id, title: cur.textContent });
     mark.style.transform = `translateY(${a.offsetTop}px)`;
     mark.style.height = `${a.offsetHeight}px`;
     mark.classList.add("on");
@@ -875,7 +904,14 @@ function route() {
   document.title = e ? `${e.title} · AI System Design` : "AI System Design";
   closeMenu();
 }
-window.addEventListener("hashchange", () => { route(); window.scrollTo(0, 0); });
+let pendingSection = null;
+document.getElementById("main").addEventListener("click", ev => {
+  const a = ev.target.closest("a[data-section]"); if (a) pendingSection = a.dataset.section;
+});
+window.addEventListener("hashchange", () => {
+  route(); window.scrollTo(0, 0);
+  if (pendingSection) { document.getElementById(pendingSection)?.scrollIntoView({ block: "start" }); pendingSection = null; }
+});
 
 /* ---------- Search ---------- */
 const plain = COURSE.map(e => ({ e, text: (e.title + " " + e.body).toLowerCase() }));
