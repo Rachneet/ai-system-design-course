@@ -569,9 +569,10 @@ function mountWidgets(root) {
     const spec = JSON.parse(el.dataset.spec), W = WIDGETS[spec.type];
     if (!W) return;
     const names = Object.keys(W.presets);
-    const v = { ...W.presets[spec.preset] || W.presets[names[0]] };
+    const chosen = W.presets[spec.preset] ? spec.preset : names[0];
+    const v = { ...W.presets[chosen] };
     el.innerHTML = `<div class="widget-head"><span>${W.title}</span><small>try your own numbers</small></div><div class="widget-body">
-      <div class="w-inputs">${names.length > 1 ? `<label>Preset<select data-preset>${names.map(n => `<option${v === W.presets[n] ? " selected" : ""}>${esc(n)}</option>`).join("")}</select></label>` : ""}
+      <div class="w-inputs">${names.length > 1 ? `<label>Preset<select data-preset>${names.map(n => `<option${n === chosen ? " selected" : ""}>${esc(n)}</option>`).join("")}</select></label>` : ""}
       ${W.fields.map(([k, label, type, min, max]) => `<label>${label}${type === "range" ? ` <span data-show="${k}"></span>` : ""}<input data-k="${k}" type="${type || "number"}" ${min ? `min="${min}" max="${max}"` : 'min="0" step="any"'} value="${v[k]}"></label>`).join("")}</div>
       <div class="w-out"></div><div class="w-meter"><i></i></div><p class="w-note"></p></div>`;
     const draw = () => {
