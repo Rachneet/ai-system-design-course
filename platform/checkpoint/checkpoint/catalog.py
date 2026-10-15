@@ -52,7 +52,7 @@ class Catalog:
         self.atlas = httpx.AsyncClient(base_url=cfg.atlas_url, transport=atlas_transport, timeout=15)
         self.upstream_transport = upstream_transport
         self.servers: dict[str, Server] = {}
-        self.loaded_at = 0.0
+        self.loaded_at: float | None = None  # monotonic time counts from boot, so 0.0 is not "long ago"
         self.lock = asyncio.Lock()
 
     async def _approved(self) -> list[dict]:
@@ -70,7 +70,7 @@ class Catalog:
 
     async def refresh(self, force: bool = False) -> None:
         async with self.lock:
-            if force or time.monotonic() - self.loaded_at >= self.cfg.catalog_ttl_s:
+            if force or self.loaded_at is None or time.monotonic() - self.loaded_at >= self.cfg.catalog_ttl_s:
                 await self._reload()
                 stale = list(self.servers.values())  # every TTL, list every server's tools again: they can change
             else:
