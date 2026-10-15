@@ -106,6 +106,9 @@ button { font: inherit; color: inherit; }
 .nav .lab-tag, .sheets .lab-tag { font-size: 11px; color: var(--ink-2); background: color-mix(in srgb, var(--ink) 6%, transparent); border-radius: 4px; padding: 0 5px; margin-left: 6px; vertical-align: 1px; }
 
 /* Tick boxes: state is the mark, never colour alone. */
+.ref { display: inline-block; width: 14px; height: 14px; margin-top: 3px; }
+.ref svg { display: block; width: 14px; height: 14px; }
+.ref path { fill: none; stroke: var(--ink-2); stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
 .tick { position: relative; display: inline-block; width: 14px; height: 14px; border: 1.25px solid var(--ink-2); border-radius: 3px; margin-top: 3px; background: var(--sheet); flex: none; }
 .tick svg { position: absolute; inset: -4px -5px -2px -1px; width: 21px; height: 18px; overflow: visible; }
 .tick path { fill: none; stroke: var(--pen); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
@@ -322,13 +325,6 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
 .sheets a:hover .t { text-decoration: underline; text-decoration-color: var(--pen); }
 .sheets .no { font-size: 12px; color: var(--ink-2); padding-top: 2px; }
 .sheets a.next-up .no { color: var(--red); font-weight: 600; }
-.library { margin-top: 44px; display: grid; grid-template-columns: 96px minmax(0, 1fr); gap: 20px; border-top: 1px solid var(--rule); padding-top: 22px; }
-.library h2 { margin: 0; font-size: 20px; font-weight: 650; }
-.library ul { list-style: none; margin: 0; padding: 0; }
-.library a { display: grid; grid-template-columns: minmax(0, 200px) 1fr; gap: 16px; padding: 8px 0; text-decoration: none; color: var(--ink); }
-.library a b { font-family: var(--font-display); font-size: 15.5px; font-weight: 600; }
-.library a span { color: var(--ink-2); font-size: 14.5px; line-height: 1.5; }
-.library a:hover b { text-decoration: underline; text-decoration-color: var(--pen); }
 .note { margin-top: 40px; color: var(--ink-2); font-size: 14.5px; max-width: 72ch; }
 
 @media (max-width: 900px) {
@@ -344,10 +340,9 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
   .sheet { border-left: 0; border-right: 0; border-top: 0; }
   .sheet-body, .cover { padding: 28px max(16px, env(safe-area-inset-right, 0px)) 40px max(16px, env(safe-area-inset-left, 0px)); }
   body { font-size: 17px; }
-  .wk, .library { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .wk { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .wk-no b { display: inline; font-size: 30px; }
   .wk-no small { display: inline; margin-left: 10px; }
-  .library a { grid-template-columns: minmax(0, 1fr); gap: 4px; }
   .pager { grid-template-columns: minmax(0, 1fr); }
 
   .pager .next { grid-column: 1; }
@@ -397,7 +392,7 @@ const WEEKS = {
   8: { title: "Policy & the Agent Supply Chain", blurb: "Policy as code for tool calls, human approvals, and registries that vet MCP servers, agents and skills." },
   9: { title: "Multi-Agent Systems & Multi-Tenancy", blurb: "Agents that delegate to agents, and one platform serving many teams and customers in isolation." },
   10: { title: "Platform, Governance & FinOps", blurb: "The paved path for agent teams, regulation and audit, and the unit economics of AI in production." },
-  99: { title: "Library", blurb: "Design drills, a glossary, and the full reading list." },
+  99: { title: "Library", blurb: "Reference pages to use alongside any week. They are not counted in your progress." },
 };
 const LIBRARY = 99;
 const CORE = [0, 1, 2, 3, 4, 5, 6], ENTERPRISE = [7, 8, 9, 10];
@@ -416,6 +411,7 @@ const pad2 = n => String(n).padStart(2, "0");
 /* ---------- Markdown ---------- */
 const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const TICK = '<svg viewBox="0 0 21 18" aria-hidden="true"><path d="M3 10 L8.5 15 L19 2"/></svg>';
+const refMark = `<i class="ref" aria-hidden="true"><svg viewBox="0 0 14 14"><path d="M3.5 1.5h5l2.5 2.5v8.5h-7.5z M8.5 1.5v2.5h2.5 M5.5 7h3.5 M5.5 9.5h3.5"/></svg></i>`;
 const tickBox = (on, draw) => `<i class="tick${draw ? " draw" : ""}" aria-hidden="true">${on ? TICK : ""}</i>`;
 let quizCount = 0, figCount = 0, figPrefix = "";
 const renderer = new marked.Renderer();
@@ -652,7 +648,7 @@ function renderNav(current) {
     html += items.map(e => {
       const no = sheetNo[e.id] || "";
       const tracked = e.week < LIBRARY;
-      return `<li><a href="#${e.id}" ${e.id === current ? 'aria-current="page"' : ""}>${tracked ? tickBox(done.has(e.id)) : "<i></i>"}<span class="no">${no}</span><span class="t">${esc(e.title)}${e.kind === "lab" ? '<span class="lab-tag">lab</span>' : ""}</span></a></li>`;
+      return `<li><a href="#${e.id}" ${e.id === current ? 'aria-current="page"' : ""}>${tracked ? tickBox(done.has(e.id)) : refMark}<span class="no">${no}</span><span class="t">${esc(e.title)}${e.kind === "lab" ? '<span class="lab-tag">lab</span>' : ""}</span></a></li>`;
     }).join("");
     html += `</ul></section>`;
   }
@@ -675,7 +671,11 @@ function renderHome() {
       <ul class="sheets">${items.map(e => `<li><a href="#${e.id}"${e.id === next.id ? ' class="next-up"' : ""}>${tickBox(done.has(e.id))}<span class="no">${sheetNo[e.id]}</span><span class="t">${esc(e.short || e.title)}${e.kind === "lab" ? '<span class="lab-tag">lab</span>' : ""}</span></a></li>`).join("")}</ul>
     </div></section>`;
   };
-  const extras = (g[LIBRARY] || []).map(e => `<li><a href="#${e.id}"><b>${esc(e.title)}</b><span>${esc(e.summary || "")}</span></a></li>`).join("");
+  const library = g[LIBRARY] || [];
+  const extras = `<section class="wk"><div class="wk-no"><b>Library</b><small>${library.length} pages</small><small>Not tracked</small></div><div>
+      <h2>Drills, glossary and reading</h2><p>${esc(WEEKS[LIBRARY].blurb)}</p>
+      <ul class="sheets">${library.map(e => `<li><a href="#${e.id}">${refMark}<span class="no"></span><span class="t">${esc(e.short || e.title)}</span></a></li>`).join("")}</ul>
+    </div></section>`;
   const minutes = COURSE.reduce((s, e) => s + e.minutes, 0);
   const strip = `<p class="meta"><span>${n} of ${trackable.length} lessons done</span><span>Up next: <a href="#${next.id}">${esc(next.short || next.title)}</a></span><span>${(g[10] ? 10 : 6)} weeks, about ${Math.round(minutes / 60)} hours</span><span>Free</span></p>`;
   return `<div class="sheet"><div class="cover">${strip}
@@ -699,8 +699,7 @@ function renderHome() {
     <div class="weeks">${CORE.map(week).join("")}</div>
     ${ENTERPRISE.some(w => g[w]) ? `<section class="track"><h2>Enterprise track</h2>
       <p>Four more weeks on running agents across a company: a gateway for every model, identity and policy for every tool call, a registry of what is approved, many tenants, and the economics. Each week builds on a tested reference service.</p></section>
-    <div class="weeks">${ENTERPRISE.filter(w => g[w]).map(week).join("")}</div>` : ""}
-    <section class="library"><h2>Library</h2><ul>${extras}</ul></section>
+    <div class="weeks">${ENTERPRISE.filter(w => g[w]).map(week).join("")}${library.length ? extras : ""}</div>` : `<div class="weeks">${library.length ? extras : ""}</div>`}
   </div></div>`;
 }
 
