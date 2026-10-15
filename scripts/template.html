@@ -680,7 +680,7 @@ function renderHome() {
   const strip = `<p class="meta"><span>${n} of ${trackable.length} lessons done</span><span>Up next: <a href="#${next.id}">${esc(next.short || next.title)}</a></span><span>${(g[10] ? 10 : 6)} weeks, about ${Math.round(minutes / 60)} hours</span><span>Free</span></p>`;
   return `<div class="sheet"><div class="cover">${strip}
     <h1>Design AI systems that survive production.</h1>
-    <p class="lede">Six weeks on agents, retrieval, evals, security, deployment and operations, worked through one system you build from prototype to monitored service. Free, with tested reference code for every lab.</p>
+    <p class="lede">Six core weeks on agents, retrieval, evals, security, deployment and operations, worked through one system you build from prototype to monitored service, then four on running agents across a company. Free, with tested reference code for every lab.</p>
     <div class="resume">
       <a class="go" href="#${next.id}">${n ? `Continue with lesson ${Number(sheetNo[next.id])}` : "Start the course"}</a>
     </div>
