@@ -53,6 +53,7 @@ class Result:
     review: dict = field(default_factory=dict)
     tokens: int = 0
     summary: str = ""
+    transcript: list[dict] = field(default_factory=list)  # every model turn and tool call, results cut short
 
 
 def gates(ws: Workspace, cfg) -> list[Gate]:
@@ -101,7 +102,7 @@ def handle(repo: Path, issue: str, cfg, model: Model, ledger: Path) -> Result:
     ws = Workspace.clone(repo, cfg.sandbox_prefix, cfg.timeout_s)
     try:
         coder = Harness(ws, cfg, model, repo, f"job:{job}:coder").run(issue)
-        result.tokens, result.summary = coder.tokens, coder.summary
+        result.tokens, result.summary, result.transcript = coder.tokens, coder.summary, coder.transcript
         if coder.status != "finished":
             result.summary = f"the coder stopped: {coder.status}"
             return result

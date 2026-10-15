@@ -38,6 +38,7 @@ def test_a_bug_is_fixed_tested_reviewed_and_branched_with_provenance(repo, scrip
     )
     record = json.loads(log(tmp_path).read_text())
     assert record["commit"] == r.commit and record["models"]["coder"] == cfg.coder_model and record["tokens"] == 5000
+    assert [c["name"] for turn in record["transcript"] for c in turn["calls"]][:2] == ["read_file", "edit_file"]
     assert {s["auth"] for s in scripted.seen} == {"Bearer sbk_job_key"}
     reviewer = next(s for s in scripted.seen if s["role"] == "reviewer")["body"]
     assert "tools" not in reviewer and "read_file" not in json.dumps(reviewer)  # it sees the diff, not the work

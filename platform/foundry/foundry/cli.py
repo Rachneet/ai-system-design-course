@@ -74,7 +74,7 @@ def main(argv: list[str] | None = None) -> int:
         failed += result.status not in ("ready", "merged")
         print(
             json.dumps(
-                {k: v for k, v in asdict(result).items() if k != "gates"}
+                {k: v for k, v in asdict(result).items() if k not in ("gates", "transcript")}
                 | {"gates": {g.name: g.passed for g in result.gates}}
             )
         )

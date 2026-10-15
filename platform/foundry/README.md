@@ -53,7 +53,7 @@ allow = ["read(**)", "edit(**)", "run(python -m pytest*)", "run(ruff *)"]
 ask = ["run(uv add*)"]
 deny = ["edit(.git/**)", "edit(.github/**)", "run(curl*)"]
 hooks = ["python scripts/no_new_deps.py"]
-sandbox_prefix = ["bwrap", "--ro-bind", "/", "/", "--bind", ".", ".", "--unshare-net", "--"]  # Linux
+sandbox_prefix = ["bwrap", "--dev-bind", "/", "/", "--unshare-net", "--"]  # Linux: no network; add binds to narrow files
 ```
 
 ## Tests
