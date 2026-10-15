@@ -201,7 +201,7 @@ async def resolve_escalation(escalation_id: int, body: ResolveIn, request: Reque
         ).fetchone()
         if e is None:
             raise HTTPException(404, "no open escalation with that id")
-        t = await rt.load(c, person.tenant, e["ticket_id"])
+        t = await rt.load(c, e["ticket_id"])
         await rt.say(c, t, "assistant", body.reply, f"human:{person.id}")
         await c.execute(
             "UPDATE tickets SET status = 'resolved', resolved_by = 'human', resolved_at = now(), updated_at = now() "

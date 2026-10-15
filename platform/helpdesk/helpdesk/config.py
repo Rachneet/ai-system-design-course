@@ -48,7 +48,6 @@ class Settings(BaseSettings):
     retention_days: dict[str, int] = {"messages": 90, "events": 365, "escalations": 365}
     human_cost_per_escalation_usd: float = 6.0  # fully loaded cost assumptions for FinOps, labelled as such
     human_cost_per_approval_usd: float = 1.5
-    allowed_origins: list[str] = []
 
 
 settings = Settings()

@@ -13,7 +13,6 @@ import yaml
 class AgentSpec:
     id: str
     tenant: str
-    tier: str
     model: str
     skill: str
     instructions: str
@@ -51,7 +50,6 @@ def load(agents_file: str, models_file: str, skills_dir: str) -> Roster:
         agents[aid] = AgentSpec(
             aid,
             a["tenant"],
-            a["tier"],
             models.get(a["tier"], ""),
             a["skill"],
             body,
@@ -65,7 +63,7 @@ def load(agents_file: str, models_file: str, skills_dir: str) -> Roster:
             if target not in agents or agents[target].tenant != a.tenant:
                 problems.append(f"{aid}: handoff target {target} is not an agent of tenant {a.tenant}")
     for tenant, t in spec["tenants"].items():
-        if agents.get(t["triage"], None) is None or agents[t["triage"]].tenant != tenant:
+        if agents.get(t["triage"]) is None or agents[t["triage"]].tenant != tenant:
             problems.append(f"tenant {tenant}: triage agent {t['triage']} is missing or belongs elsewhere")
     if problems:
         raise ValueError("invalid roster: " + "; ".join(problems))

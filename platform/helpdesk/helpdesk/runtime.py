@@ -29,7 +29,6 @@ from . import metrics
 from .db import tenant
 from .identity import User, expired
 from .llm import ModelError
-from .tools import ToolResult
 
 log = structlog.get_logger("helpdesk")
 HANDOFF, ESCALATE = "handoff", "escalate_to_human"
@@ -117,7 +116,7 @@ class Runtime:
             (t["id"], t["tenant"], kind, agent, Jsonb(detail)),
         )
 
-    async def load(self, c, tenant_id: str, ticket_id: str, user_id: str | None = None) -> dict | None:
+    async def load(self, c, ticket_id: str, user_id: str | None = None) -> dict | None:
         sql, args = "SELECT * FROM tickets WHERE id = %s", [ticket_id]
         if user_id is not None:
             sql, args = sql + " AND user_id = %s", args + [user_id]
@@ -152,7 +151,7 @@ class Runtime:
 
     async def post(self, user: User, ticket_id: str, text: str) -> None:
         async with tenant(self.pool, user.tenant) as c:
-            t = await self.load(c, user.tenant, ticket_id, user.id)
+            t = await self.load(c, ticket_id, user.id)
             if t is None:
                 raise LookupError(ticket_id)
             if t["status"] in ("resolved", "answered"):
@@ -186,7 +185,7 @@ class Runtime:
     async def run(self, user: User, ticket_id: str) -> None:
         for _ in range(self.cfg.max_handoffs + 2):
             async with tenant(self.pool, user.tenant) as c:
-                t = await self.load(c, user.tenant, ticket_id)
+                t = await self.load(c, ticket_id)
             spec = self.roster.agents[t["agent_id"]]
             if not await self.enabled(spec.id):
                 await self.escalate(t, spec.id, "agent switched off", "")
@@ -303,7 +302,8 @@ class Runtime:
                     result = await self.checkpoint.call(
                         creds.checkpoint_token, user.token, tools[name], args, traceparent=traceparent(t["trace_id"])
                     )
-                    await self.record_tool(t, spec.id, name, args, result)
+                    async with tenant(self.pool, t["tenant"]) as c:
+                        await self.record_tool(c, t, spec.id, name, args, result, result.approval_id)
                     if result.outcome == "held":
                         await self.hold(t, spec.id, name, args, cid, result, user.token)
                         ended = Outcome("held")
@@ -318,20 +318,19 @@ class Runtime:
         async with tenant(self.pool, t["tenant"]) as c:
             await self.say(c, t, "tool", text, agent, tool_call_id=call_id)
 
-    async def record_tool(self, t: dict, agent: str, name: str, args: dict, result: ToolResult) -> None:
-        async with tenant(self.pool, t["tenant"]) as c:
-            await self.event(
-                c,
-                t,
-                "tool_call",
-                agent,
-                tool=name,
-                args=args,
-                outcome=result.outcome,
-                approval_id=result.approval_id,
-                flags=result.flags,
-                result=result.text[:500],
-            )
+    async def record_tool(self, c, t: dict, agent: str, name: str, args: dict, result, approval_id) -> None:
+        await self.event(
+            c,
+            t,
+            "tool_call",
+            agent,
+            tool=name,
+            args=args,
+            outcome=result.outcome,
+            approval_id=approval_id,
+            flags=result.flags,
+            result=result.text[:500],
+        )
         metrics.tool_calls.labels(agent=agent, outcome=result.outcome).inc()
 
     # ---------- handoffs and escalation ----------
@@ -343,7 +342,7 @@ class Runtime:
         if self.roster.agents[out.target].tenant != t["tenant"]:
             return "handoff across tenants"  # the roster refuses this at load; checked again here
         async with tenant(self.pool, t["tenant"]) as c:
-            t = await self.load(c, t["tenant"], t["id"])
+            t = await self.load(c, t["id"])
             visited = await (
                 await c.execute(
                     "SELECT detail->>'from' AS a, detail->>'to' AS b FROM events WHERE ticket_id = %s AND kind = 'handoff'",
@@ -413,7 +412,7 @@ class Runtime:
             p = await (await c.execute("SELECT * FROM pending_calls WHERE approval_id = %s", (approval_id,))).fetchone()
             if p is None:
                 return None
-            t = await self.load(c, tenant_id, p["ticket_id"])
+            t = await self.load(c, p["ticket_id"])
             await self.event(c, t, "approval", p["agent_id"], approval_id=approval_id, approved=approved, by=person)
             if not approved:
                 await c.execute("DELETE FROM pending_calls WHERE ticket_id = %s", (t["id"],))
@@ -443,7 +442,7 @@ class Runtime:
             ).fetchone()
             if p is None:
                 return False  # nothing waiting, or another request is running it right now
-            t = await self.load(c, tenant_id, ticket_id)
+            t = await self.load(c, ticket_id)
             creds = self.secrets_for(p["agent_id"])
             tools = {x["name"]: x for x in await self.checkpoint.list_tools(creds.checkpoint_token, user_token)}
             tool = tools.get(p["tool"], {"name": p["tool"], "inputSchema": {}})
@@ -459,20 +458,8 @@ class Runtime:
                     await self.event(c, t, "approval", p["agent_id"], approval_id=result.approval_id, renewed=True)
                 return False
             await c.execute("DELETE FROM pending_calls WHERE ticket_id = %s", (ticket_id,))
-            await self.event(
-                c,
-                t,
-                "tool_call",
-                p["agent_id"],
-                tool=p["tool"],
-                args=p["args"],
-                outcome=result.outcome,
-                approval_id=p["approval_id"],
-                flags=result.flags,
-                result=result.text[:500],
-            )
+            await self.record_tool(c, t, p["agent_id"], p["tool"], p["args"], result, p["approval_id"])
             await self.replay(c, t, p, result.text)
             await c.execute("UPDATE tickets SET status = 'open', updated_at = now() WHERE id = %s", (ticket_id,))
-        metrics.tool_calls.labels(agent=p["agent_id"], outcome=result.outcome).inc()
         await self.run(User(t["user_id"], tenant_id, (), token=user_token), ticket_id)
         return True
