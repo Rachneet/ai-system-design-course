@@ -43,7 +43,11 @@
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --cell: 18px;
   --rail: 304px;
-  --measure: none; /* text runs the full lesson width (owner preference) */
+  /* Reading scale: type grows with the screen; the text column is measured in ems so a line stays about 80
+     characters at every size. Figures, tables, code and calculators use the wider sheet. */
+  --fs: clamp(17px, 0.42vw + 11px, 19px);
+  --text: calc(var(--fs) * 36); /* about 75 characters of Inter per full line */
+  --wide: clamp(1100px, 68vw, 1360px);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -62,7 +66,7 @@
 
 * { box-sizing: border-box; }
 html, body { background: var(--sheet); color: var(--ink); }
-body { margin: 0; font-family: var(--font-read); font-size: 17px; line-height: 1.7; font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiased; font-optical-sizing: auto; }
+body { margin: 0; font-family: var(--font-read); font-size: var(--fs); line-height: 1.7; font-feature-settings: "cv11", "ss01"; -webkit-font-smoothing: antialiased; font-optical-sizing: auto; }
 ::selection { background: var(--pen-soft); color: var(--ink); }
 input, textarea { caret-color: var(--red); }
 a { color: var(--pen); text-decoration-thickness: 1px; text-underline-offset: 3px; }
@@ -87,6 +91,7 @@ button { font: inherit; color: inherit; }
 .rail::-webkit-scrollbar-track { background: var(--sheet); border-left: 1px solid var(--rule); }
 .rail::-webkit-scrollbar-thumb { background: var(--ink-2); border: 2px solid var(--sheet); }
 .rail::-webkit-scrollbar-thumb:hover { background: var(--ink); }
+.rail-head { position: sticky; top: -22px; z-index: 1; margin: -22px -18px 0; padding: 22px 18px 12px; background: var(--pad); border-bottom: 1px solid var(--rule); } /* search and progress stay in reach */
 .pad-title { display: block; text-decoration: none; color: var(--ink); padding: 2px 2px 4px; }
 .pad-title b { display: block; font-weight: 700; font-size: 17px; letter-spacing: -0.01em; line-height: 1.2; }
 .pad-title span { display: block; margin-top: 3px; font-size: 12.5px; color: var(--ink-2); }
@@ -95,15 +100,25 @@ button { font: inherit; color: inherit; }
 .search::placeholder { color: var(--ink-2); }
 .tally { margin-top: 10px; display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--ink-2); padding: 0 2px; }
 .tally b { font-size: 13px; color: var(--ink-2); font-weight: 500; font-variant-numeric: tabular-nums; }
-.group { margin-top: 22px; }
-.group-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; padding: 2px 2px 4px; }
-.group-head b { font-weight: 600; font-size: 13px; color: var(--ink); }
+#navWrap { margin-top: 14px; }
+.track-label { margin: 22px 8px 2px; font-size: 12px; font-weight: 500; color: var(--ink-2); }
+.group { margin-top: 2px; }
+.group > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 22px 1fr auto 10px; gap: 8px; align-items: baseline; padding: 6px 8px; border-radius: 6px; }
+.group > summary::-webkit-details-marker { display: none; }
+.group > summary:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
+.group > summary::after { content: ""; width: 5px; height: 5px; border: solid var(--ink-2); border-width: 0 1.5px 1.5px 0; transform: translateY(-2px) rotate(45deg); transition: transform .15s; }
+.group[open] > summary::after { transform: translateY(1px) rotate(-135deg); }
+.group-head b { font-weight: 600; font-size: 14px; color: var(--ink); line-height: 1.35; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.group-head .no { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .group-head small { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
-.nav { list-style: none; margin: 4px 0 0; padding: 0; }
-.nav a { display: grid; grid-template-columns: 16px 22px 1fr; gap: 8px; align-items: start; padding: 5px 8px 5px 4px; color: var(--ink); text-decoration: none; border-radius: 6px; }
+.nav { list-style: none; margin: 0 0 8px; padding: 0; }
+.nav a { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; padding: 4px 8px; color: var(--ink); text-decoration: none; border-radius: 6px; font-size: 13.5px; line-height: 1.4; }
 .nav a:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
-.nav .no { font-size: 12px; color: var(--ink-2); padding-top: 2px; font-variant-numeric: tabular-nums; }
-.toc { list-style: none; margin: 2px 0 10px 54px; padding: 0 0 0 10px; border-left: 1px solid var(--rule); }
+.nav .no { font-size: 12px; color: var(--ink-2); padding-top: 1px; font-variant-numeric: tabular-nums; }
+.nav .no.ok svg { width: 13px; height: 11px; overflow: visible; }
+.nav .no.ok path { fill: none; stroke: var(--pen); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.nav .no .ref { margin-top: 0; }
+.toc { list-style: none; margin: 2px 0 10px 27px; padding: 0 0 0 10px; border-left: 1px solid var(--rule); } /* text lines up with lesson titles */
 .toc a { display: block; padding: 3px 0; font-size: 13px; line-height: 1.3; color: var(--ink-2); text-decoration: none; }
 .toc a:hover { color: var(--ink); text-decoration: underline; text-decoration-color: var(--pen); }
 .toc a.on { color: var(--ink); font-weight: 600; box-shadow: -11px 0 0 -9px var(--pen); }
@@ -134,23 +149,27 @@ button { font: inherit; color: inherit; }
 
 /* ---------- Sheet ---------- */
 .topbar { display: none; }
-main { min-width: 0; padding-block: 40px 96px; padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: max(28px, env(safe-area-inset-right, 0px)); }
-.sheet { max-width: 680px; margin: 0 auto; background: var(--sheet); } /* about 84 characters of 17px Inter */
+main { min-width: 0; padding-block: 40px 96px; padding-left: max(clamp(28px, 4.5vw, 80px), calc((100vw - var(--rail) - var(--wide)) / 2), env(safe-area-inset-left, 0px)); padding-right: max(28px, env(safe-area-inset-right, 0px)); }
+.sheet { max-width: var(--wide); margin: 0; background: var(--sheet); } /* anchored beside the index, not floating */
+/* One left edge for everything; prose keeps a readable line, wide blocks take the sheet's width. */
+article > .meta, article > h1, article > .lede, .sign-off, .pager, .cover > .meta, .cover > h1, .cover > .lede,
+.body > :not(figure):not(.codewrap):not(.table-wrap):not(.widget) { max-width: var(--text); }
+.body > .table-wrap { width: fit-content; min-width: min(100%, var(--text)); max-width: 100%; }
 .sheet-body { padding: 8px 0 0; }
 /* One centered column, about 75 characters wide, shared by text and figures so every edge lines up. */
 article { min-width: 0; }
 .meta { margin: 0 0 14px; font-size: 13.5px; color: var(--ink-2); display: flex; flex-wrap: wrap; gap: 4px 0; }
+.meta span { white-space: nowrap; }
+@media (max-width: 640px) { .meta { gap: 2px 14px; } .meta span + span::before { content: none; } } /* no dot can start a wrapped line */
 .meta span + span::before { content: "\00b7"; margin: 0 9px; color: var(--rule); }
 .meta a { color: var(--ink-2); }
 
 h1, h2, h3, h4 { font-family: var(--font-display); line-height: 1.2; text-wrap: balance; color: var(--ink); }
 h1 { font-size: clamp(30px, 3.6vw, 40px); font-weight: 700; letter-spacing: -0.022em; margin: 0 0 14px; }
-.lede { font-size: 19px; line-height: 1.6; color: var(--ink-2); margin: 0 0 8px; }
+.lede { font-size: calc(var(--fs) + 2px); line-height: 1.6; color: var(--ink-2); margin: 0 0 8px; }
 .body h2 { font-size: 25px; font-weight: 650; letter-spacing: -0.018em; margin: 2.4em 0 .5em; }
 .body h3 { font-size: 19px; font-weight: 600; letter-spacing: -0.01em; margin: 1.9em 0 .4em; }
 .body h4 { font-size: 17px; margin: 1.5em 0 .3em; }
-.body p, .body li, .body h2, .body h3, .body h4, .body blockquote { max-width: var(--measure); }
-.body h2 { max-width: none; }
 .body ul, .body ol { padding-left: 1.3em; }
 .body li { margin: .3em 0; }
 .body li::marker { color: var(--ink-2); }
@@ -181,6 +200,8 @@ figure.fig { margin: 1.8em 0; }
 .mmd { padding: 16px; border-radius: 10px; background: var(--sheet); border: 1px solid var(--rule); overflow-x: auto; text-align: center; font-family: var(--font-mono); font-size: 12px; white-space: pre; color: var(--ink-2); }
 .mmd[data-done] { white-space: normal; }
 .mmd svg { max-width: 100%; height: auto; }
+figure.tall { max-width: var(--text); } /* a portrait diagram at full width would fill more than a screen */
+figure.tall .mmd svg { max-height: 80vh; width: auto; }
 .mmd::-webkit-scrollbar { height: 8px; }
 .mmd::-webkit-scrollbar-thumb { background: var(--ink-2); }
 .mmd::-webkit-scrollbar-track { background: var(--box); }
@@ -299,7 +320,7 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
 /* ---------- Pad cover (home) ---------- */
 .cover { padding: 8px 0 0; }
 .cover h1 { font-size: clamp(32px, 4vw, 46px); line-height: 1.1; margin-bottom: 14px; text-wrap: balance; }
-.cover .lede { font-size: 19px; }
+.cover .lede { font-size: calc(var(--fs) + 2px); }
 .resume { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 20px; margin: 26px 0 8px; font-family: var(--font-display); }
 .go { display: inline-flex; align-items: center; gap: 10px; background: var(--ink); color: var(--sheet); border-radius: 8px; padding: 11px 18px; font: 600 15px var(--font-display); text-decoration: none; }
 .go:hover { background: var(--pen); }
@@ -315,6 +336,7 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
 .map .lab-col h5 { font-size: 16px; margin: 0 0 2px; }
 .map .lab-col .ch { white-space: normal; text-align: left; justify-content: flex-start; width: 100%; }
 @media (min-width: 641px) { .map .vz-cols { --k: 3 !important; } }
+@media (min-width: 1400px) { .map .vz-cols { --k: 5 !important; } } /* all five labs on one line, no empty cell */
 .weeks { margin-top: 48px; }
 .track { margin-top: 56px; }
 .track h2 { font-size: 21px; font-weight: 650; letter-spacing: -0.01em; margin: 0 0 4px; }
@@ -364,10 +386,12 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
     <span id="topTally"></span>
   </header>
   <nav class="rail" id="rail" aria-label="Course index">
-    <a class="pad-title" href="#home"><b>AI System Design</b></a>
-    <label for="q" class="search-label">Search the course</label>
-    <input class="search" id="q" type="search" placeholder="Search the course" autocomplete="off">
-    <div class="tally"><span>Lessons done</span><b id="tally"></b></div>
+    <div class="rail-head">
+      <a class="pad-title" href="#home"><b>AI System Design</b></a>
+      <label for="q" class="search-label">Search the course</label>
+      <input class="search" id="q" type="search" placeholder="Search the course" autocomplete="off">
+      <div class="tally"><span>Lessons done</span><b id="tally"></b></div>
+    </div>
     <ul class="results" id="results" hidden></ul>
     <div id="navWrap"></div>
     <div class="rail-foot">
@@ -632,6 +656,7 @@ async function drawDiagrams(root) {
       n.innerHTML = svg; n.dataset.done = "1";
       const el = n.querySelector("svg"), w = el?.viewBox?.baseVal?.width;
       if (w) el.style.minWidth = `${Math.round(w * 0.7)}px`; // wide diagrams scroll rather than shrink past legibility
+      if (w && el.viewBox.baseVal.height > w) n.closest("figure")?.classList.add("tall");
     } catch (e) { n.textContent = n.dataset.src; }
   }
   const mark = () => nodes.forEach(n => n.closest("figure")?.classList.toggle("scrolls", n.scrollWidth > n.clientWidth + 2));
@@ -647,19 +672,25 @@ function weekGroups() {
   return g;
 }
 const groupName = w => w == 0 ? "Start" : w >= EXTRA ? WEEKS[w].title : `Week ${w}`;
+const openWeeks = new Set(); // weeks the reader unfolded; the current week is always open
+const TRACKS = { 1: "Core weeks", 7: "Enterprise track", [EXTRA]: "Optional" };
+const SHORT_WEEKS = { 1: "Agent design", 2: "Search and retrieval", 3: "Evals and security", 4: "Deployment and CI/CD", 5: "Observability and scaling", 6: "Production capstone", 7: "Gateways and identity", 8: "Policy and supply chain", 9: "Multi-agent and tenancy", 10: "Platform and FinOps", 11: "Coding-agent harnesses", 12: "Software factory" };
 function renderNav(current) {
   const g = weekGroups();
+  const here = current ? byId[current].week : (trackable.find(e => !done.has(e.id)) || trackable[0]).week;
   let html = "";
-  for (const w of Object.keys(g).sort((a, b) => a - b)) {
+  for (const w of Object.keys(g).map(Number).sort((a, b) => a - b)) {
     const items = g[w];
     const count = items.filter(e => done.has(e.id)).length;
-    html += `<section class="group"><div class="group-head"><b>${w >= 1 && w < EXTRA ? `${groupName(w)}: ${esc(WEEKS[w].title)}` : groupName(w)}</b>${w < EXTRA ? `<small>${count}/${items.length}</small>` : ""}</div><ul class="nav">`;
+    const label = w >= 1 && w < EXTRA ? `<span class="no">${w}</span><b title="Week ${w}: ${esc(WEEKS[w].title)}">${esc(SHORT_WEEKS[w] || WEEKS[w].title)}</b>` : `<span class="no"></span><b>${groupName(w)}</b>`;
+    if (TRACKS[w]) html += `<p class="track-label">${TRACKS[w]}</p>`;
+    html += `<details class="group" data-w="${w}"${w === here || openWeeks.has(w) ? " open" : ""}><summary class="group-head">${label}<small>${w < EXTRA && count ? `${count}/${items.length}` : ""}</small></summary><ul class="nav">`;
     html += items.map(e => {
-      const no = sheetNo[e.id] || "";
-      const tracked = e.week < EXTRA;
-      return `<li><a href="#${e.id}" ${e.id === current ? 'aria-current="page"' : ""}>${tracked ? tickBox(done.has(e.id)) : refMark}<span class="no">${no}</span><span class="t">${esc(e.title)}${e.kind === "lab" ? '<span class="lab-tag">lab</span>' : ""}</span></a></li>`;
+      const mark = e.week >= EXTRA ? refMark : done.has(e.id) ? TICK : Number(sheetNo[e.id]);
+      const cls = e.week < EXTRA && done.has(e.id) ? "no ok" : "no";
+      return `<li><a href="#${e.id}" ${e.id === current ? 'aria-current="page"' : ""}><span class="${cls}">${mark}</span><span class="t">${esc(e.short || e.title)}${e.kind === "lab" ? '<span class="lab-tag">lab</span>' : ""}</span></a></li>`;
     }).join("");
-    html += `</ul></section>`;
+    html += `</ul></details>`;
   }
   document.getElementById("navWrap").innerHTML = html;
   const n = trackable.filter(e => done.has(e.id)).length;
@@ -785,8 +816,9 @@ function mountOutline() {
   const cur = document.querySelector('.nav a[aria-current="page"]');
   const rail = document.getElementById("rail");
   if (cur && rail) { // bring the current lesson into view inside the index, without scrolling the page
+    const head = rail.querySelector(".rail-head")?.offsetHeight || 0;
     const off = cur.getBoundingClientRect().top - rail.getBoundingClientRect().top;
-    if (off < 80 || off > rail.clientHeight * 0.6) rail.scrollTop += off - 120;
+    if (off < head + 40 || off > rail.clientHeight * 0.6) rail.scrollTop += off - head - 60;
   }
   if (!cur || outline.length < 2) return;
   const ol = document.createElement("ol");
@@ -842,6 +874,10 @@ qInput.addEventListener("input", ev => {
   }).join("") : `<li class="empty">Nothing matches “${esc(q)}”. Try a shorter term such as “cache” or “judge”.</li>`;
   out.hidden = false; nav.hidden = true;
 });
+document.getElementById("navWrap").addEventListener("toggle", ev => {
+  const w = Number(ev.target.dataset.w);
+  if (ev.target.open) openWeeks.add(w); else openWeeks.delete(w);
+}, true);
 document.getElementById("results").addEventListener("click", () => { qInput.value = ""; document.getElementById("results").hidden = true; document.getElementById("navWrap").hidden = false; });
 
 /* ---------- Theme, menu, reset ---------- */
