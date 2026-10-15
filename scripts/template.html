@@ -105,6 +105,7 @@ button { font: inherit; color: inherit; }
 .group-head .no { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .group-head small { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 .nav { list-style: none; margin: 0 0 8px 30px; padding: 0; } /* lessons sit under the week title, one step in from the week number */
+.nav.flat { margin-left: 0; } /* Start: ticks under the week numbers, titles under the week titles */
 .nav a { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; padding: 4px 8px; color: var(--ink); text-decoration: none; border-radius: 6px; font-size: 13.5px; line-height: 1.4; }
 .nav a:hover { background: color-mix(in srgb, var(--ink) 5%, transparent); }
 .nav .no { font-size: 12px; color: var(--ink-2); padding-top: 1px; font-variant-numeric: tabular-nums; }
@@ -686,13 +687,15 @@ function renderNav(current) {
     const count = items.filter(e => done.has(e.id)).length;
     const label = w >= 1 && w < EXTRA ? `<span class="no">${w}</span><b title="Week ${w}: ${esc(WEEKS[w].title)}">${esc(SHORT_WEEKS[w] || WEEKS[w].title)}</b>` : `<b class="span">${groupName(w)}</b>`;
     if (TRACKS[w]) html += `<p class="track-label">${TRACKS[w]}</p>`;
-    html += `<details class="group" data-w="${w}"${w === here || openWeeks.has(w) ? " open" : ""}><summary class="group-head">${label}<small>${w < EXTRA && count ? `${count}/${items.length}` : ""}</small></summary><ul class="nav">`;
+    // Start is two pages: a plain list under its label, so it never folds open on its own
+    if (w === 0) html += `<p class="track-label">${groupName(w)}</p><ul class="nav flat">`;
+    else html += `<details class="group" data-w="${w}"${w === here || openWeeks.has(w) ? " open" : ""}><summary class="group-head">${label}<small>${w < EXTRA && count ? `${count}/${items.length}` : ""}</small></summary><ul class="nav">`;
     html += items.map(e => {
       const mark = e.week >= EXTRA ? refMark : done.has(e.id) ? TICK : inWeek[e.id];
       const cls = e.week < EXTRA && done.has(e.id) ? "no ok" : "no";
       return `<li><a href="#${e.id}" ${e.id === current ? 'aria-current="page"' : ""}><span class="${cls}">${mark}</span><span class="t">${esc(e.short || e.title)}${e.kind === "lab" ? '<span class="lab-tag">lab</span>' : ""}</span></a></li>`;
     }).join("");
-    html += `</ul></details>`;
+    html += w === 0 ? `</ul>` : `</ul></details>`;
   }
   document.getElementById("navWrap").innerHTML = html;
   const n = trackable.filter(e => done.has(e.id)).length;
