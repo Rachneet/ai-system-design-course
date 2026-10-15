@@ -113,7 +113,11 @@ button { font: inherit; color: inherit; }
 .toc { list-style: none; margin: 2px 0 10px 27px; padding: 0 0 0 10px; border-left: 1px solid var(--rule); } /* text lines up with lesson titles */
 .toc a { display: block; padding: 3px 0; font-size: 13px; line-height: 1.3; color: var(--ink-2); text-decoration: none; }
 .toc a:hover { color: var(--ink); text-decoration: underline; text-decoration-color: var(--pen); }
-.toc a.on { color: var(--ink); font-weight: 600; box-shadow: -11px 0 0 -9px var(--pen); }
+.toc { position: relative; }
+.toc a.on { color: var(--ink); } /* colour only: the marker shows position, nothing reflows */
+.toc-mark { position: absolute; left: -1.5px; top: 0; width: 2px; background: var(--pen); opacity: 0; transition: transform .22s cubic-bezier(.2,.7,.2,1), height .22s cubic-bezier(.2,.7,.2,1), opacity .15s; pointer-events: none; }
+.toc-mark.on { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .toc-mark { transition: none; } }
 .nav a[aria-current="page"] { background: var(--sheet); box-shadow: 0 0 0 1px var(--rule); }
 .nav a[aria-current="page"] .no { color: var(--red); font-weight: 600; }
 .nav a[aria-current="page"] .t { font-weight: 600; }
@@ -799,7 +803,7 @@ function enhance(root, e) {
 /* ---------- Lesson outline in the index rail, with the section in view marked ---------- */
 let outlineSpy = null;
 function mountOutline() {
-  outlineSpy?.disconnect();
+  outlineSpy?.disconnect(); outlineSpy?.ends?.disconnect();
   const cur = document.querySelector('.nav a[aria-current="page"]');
   const rail = document.getElementById("rail");
   if (cur && rail) { // bring the current lesson into view inside the index, without scrolling the page
@@ -820,14 +824,32 @@ function mountOutline() {
     document.getElementById(a.dataset.target)?.scrollIntoView({ behavior: "smooth", block: "start" });
   });
   const links = Object.fromEntries([...ol.querySelectorAll("a")].map(a => [a.dataset.target, a]));
-  if (!window.IntersectionObserver) return;
-  outlineSpy = new IntersectionObserver(entries => {
-    const top = entries.filter(x => x.isIntersecting).sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top)[0];
-    if (!top) return;
+  const mark = document.createElement("span");
+  mark.className = "toc-mark";
+  ol.prepend(mark);
+  let atEnd = false;
+  // The section being read is the last heading above a reading line 30% down the screen; at the end of the lesson,
+  // where the last heading may never reach that line, it is the last one.
+  const pick = () => {
+    const line = innerHeight * 0.3;
+    const above = outline.filter(h => h.getBoundingClientRect().top <= line);
+    const cur = atEnd ? outline[outline.length - 1] : above[above.length - 1];
     Object.values(links).forEach(a => a.classList.remove("on"));
-    links[top.target.id]?.classList.add("on");
-  }, { rootMargin: "0px 0px -70% 0px" });
+    const a = cur && links[cur.id];
+    if (!a) return mark.classList.remove("on");
+    a.classList.add("on");
+    mark.style.transform = `translateY(${a.offsetTop}px)`;
+    mark.style.height = `${a.offsetHeight}px`;
+    mark.classList.add("on");
+  };
+  if (!window.IntersectionObserver) return;
+  // Recompute when a heading crosses the reading line or the end of the lesson comes into view. The observed band
+  // is everything above the line, so a fast scroll or a jump link that carries a heading past it still flips it.
+  outlineSpy = new IntersectionObserver(pick, { rootMargin: "100000px 0px -70% 0px" });
   outline.forEach(h => outlineSpy.observe(h));
+  const end = document.querySelector(".pager");
+  if (end) { const endSpy = new IntersectionObserver(([x]) => { atEnd = x.isIntersecting; pick(); }); endSpy.observe(end); outlineSpy.ends = endSpy; }
+  pick();
 }
 
 function route() {
