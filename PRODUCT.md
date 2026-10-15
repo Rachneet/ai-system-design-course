@@ -12,11 +12,11 @@ Static single-file HTML page built by `scripts/build.py` from `content/*.md`, re
 
 ## Users
 
-Working software engineers with some LLM application experience, studying in evenings and on weekends to move into AI engineering and AI system design roles. They read long lessons on a laptop (40 to 60 minutes per lesson), work through labs alongside, return over six weeks, and need to find their place quickly.
+Working software engineers with some LLM application experience, studying in evenings and on weekends to move into AI engineering and AI system design roles. They read long lessons on a laptop (40 to 60 minutes per lesson), work through labs alongside, return over twelve weeks, and need to find their place quickly.
 
 ## Product Purpose
 
-A free, independent course on designing production AI systems: agents, retrieval, evals, security, deployment, observability, and an enterprise track. It exists because comparable cohorts cost about $2,200. Success means learners finish the six weeks, can answer the design review questions, and ship the capstone.
+A free, independent course on designing production AI systems: agents, retrieval, evals, security, deployment, observability, and an enterprise track. It exists because comparable cohorts cost about $2,200. Success means learners finish the core six weeks, go as far into the enterprise six as their work needs, can answer the design review questions, and ship the capstone.
 
 ## Positioning
 

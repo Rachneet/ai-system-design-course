@@ -392,11 +392,13 @@ const WEEKS = {
   8: { title: "Policy & the Agent Supply Chain", blurb: "Policy as code for tool calls, human approvals, and registries that vet MCP servers, agents and skills." },
   9: { title: "Multi-Agent Systems & Multi-Tenancy", blurb: "Agents that delegate to agents, and one platform serving many teams and customers in isolation." },
   10: { title: "Platform, Governance & FinOps", blurb: "The paved path for agent teams, regulation and audit, and the unit economics of AI in production." },
+  11: { title: "Coding-Agent Harnesses", blurb: "How coding agents work inside: the loop, tools, context, permissions, hooks and sandboxes, and how to evaluate them now that public benchmarks decay." },
+  12: { title: "The Software Factory", blurb: "From issue to merged change: deterministic gates, independent review, provenance, and the security of code an agent wrote." },
   98: { title: "Under the hood", blurb: "Optional: what happens inside the model, built from scratch in small runnable code, and the system decisions each idea explains." },
   99: { title: "Library", blurb: "Reference pages to use alongside any week. They are not counted in your progress." },
 };
 const LIBRARY = 99, EXTRA = 98; // weeks from EXTRA up are optional reference pages, not counted in progress
-const CORE = [0, 1, 2, 3, 4, 5, 6], ENTERPRISE = [7, 8, 9, 10];
+const CORE = [0, 1, 2, 3, 4, 5, 6], ENTERPRISE = [7, 8, 9, 10, 11, 12];
 
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } },
@@ -680,10 +682,10 @@ function renderHome() {
   };
   const extras = reference(EXTRA, "Inside the model, from scratch", n => `${n} lessons`) + reference(LIBRARY, "Drills, glossary and reading", n => `${n} pages`);
   const minutes = COURSE.reduce((s, e) => s + e.minutes, 0);
-  const strip = `<p class="meta"><span>${n} of ${trackable.length} lessons done</span><span>Up next: <a href="#${next.id}">${esc(next.short || next.title)}</a></span><span>${(g[10] ? 10 : 6)} weeks, about ${Math.round(minutes / 60)} hours</span><span>Free</span></p>`;
+  const strip = `<p class="meta"><span>${n} of ${trackable.length} lessons done</span><span>Up next: <a href="#${next.id}">${esc(next.short || next.title)}</a></span><span>${Math.max(...Object.keys(g).map(Number).filter(w => w < EXTRA))} weeks, about ${Math.round(minutes / 60)} hours</span><span>Free</span></p>`;
   return `<div class="sheet"><div class="cover">${strip}
     <h1>Design AI systems that survive production.</h1>
-    <p class="lede">Six core weeks on agents, retrieval, evals, security, deployment and operations, worked through one system you build from prototype to monitored service, then four on running agents across a company. Free, with tested reference code for every lab.</p>
+    <p class="lede">Twelve weeks. The first six take one agent from prototype to monitored production service: agents, retrieval, evals, security, deployment and operations. The next six build the platform companies run agents on, ending with coding agents that turn issues into tested, reviewed changes. Free, with tested reference code for every lab.</p>
     <div class="resume">
       <a class="go" href="#${next.id}">${n ? `Continue with lesson ${Number(sheetNo[next.id])}` : "Start the course"}</a>
     </div>
@@ -701,7 +703,7 @@ function renderHome() {
     </section>
     <div class="weeks">${CORE.map(week).join("")}</div>
     ${ENTERPRISE.some(w => g[w]) ? `<section class="track"><h2>Enterprise track</h2>
-      <p>Four more weeks on running agents across a company: a gateway for every model, identity and policy for every tool call, a registry of what is approved, many tenants, and the economics. Each week builds on a tested reference service.</p></section>
+      <p>Six more weeks on running agents across a company: a gateway for every model, identity and policy for every tool call, a registry of what is approved, many tenants, the economics, and a software factory where agents change code. Each week builds on a tested reference service.</p></section>
     <div class="weeks">${ENTERPRISE.filter(w => g[w]).map(week).join("")}${extras}</div>` : `<div class="weeks">${extras}</div>`}
   </div></div>`;
 }

@@ -5,7 +5,7 @@ kind: lesson
 title: Start here
 short: Start here
 minutes: 20
-summary: How the course is structured, what you need before you begin, and the one system you will build across all six weeks.
+summary: How the twelve weeks are structured, what you need before you begin, and the systems you will build.
 ---
 
 ## Who this course is for
@@ -22,7 +22,11 @@ That gap, between a demo and a system you would put your name on, is what this c
 
 This is not an introduction to machine learning. You will not train models. You will compose them into systems.
 
-## How the six weeks fit together
+## How the twelve weeks fit together
+
+The course has two halves. The six core weeks build one agent, Relay, from prototype to production. The six enterprise weeks build the platform a company runs many agents on, and end with agents that change code.
+
+### Weeks 1 to 6: one agent, all the way to production
 
 ```mermaid
 flowchart LR
@@ -35,7 +39,7 @@ flowchart LR
   W5 -. traces feed datasets .-> W3
 ```
 
-Each week has four lessons and one lab. Lessons explain the design space, give you worked numbers, and end with a short self-check. Labs are where you build. Each lab adds one layer to the same application, so by Week 6 you have a deployed, evaluated, monitored agent that you understand line by line.
+Each core week has four or five lessons and one lab. Lessons explain the design space, give you worked numbers, and end with a short self-check. Labs are where you build. Each lab adds one layer to the same application, so by Week 6 you have a deployed, evaluated, monitored agent that you understand line by line.
 
 | Week | Theme | Lab outcome |
 |---|---|---|
@@ -45,6 +49,19 @@ Each week has four lessons and one lab. Lessons explain the design space, give y
 | 4 | Deployment and CI/CD | The agent running in a cloud container behind an authenticated API, deployed by a pipeline that runs your evals |
 | 5 | Observability and scaling | Traces, cost dashboards, caching, rate limits, and alerts |
 | 6 | Capstone | A production readiness review and a live demo of your own system |
+
+### Weeks 7 to 12: the platform, many agents, and agents that write code
+
+Each enterprise week has two or three lessons and a lab or capstone, built on a tested reference service in the course repository: Switchboard (a gateway for every model), Atlas (a registry of approved MCP servers, agents and skills), Checkpoint (identity and policy for every tool call), Helpdesk OS (a multi-tenant support platform) and Foundry (a coding-agent harness and software factory).
+
+| Week | Theme | Lab outcome |
+|---|---|---|
+| 7 | AI gateways and agent identity | Relay behind a gateway, its tool calls carrying an identity |
+| 8 | Policy and the agent supply chain | Relay's tools behind a registry and a policy gateway |
+| 9 | Multi-agent systems and multi-tenancy | Relay serving two tenants in isolation |
+| 10 | Platform, governance and FinOps | Capstone: Helpdesk OS, several agents for several tenants, with evidence |
+| 11 | Coding-agent harnesses | A harness that fixes a failing test inside a sandbox, every command passing policy |
+| 12 | The software factory | Capstone: issues in, tested and reviewed changes out, with provenance |
 
 ## The project: Relay
 

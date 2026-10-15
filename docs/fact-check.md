@@ -86,6 +86,29 @@ a reader shared.
 | H100 SXM 989 TFLOPS dense BF16, 3.35 TB/s | [NVIDIA H100](https://www.nvidia.com/en-us/data-center/h100/) | OK |
 | "Distilled 8B over 10x cheaper with similar quality" | No source given | **NOT USED**; the lesson states the principle and DeepSeek's released distilled sizes |
 
+## Weeks 11 and 12, and Under the hood (2026-10-15)
+
+| Claim (lesson) | Source | Status |
+|---|---|---|
+| Permission rules evaluated deny, then ask, then allow; specificity does not change the order; modes default, acceptEdits, plan, auto, dontAsk, bypassPermissions (W11 harness) | [Claude Code permissions](https://code.claude.com/docs/en/permissions) | OK |
+| Bash rules "isn't a security boundary around the program" (W11 harness, Foundry threat model) | Same page | OK; the lesson does not claim Claude Code chains commands, since it splits compound commands |
+| PreToolUse hook exit code 2 blocks the call; stderr is the reason (W11 harness) | [Claude Code hooks](https://code.claude.com/docs/en/hooks) | OK |
+| Sandboxing: filesystem and network isolation, bubblewrap and seatbelt, "reduces permission prompts by 84%" (W11 harness) | [Anthropic engineering, 2025-10-20](https://www.anthropic.com/engineering/claude-code-sandboxing) | OK |
+| Codex: setup scripts with internet, agent internet off by default (W11 harness, Foundry ADR 0001) | [Codex agent internet access](https://developers.openai.com/codex/cloud/agent-internet) | OK |
+| AGENTS.md: origin across Codex, Amp, Jules, Cursor, Factory; stewarded by the Agentic AI Foundation under the Linux Foundation; nearest file wins (W11 harness) | [agents.md](https://agents.md/) | OK |
+| SWE-agent "significantly enhances an agent's ability to create and edit code files"; Agentless 32% on SWE-bench Lite (W11 harness) | [arXiv 2405.15793](https://arxiv.org/abs/2405.15793), [arXiv 2407.01489](https://arxiv.org/abs/2407.01489) | OK |
+| SWE-bench: 2,294 problems, 12 repositories, best model 1.96% (W11 evals) | [arXiv 2310.06770](https://arxiv.org/abs/2310.06770) | OK |
+| Verified: 500 tasks screened by professional developers, August 2024 (W11 evals) | [swebench.com/verified](https://swebench.com/verified); OpenAI announcement via search | OK |
+| OpenAI stopped reporting Verified in February 2026, citing flawed tests and contamination, and recommended SWE-bench Pro (W11 evals, Foundry ADR 0004) | OpenAI post (403 to automated fetches; confirmed through its developer announcement and coverage) | OK, stated without the subset-audit percentages, which are easy to misquote |
+| A claim that OpenAI later withdrew the Pro recommendation | One secondary source only | **NOT USED** |
+| SWE-Bench Pro: 1,865 problems, 41 repositories, public, held-out and commercial sets (W11 evals) | [arXiv 2509.16941](https://arxiv.org/abs/2509.16941) | OK |
+| METR 2025: 16 developers, 246 issues, 19% longer, expected 24% faster, believed 20% faster (W11 evals) | [METR, 2025-07-10](https://metr.org/blog/2025-07-10-early-2025-ai-experienced-os-dev-study/) | OK |
+| METR 2026: 57 developers; returning -18% (-38% to +9%), new -4% (-15% to +9%); "an unreliable signal" (W11 evals) | [METR, 2026-02-24](https://metr.org/blog/2026-02-24-uplift-update/) | OK |
+| Package hallucination: at least 5.2% commercial, 21.7% open-source, 205,474 unique names (W12 security) | [arXiv 2406.10279](https://arxiv.org/abs/2406.10279) | OK; a model count was removed because the abstract does not state it |
+| SLSA provenance definition and fields (W12 factory) | [SLSA v1.0 provenance](https://slsa.dev/spec/v1.0/provenance) | OK |
+| Under the hood: tokenizer gaps up to 15x (Petrov et al.), self-consistency +17.9% GSM8K, LoRA 10,000x fewer trainable parameters and 3x less memory, Snell et al. 4x and 14x, nucleus sampling, batch-size nondeterminism, reasoning tokens billed as output (OpenAI, Anthropic) | Papers and docs linked in each lesson | OK |
+| Raschka chapter mapping: ch. 2 text, ch. 3 attention, ch. 5 decoding (5.3 temperature, top-k), ch. 6 and 7 fine-tuning, appendix E LoRA; reasoning book chapters 4 to 8 | His repositories' READMEs and notebooks | OK |
+
 ## Not yet verified (pass 2)
 
 - Lab code has not been executed. The reference implementation (in progress) will replace snippets with tested code.
