@@ -17,7 +17,7 @@ what comes back. Part of the enterprise track of the [AI System Design Course](.
 | Tenants | An agent or approver may be bound to a tenant (`tenant` claim in the user JWT, `USER_TENANT_CLAIM`); a bound agent acting for another tenant's user is refused before policy runs; approvers see only their tenant's queue; assertions carry `tenant` |
 | Policy | Cedar: default deny, forbid wins, decisions name their policies; `@approval("required")` holds a call for a person; a forbid that fails to evaluate denies, and evaluation errors are logged |
 | Approvals | Bound to agent, user, tool and exact arguments; single use; pending requests lapse after 30 minutes and approvals after 5 (`APPROVAL_PENDING_TTL_S`, `APPROVAL_USE_TTL_S`); nobody decides a request made on their own behalf; a console with an approver token can decide for a signed-in person (their JWT in `X-User-Token`, role `approver`, same tenant), recorded as `<person> via <console>`; approver API |
-| Upstream identity | RS256 assertion (`sub` user, `act.sub` agent, `aud` server, `tenant`, 60 s) verifiable at `/.well-known/jwks.json`; server credentials stay in Checkpoint |
+| Upstream identity | RS256 assertion (`sub` user, `act.sub` agent, `aud` server, `tenant`, `approval` when a person approved the call, 60 s) verifiable at `/.well-known/jwks.json`; server credentials stay in Checkpoint |
 | Output | Hidden Unicode removed, secrets redacted, instruction-like text marked as data, flags in `_meta` |
 | Limits and audit | Per-agent, per-tool rate limits; every decision logged; Prometheus metrics |
 

@@ -94,6 +94,9 @@ async def test_large_refunds_wait_for_a_person_and_approvals_are_single_use(gw):
     assert changed.json()["result"]["isError"]  # approval covers exactly the approved arguments
     done = await call(gw, a, "payments__refund", args, user, {"io.checkpoint/approvalId": approval_id})
     assert done.json()["result"]["content"][0]["text"] == "Refunded 900"
+    sent = [x for x in mock_servers.seen if x["body"].get("method") == "tools/call"][-1]
+    claims = jwt.decode(sent["headers"]["x-checkpoint-assertion"], options={"verify_signature": False})
+    assert claims["approval"] == approval_id  # the server can tell an approved call from an allowed one
     again = await call(gw, a, "payments__refund", args, user, {"io.checkpoint/approvalId": approval_id})
     assert again.json()["result"]["isError"]  # used once; a second refund needs a new approval
 

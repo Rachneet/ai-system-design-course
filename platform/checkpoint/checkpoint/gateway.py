@@ -185,7 +185,9 @@ async def call_tool(request: Request, rid, params: dict, agent: Agent, user: Use
         why = f" by {', '.join(decision.policies)}" if decision.policies else " (no policy permits it)"
         return tool_error(rid, f"Denied{why}. Do not retry; explain to the user that this action is not allowed.")
 
+    approved = None
     if decision.needs_approval:
+        approved = (params.get("_meta") or {}).get(APPROVAL_KEY)
         held = await approval_gate(state, rid, params, agent, user, name, args, decision.policies)
         if held is not None:
             await record(
@@ -203,7 +205,7 @@ async def call_tool(request: Request, rid, params: dict, agent: Agent, user: Use
 
     upstream_tool = name.split(SEP, 1)[1]
     headers = mcp.param_headers(tool.get("inputSchema"), args) | {
-        "x-checkpoint-assertion": state.signer.assertion(server.name, upstream_tool, agent, user)
+        "x-checkpoint-assertion": state.signer.assertion(server.name, upstream_tool, agent, user, approved)
     }
     meta = {k: v for k, v in (params.get("_meta") or {}).items() if k in ("traceparent", "tracestate")}
     t0 = time.perf_counter()

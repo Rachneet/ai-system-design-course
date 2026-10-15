@@ -93,7 +93,7 @@ class Signer:
         jwk = jwt.algorithms.RSAAlgorithm.to_jwk(self.key.public_key(), as_dict=True)
         return {"keys": [jwk | {"kid": self.kid, "use": "sig", "alg": "RS256"}]}
 
-    def assertion(self, server: str, tool: str, agent: Agent, user: User | None) -> str:
+    def assertion(self, server: str, tool: str, agent: Agent, user: User | None, approval: int | None = None) -> str:
         now = int(time.time())
         claims = {
             "iss": "checkpoint",
@@ -106,4 +106,6 @@ class Signer:
             "exp": now + self.ttl_s,
             "jti": secrets.token_hex(8),
         }
+        if approval is not None:
+            claims["approval"] = approval  # a person approved exactly this call; servers may require it
         return jwt.encode(claims, self.key, algorithm="RS256", headers={"kid": self.kid})
