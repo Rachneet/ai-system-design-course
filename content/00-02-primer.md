@@ -91,6 +91,8 @@ Models read and write tokens, which are word pieces. In English, one token is ro
 - **Latency.** Input tokens are processed in parallel and are fast. Output tokens are generated one at a time, so latency is dominated by how many tokens the model writes.
 - **Limits.** The context window is the maximum number of tokens in one request plus response. Current frontier models accept up to 1 million tokens, but more context is slower, costlier, and can reduce accuracy.
 
+The four-characters rule holds for English prose only. Code, numbers and most other languages tokenize differently, sometimes several times worse; [Tokens from scratch](#uth-tokens) builds a tokenizer in 80 lines and shows why.
+
 > [!numbers] A request with 20,000 input tokens and 400 output tokens, with illustrative speeds (measure your own provider; [Artificial Analysis](https://artificialanalysis.ai/) publishes measured first-token time and output speed per model). If prefill reads 20,000 tokens per second, the first token arrives after about 1 s. If generation runs at 80 tokens per second, the 400 output tokens take another 5 s. **Output length, not input length, usually dominates latency**, because output is produced one token at a time (the [inference lesson](#w5-inference) shows why). Ask for shorter answers and you get faster ones.
 
 ```viz

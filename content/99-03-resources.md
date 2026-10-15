@@ -34,6 +34,16 @@ All links are free to read. Starred items (★) are the ones to read if you only
 - [LLM Course](https://github.com/mlabonne/llm-course), Maxime Labonne. A roadmap for deeper ML background.
 - [System Design Primer](https://github.com/donnemartin/system-design-primer), for general distributed systems design.
 
+## Inside the model, from scratch
+
+The course's optional [Under the hood](#uth-tokens) lessons build tokenization, attention, sampling, LoRA and test-time compute in small runnable code, and point to these for the full treatment.
+
+- ★ [LLMs-from-scratch](https://github.com/rasbt/LLMs-from-scratch), Sebastian Raschka. The free code for his book [*Build a Large Language Model (From Scratch)*](http://mng.bz/orYv) (the book itself is paid): a GPT-style model built in PyTorch chapter by chapter, from tokenization (chapter 2) and attention (chapter 3) through pretraining and decoding (chapter 5), fine-tuning (chapters 6 and 7) and LoRA (appendix E). Bonus material adds a KV cache, grouped-query attention and mixture of experts.
+- ★ [reasoning-from-scratch](https://github.com/rasbt/reasoning-from-scratch), Sebastian Raschka. Code for *Build a Reasoning Model (From Scratch)*: evaluating reasoning, inference-time scaling, self-refinement, reinforcement learning with GRPO, and distillation.
+- [Understanding Reasoning LLMs](https://magazine.sebastianraschka.com/p/understanding-reasoning-llms), Sebastian Raschka. The four main ways reasoning models are built, in one free article.
+- [dora-from-scratch](https://github.com/rasbt/dora-from-scratch), Sebastian Raschka. LoRA and DoRA side by side in a few hundred lines.
+- [Attention Is All You Need](https://arxiv.org/abs/1706.03762), the transformer paper, and [LoRA](https://arxiv.org/abs/2106.09685), the low-rank adaptation paper.
+
 ## Agents and context
 
 - ★ [Building effective agents](https://www.anthropic.com/engineering/building-effective-agents), Anthropic.

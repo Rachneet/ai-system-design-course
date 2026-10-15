@@ -25,6 +25,8 @@ The levers, roughly in order of payoff per unit of effort:
 | Batch API for offline work | 50% on batch jobs (Anthropic, OpenAI, Gemini) | Low | None for offline |
 | Lower effort / thinking settings | Cost, latency | Low | Medium (quality) |
 
+Reasoning tokens are billed as output, the expensive and sequential kind, so thinking settings and model routing are among the biggest levers here. [Reasoning and test-time compute](#uth-reasoning) works through when thinking longer pays.
+
 ## Prompt caching
 
 Providers cache the processed state of a prompt **prefix** (the KV cache from the [inference lesson](#w5-inference)). When the next request starts with the same tokens, those tokens are read from cache at a steep discount and with lower latency. For agents, where every loop iteration resends the system prompt, tools, and history, this is the most important cost lever.

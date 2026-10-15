@@ -142,6 +142,8 @@ A model fine-tuned on several tenants' data can repeat that data: [Carlini et al
 
 That convenience is the leak: if the client chooses the model name, a client can choose another tenant's adapter. Enforce the mapping from tenant to adapter in the gateway, never in the client. In Switchboard, that is the per-app `allowed_models` list, checked on every request and on fallbacks too. The same vLLM page warns that loading adapters at runtime "should not be used in production unless it is an isolated, fully trusted environment".
 
+[Fine-tuning and LoRA](#uth-lora) trains an adapter per tenant from scratch and shows one tenant's adapter failing on the other's data: the adapter carries its tenant's behaviour. For LoRA in PyTorch, see appendix E of Raschka's [*Build a Large Language Model (From Scratch)*](https://github.com/rasbt/LLMs-from-scratch/tree/main/appendix-E).
+
 ### Logs and traces
 
 Traces hold prompts, retrieved chunks and answers: everything the isolation above protects. Tag every span and log line with the tenant, restrict who can query each tenant's traces, and apply each tenant's retention and deletion rules to them. Relay records content in traces only when you opt in, and redacts it; Switchboard stores request bodies only when an app sets `log_bodies`, always redacted, with a per-app `retention_days`.

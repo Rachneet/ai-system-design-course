@@ -57,6 +57,8 @@ Agents are stochastic, so a single run of a suite is a noisy measurement. First 
 - **pass@k**: at least one of k trials passed. Right for code generation, where you can test candidates and keep the good one.
 - **pass^k**: all k trials passed. Right for agents, because every customer gets one trial and you cannot pick the best. [τ-bench](https://arxiv.org/abs/2406.12045) introduced pass^k for exactly this reason and found that agents that look fine at k = 1 fall apart at k = 8.
 
+Where the randomness comes from, and why temperature 0 does not remove it, is in [Sampling from scratch](#uth-sampling).
+
 ```viz
 caption: The same agent, 90% per trial. pass@k climbs to almost 100%, while pass^k falls to 43% by k = 8. Gate agents on pass^k.
 <div class="vz-cols">

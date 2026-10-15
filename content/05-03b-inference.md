@@ -137,6 +137,8 @@ Try it with your own model and GPU. The weights stay fixed; every extra conversa
 
 This is why long contexts are expensive even when a provider accepts a million tokens: a long conversation holds memory for its whole life and limits how many others can run beside it.
 
+To see the cache work rather than take it on trust, [Attention and the KV cache](#uth-attention) builds a tiny decoder in numpy and generates with and without one: identical tokens, about 150 times fewer attention computations. Sebastian Raschka's repository adds [a KV cache to a GPT model](https://github.com/rasbt/LLMs-from-scratch/tree/main/ch04/03_kv-cache) in PyTorch.
+
 ### 6. PagedAttention
 
 Early servers reserved one contiguous slab of memory per request, sized for the longest possible answer. Most of it sat empty. [PagedAttention](https://arxiv.org/abs/2309.06180), the idea behind vLLM, borrows virtual memory from operating systems: the cache is cut into small fixed-size blocks handed out as tokens arrive, with a block table mapping each request to its blocks.

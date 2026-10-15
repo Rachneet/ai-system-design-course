@@ -23,6 +23,7 @@ is reproduced.
 | [`platform/atlas/`](platform/atlas) | Registry for MCP servers, A2A agent cards and Agent Skills, with review and pinned tool lists | Week 8 |
 | [`platform/checkpoint/`](platform/checkpoint) | MCP gateway: agent and user identity, tenants, Cedar policy, approvals, assertions | Weeks 7 and 8 |
 | [`platform/helpdesk/`](platform/helpdesk) | Helpdesk OS, the enterprise capstone: two tenants, six agents, all on the three services above | Weeks 9 and 10 |
+| [`under-the-hood/`](under-the-hood) | Tokenizer, KV cache, sampling, LoRA and test-time compute, each from scratch in numpy | Optional lessons |
 
 Each has its own tests, CI, threat model and ADRs. Helpdesk's tests run the other three for real, in process.
 
@@ -51,7 +52,7 @@ bash scripts/check_links.sh /tmp/links.txt | grep -v '^200'
 
 ## Writing lessons
 
-Front matter fields: `id`, `week` (0 = orientation, 1 to 6 core, 7 to 10 enterprise, 99 = library), `kind` (`lesson`, `lab`, `page`),
+Front matter fields: `id`, `week` (0 = orientation, 1 to 6 core, 7 to 10 enterprise, 98 = under the hood, 99 = library), `kind` (`lesson`, `lab`, `page`),
 `title`, `short`, `minutes`, `summary`, optional `builds`.
 
 Special Markdown:
