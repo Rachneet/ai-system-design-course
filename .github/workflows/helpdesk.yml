@@ -1,0 +1,109 @@
+name: helpdesk
+on:
+  push:
+    # Helpdesk's tests run the real Switchboard, Atlas and Checkpoint, so a change to any of them runs this too.
+    paths: ["platform/helpdesk/**", "platform/switchboard/**", "platform/atlas/**", "platform/checkpoint/**", ".github/workflows/helpdesk.yml"]
+  pull_request:
+    paths: ["platform/helpdesk/**", "platform/switchboard/**", "platform/atlas/**", "platform/checkpoint/**", ".github/workflows/helpdesk.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: platform/helpdesk
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run ruff check . && uv run ruff format --check .
+      - name: Policy, platform end to end, red-team (compromised model) and migrations
+        run: uv run pytest -q
+      - name: Static security analysis
+        run: uv run bandit -q -r helpdesk -ll
+      - name: Known vulnerabilities in locked dependencies
+        run: |
+          uv export --frozen --no-default-groups --no-hashes -q > /tmp/requirements.txt
+          uv run pip-audit -r /tmp/requirements.txt --no-deps --disable-pip
+
+  image:
+    needs: test
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: helpdesk
+          POSTGRES_DB: helpdesk
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+    env:
+      OWNER_DB: postgresql://postgres:helpdesk@localhost:5432/helpdesk
+      APP_DB: postgresql://helpdesk_app:app-ci-password@localhost:5432/helpdesk
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build
+        run: docker build -t helpdesk:ci platform/helpdesk
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: helpdesk:ci
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+      - name: Software bill of materials
+        uses: anchore/sbom-action@v0
+        with:
+          image: helpdesk:ci
+          format: spdx-json
+          output-file: helpdesk.spdx.json
+      - name: Migrate as the owner, run as a role row-level security applies to, and smoke test
+        run: |
+          test "$(docker run --rm helpdesk:ci id -u)" = "10001"
+          psql "$OWNER_DB" -c "CREATE ROLE helpdesk_app LOGIN PASSWORD 'app-ci-password'"
+          docker run --rm --network host -e HELPDESK_DATABASE_URL=$OWNER_DB helpdesk:ci alembic upgrade head
+          test "$(psql "$OWNER_DB" -tAc "SELECT rolbypassrls OR rolsuper FROM pg_roles WHERE rolname = 'helpdesk_app'")" = "f"
+          docker run -d --name helpdesk --network host -e HELPDESK_DATABASE_URL=$APP_DB -e HELPDESK_USER_JWT_SECRET=ci-secret-0123456789-abcdefghijk -e PORT=8080 helpdesk:ci
+          docker run -d --name systems --network host -e PORT=8081 helpdesk:ci sh -c 'exec uvicorn helpdesk.servers.main:app --port 8081'
+          for i in $(seq 1 30); do curl -fs localhost:8080/readyz && break; sleep 2; done
+          curl -fs localhost:8080/ | grep -q 'You are chatting with an AI assistant'
+          curl -fs localhost:8080/staff | grep -q 'You are chatting with an AI assistant'
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST localhost:8080/v1/tickets -H 'content-type: application/json' -d '{"message":"hi"}')" = "401"
+          curl -fs localhost:8081/healthz
+          test "$(psql "$APP_DB" -tAc 'SELECT count(*) FROM tickets')" = "0"
+          docker stop --time 20 helpdesk && test "$(docker inspect helpdesk --format '{{.State.ExitCode}}')" = "0"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: helpdesk-sbom
+          path: helpdesk.spdx.json
+
+  evals:
+    # Behavioural suites need a real model, so they run against a deployed evals environment
+    # (helpdesk.provision --env evals). Set the repository variable HELPDESK_EVAL_BASE_URL and the
+    # secret HELPDESK_EVAL_JWT_SECRET to turn this job on; until then it is skipped, not faked.
+    needs: test
+    if: ${{ vars.HELPDESK_EVAL_BASE_URL != '' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: platform/helpdesk
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.0.1
+      - run: uv sync --locked --no-default-groups
+      - name: Run every suite three times and apply the gates
+        env:
+          HELPDESK_USER_JWT_SECRET: ${{ secrets.HELPDESK_EVAL_JWT_SECRET }}
+        run: |
+          uv run python -m helpdesk.evals --base-url "${{ vars.HELPDESK_EVAL_BASE_URL }}" --trials 3 \
+            $(for f in evals/cases/*.yaml; do printf -- '--suite %s ' "$f"; done)
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: helpdesk-eval-report
+          path: platform/helpdesk/evals/results/report.json
