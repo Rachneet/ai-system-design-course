@@ -1,0 +1,80 @@
+name: checkpoint
+on:
+  push:
+    paths: ["platform/checkpoint/**", ".github/workflows/checkpoint.yml"]
+  pull_request:
+    paths: ["platform/checkpoint/**", ".github/workflows/checkpoint.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: platform/checkpoint
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run ruff check . && uv run ruff format --check .
+      - run: uv run pytest -q
+      - name: Static security analysis
+        run: uv run bandit -q -r checkpoint -ll
+      - name: Known vulnerabilities in locked dependencies
+        run: |
+          uv export --frozen --no-dev --no-hashes -q > /tmp/requirements.txt
+          uv run pip-audit -r /tmp/requirements.txt --no-deps --disable-pip
+
+  image:
+    needs: test
+    runs-on: ubuntu-latest
+    services:
+      db:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: checkpoint
+          POSTGRES_DB: checkpoint
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+    env:
+      DB: postgresql://postgres:checkpoint@localhost:5432/checkpoint
+      ADMIN: ci-admin-token-0123456789-abcdefgh
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build
+        run: docker build -t checkpoint:ci platform/checkpoint
+      - name: Scan image for vulnerabilities
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          image-ref: checkpoint:ci
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+      - name: Software bill of materials
+        uses: anchore/sbom-action@v0
+        with:
+          image: checkpoint:ci
+          format: spdx-json
+          output-file: checkpoint.spdx.json
+      - name: Migrate and smoke test the container
+        run: |
+          test "$(docker run --rm checkpoint:ci id -u)" = "10001"
+          docker run --rm --network host -e CHECKPOINT_DATABASE_URL=$DB checkpoint:ci alembic upgrade head
+          docker run -d --name checkpoint --network host -e CHECKPOINT_DATABASE_URL=$DB -e CHECKPOINT_ADMIN_TOKEN=$ADMIN -e PORT=8080 checkpoint:ci
+          for i in $(seq 1 30); do curl -fs localhost:8080/readyz && break; sleep 2; done
+          A="Authorization: Bearer $ADMIN"
+          J='content-type: application/json'
+          TOKEN=$(curl -fs -X POST localhost:8080/admin/agents -H "$A" -H "$J" -d '{"id":"ci"}' | python3 -c 'import json,sys;print(json.load(sys.stdin)["token"])')
+          curl -fs localhost:8080/mcp -H "Authorization: Bearer $TOKEN" -H "$J" -H 'mcp-protocol-version: 2026-07-28' -H 'mcp-method: ping' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"ping","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}' | grep -q '"complete"'
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST localhost:8080/mcp -d '{}')" = "401"
+          curl -fs localhost:8080/.well-known/jwks.json | grep -q '"RS256"'
+          docker stop --time 20 checkpoint && test "$(docker inspect checkpoint --format '{{.State.ExitCode}}')" = "0"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: checkpoint-sbom
+          path: checkpoint.spdx.json
