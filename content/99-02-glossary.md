@@ -1,6 +1,6 @@
 ---
 id: glossary
-week: 7
+week: 99
 kind: page
 title: Glossary
 short: Glossary

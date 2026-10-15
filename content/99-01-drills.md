@@ -1,6 +1,6 @@
 ---
 id: drills
-week: 7
+week: 99
 kind: page
 title: Design drills
 short: Design drills

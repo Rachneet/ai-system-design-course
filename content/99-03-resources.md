@@ -1,6 +1,6 @@
 ---
 id: resources
-week: 7
+week: 99
 kind: page
 title: Reading list
 short: Reading list
