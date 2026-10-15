@@ -6,6 +6,7 @@ import hmac
 from pathlib import Path
 from typing import Literal
 
+import jwt
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from fastapi.responses import Response
 from pydantic import BaseModel, ConfigDict, Field
@@ -74,23 +75,44 @@ class DecisionIn(Strict):
 
 
 @router.post("/approvals/{approval_id}/decision", tags=["approvals"])
-async def decide(approval_id: int, body: DecisionIn, request: Request, who: Agent = APPROVER):
+async def decide(
+    approval_id: int,
+    body: DecisionIn,
+    request: Request,
+    who: Agent = APPROVER,
+    x_user_token: str | None = Header(default=None),
+):
+    """An approver decides as itself, or, for a console that serves many people, on behalf of the signed-in person
+    in X-User-Token: that person must hold the approver role, belong to the approver's tenant, and is the one
+    recorded and checked against the requester."""
+    cfg = request.app.state.settings
+    person = who.id
+    if x_user_token:
+        try:
+            user = request.app.state.users.verify(x_user_token)
+        except jwt.PyJWTError as e:
+            raise HTTPException(401, f"invalid user token: {e}") from None
+        if cfg.approver_role not in user.roles or (who.tenant and user.tenant != who.tenant):
+            raise HTTPException(403, f"the signed-in person needs the {cfg.approver_role} role in this tenant")
+        person = user.id
     status = "approved" if body.decision == "approve" else "rejected"
-    use_s = request.app.state.settings.approval_use_ttl_s
     async with request.app.state.pool.connection() as c:
         await expire(c)
         found = await (
-            await c.execute("SELECT status, user_id FROM approvals WHERE id = %s", (approval_id,))
+            await c.execute("SELECT status, user_id, tenant FROM approvals WHERE id = %s", (approval_id,))
         ).fetchone()
-        if found and found["user_id"] == who.id:
+        if found and who.tenant and found["tenant"] != who.tenant:
+            found = None  # another tenant's request: indistinguishable from an unknown id
+        if found and found["user_id"] == person:
             raise HTTPException(403, "you cannot decide a request made on your own behalf")
+        decided_by = person if person == who.id else f"{person} via {who.id}"
         row = await (
             await c.execute(
                 "UPDATE approvals SET status = %s, decided_by = %s, decided_at = now(), note = %s, "
                 "expires_at = CASE WHEN %s = 'approved' THEN now() + make_interval(secs => %s) ELSE expires_at END "
                 "WHERE id = %s AND status = 'pending' AND (%s::text IS NULL OR tenant = %s) "
                 "RETURNING id, status, tool, user_id, expires_at",
-                (status, who.id, body.note, status, use_s, approval_id, who.tenant, who.tenant),
+                (status, decided_by, body.note, status, cfg.approval_use_ttl_s, approval_id, who.tenant, who.tenant),
             )
         ).fetchone()
     if not row:

@@ -33,6 +33,7 @@ class Settings(BaseSettings):
     # Approvals: a pending request lapses after this long; an approval must be used within the second window
     approval_pending_ttl_s: int = 1800
     approval_use_ttl_s: int = 300
+    approver_role: str = "approver"  # role a person needs when a console decides on their behalf
 
     calls_per_minute: int = 60  # per agent and tool
     allowed_origins: list[str] = []  # browser Origins allowed to call /mcp; empty = none (server-to-server only)

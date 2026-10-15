@@ -241,3 +241,22 @@ async def test_tenant_bound_agents_act_only_for_their_tenant(gw):
 
     log = (await gw.get("/admin/decisions?tenant=globex", headers=ADMIN)).json()["decisions"]
     assert [d["decision"] for d in log] == ["tenant_mismatch"]
+
+
+async def test_a_console_decides_on_behalf_of_a_verified_person(gw):
+    a = await agent(gw, "refunds", tenant="acme")
+    console = await agent(gw, "acme-console", role="approver", tenant="acme")
+    held = await call(gw, a, "payments__refund", {"amount": 900, "customer_id": "c1"}, user_token(tenant="acme"))
+    approval_id = held.json()["result"]["structuredContent"]["approvalId"]
+    url, approve = f"/approvals/{approval_id}/decision", {"decision": "approve"}
+
+    def person(sub, roles=("approver",), tenant="acme"):
+        return console | {"x-user-token": user_token(sub, roles, tenant=tenant)}
+
+    assert (await gw.post(url, json=approve, headers=person("u1"))).status_code == 403  # the requester
+    assert (await gw.post(url, json=approve, headers=person("p2", roles=("support",)))).status_code == 403
+    assert (await gw.post(url, json=approve, headers=person("p3", tenant="globex"))).status_code == 403
+    ok = await gw.post(url, json=approve, headers=person("p2"))
+    assert ok.status_code == 200
+    row = (await gw.get("/approvals?status=approved", headers=console)).json()["approvals"][0]
+    assert row["decided_by"] == "p2 via acme-console"
