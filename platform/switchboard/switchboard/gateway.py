@@ -3,6 +3,7 @@ for every other provider). Both run the same keys, limits, budgets, PII policy, 
 
 import asyncio
 import json
+import re
 import time
 import uuid
 
@@ -24,6 +25,7 @@ from .upstream import RETRYABLE_STATUS, Breaker, ChatUpstream, ChatUsageParser, 
 log = structlog.get_logger("switchboard")
 tracer = trace.get_tracer("switchboard")
 PASS_HEADERS = ("content-type", "retry-after", "anthropic-ratelimit-requests-remaining", "request-id")
+TAG = re.compile(r"[A-Za-z0-9._:/-]{1,128}")  # a unit of work to charge, e.g. ticket:T-1042
 CHAT_PASS_HEADERS = ("content-type", "retry-after", "x-ratelimit-remaining-requests", "x-request-id")
 
 
@@ -124,6 +126,11 @@ class Gateway:
             metrics.rejections.labels(reason="invalid").inc()
             return fail(400, "invalid_request_error", "Body must be a request with a model and a messages list.")
 
+        tag = request.headers.get("x-switchboard-tag")
+        if tag is not None and not TAG.fullmatch(tag):
+            metrics.rejections.labels(reason="invalid").inc()
+            return fail(400, "invalid_request_error", "x-switchboard-tag must be 1 to 128 of A-Z a-z 0-9 . _ : / -")
+
         if not self._serves(model, chat):
             metrics.rejections.labels(reason="unknown_model").inc()
             return fail(400, "invalid_request_error", f"Model {model} is not available through this gateway.")
@@ -214,6 +221,7 @@ class Gateway:
             "requested_model": model,
             "stream": bool(body.get("stream")),
             "pii_findings": findings,
+            "tag": tag,
         }
         if resp is None:
             event |= {

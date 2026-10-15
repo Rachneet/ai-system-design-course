@@ -7,7 +7,7 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 from psycopg import sql
 from psycopg.types.json import Jsonb
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -176,9 +176,14 @@ async def revoke_key(key_id: str, request: Request, actor: str = Depends(admin))
 
 @router.get("/usage")
 async def usage(
-    request: Request, month: str, group_by: Literal["org", "team", "app", "model"] = "team", actor: str = Depends(admin)
+    request: Request,
+    month: str,
+    group_by: Literal["org", "team", "app", "model", "tag"] = "team",
+    tag_prefix: str | None = Query(default=None, max_length=128),
+    actor: str = Depends(admin),
 ):
-    """Chargeback: cost, requests, tokens and fallbacks per group for one calendar month (YYYY-MM)."""
+    """Chargeback: cost, requests, tokens and fallbacks per group for one calendar month (YYYY-MM). With
+    group_by=tag, cost per unit of work (x-switchboard-tag), optionally only tags starting with tag_prefix."""
     if not re.fullmatch(r"\d{4}-\d{2}", month):
         raise HTTPException(422, "month must be YYYY-MM")
     column = {
@@ -186,6 +191,7 @@ async def usage(
         "team": sql.Identifier("team_id"),
         "app": sql.Identifier("app_id"),
         "model": sql.SQL("coalesce(served_model, requested_model)"),
+        "tag": sql.Identifier("tag"),
     }[group_by]
     async with request.app.state.pool.connection() as c:
         rows = await (
@@ -196,9 +202,10 @@ async def usage(
                     "sum(cache_read_tokens) AS cache_read_tokens, count(*) FILTER (WHERE fallback) AS fallbacks, "
                     "count(*) FILTER (WHERE status >= 400) AS errors "
                     "FROM usage_events WHERE ts >= to_date(%s, 'YYYY-MM') AND ts < to_date(%s, 'YYYY-MM') + interval '1 month' "
+                    "AND (%s::text IS NULL OR starts_with(tag, %s)) "
                     "GROUP BY 1 ORDER BY sum(cost_usd) DESC"
                 ).format(column),
-                (month, month),
+                (month, month, tag_prefix, tag_prefix),
             )
         ).fetchall()
     return {"month": month, "group_by": group_by, "rows": rows}

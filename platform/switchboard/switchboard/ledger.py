@@ -26,10 +26,10 @@ log = structlog.get_logger("switchboard.ledger")
 INSERT = """
 INSERT INTO usage_events (request_id, key_id, app_id, team_id, org_id, requested_model, served_model, fallback, status,
   stream, input_tokens, output_tokens, cache_read_tokens, cache_write_tokens, cost_usd, latency_ms, ttfb_ms,
-  pii_findings, error_type)
+  pii_findings, error_type, tag)
 VALUES (%(request_id)s, %(key_id)s, %(app_id)s, %(team_id)s, %(org_id)s, %(requested_model)s, %(served_model)s,
   %(fallback)s, %(status)s, %(stream)s, %(input_tokens)s, %(output_tokens)s, %(cache_read)s, %(cache_write)s,
-  %(cost_usd)s, %(latency_ms)s, %(ttfb_ms)s, %(pii_findings)s, %(error_type)s)
+  %(cost_usd)s, %(latency_ms)s, %(ttfb_ms)s, %(pii_findings)s, %(error_type)s, %(tag)s)
 ON CONFLICT (request_id) DO NOTHING
 RETURNING request_id
 """
@@ -56,6 +56,7 @@ def to_row(caller: Caller, event: dict, cost: Decimal) -> dict:
                 "latency_ms",
                 "ttfb_ms",
                 "error_type",
+                "tag",
             )
         },
         "key_id": caller.key_id,

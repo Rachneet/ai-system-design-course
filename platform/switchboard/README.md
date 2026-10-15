@@ -18,7 +18,7 @@ Providers, and self-hosted vLLM or Ollama servers. Part of the enterprise track 
 | Reliability | Timeouts, circuit breakers, fallback chains tried before the first byte reaches the client |
 | Personal data | `pii_mode`: off, detect (count only) or redact (cards with Luhn, emails, phones, IBANs) |
 | Prompt caching | Request bytes are forwarded unchanged unless policy must change them ([ADR 0003](docs/adr/0003-forward-bytes-unchanged.md)) |
-| Metering | Append-only usage ledger, monthly totals, chargeback report by org, team, app or model |
+| Metering | Append-only usage ledger, monthly totals, chargeback report by org, team, app, model or tag; an optional `x-switchboard-tag` header (for example `ticket:T-1042`) charges a request to a unit of work |
 | Audit | Admin actions logged; request and response bodies only on opt-in, always redacted, with expiry |
 | Operations | Prometheus metrics, OpenTelemetry spans, JSON logs, `Server-Timing` header, health and readiness |
 
@@ -78,12 +78,13 @@ client.chat.completions.create(model="gpt-5", messages=[{"role": "user", "conten
 Streaming requests get `stream_options.include_usage` added when missing, because only the final chunk carries token
 usage; that is the one change the gateway makes to these bodies, and it does not affect the cached prompt prefix.
 
-Chargeback: `GET /admin/usage?month=2026-10&group_by=team`.
+Chargeback: `GET /admin/usage?month=2026-10&group_by=team`. Cost per unit of work: send `x-switchboard-tag: ticket:T-1042`
+with each request, then `GET /admin/usage?month=2026-10&group_by=tag&tag_prefix=ticket:`.
 
 ## Tests and measurements
 
 ```bash
-uv run pytest                                   # 35 tests on an embedded Postgres; no provider key needed
+uv run pytest                                   # 36 tests on an embedded Postgres; no provider key needed
 uv run python -m loadtest.overhead --concurrency 32
 ```
 

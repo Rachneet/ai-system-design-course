@@ -237,3 +237,22 @@ async def test_spent_budgets_tell_sdks_not_to_retry_and_can_be_raised(gw):
     await gw.put("/admin/teams/t1/budget", json={"budget_usd_month": None}, headers=ADMIN)
     assert (await gw.post("/v1/messages", json=msg(), headers={"x-api-key": key})).status_code == 200
     assert (await gw.put("/admin/orgs/nope/budget", json={"budget_usd_month": 1}, headers=ADMIN)).status_code == 404
+
+
+async def test_tagged_requests_charge_back_per_unit_of_work(gw, upstream):
+    key = await provision(gw)
+    for tag in ("ticket:T-1", "ticket:T-1", "ticket:T-2", "eval:run-7"):
+        r = await gw.post("/v1/messages", json=msg(), headers={"x-api-key": key, "x-switchboard-tag": tag})
+        assert r.status_code == 200
+    await gw.post("/v1/messages", json=msg(), headers={"x-api-key": key})  # untagged still works
+    bad = await gw.post("/v1/messages", json=msg(), headers={"x-api-key": key, "x-switchboard-tag": "a b"})
+    assert bad.status_code == 400 and len(upstream.state.received) == 5  # refused before the provider
+    await settle(gw)
+    [event] = await ledger(gw, "SELECT ts FROM usage_events LIMIT 1")
+    month = event["ts"].strftime("%Y-%m")
+    report = (
+        await gw.get("/admin/usage", params={"month": month, "group_by": "tag", "tag_prefix": "ticket:"}, headers=ADMIN)
+    ).json()
+    rows = {r["id"]: r for r in report["rows"]}
+    assert set(rows) == {"ticket:T-1", "ticket:T-2"} and rows["ticket:T-1"]["requests"] == 2
+    assert rows["ticket:T-1"]["cost_usd"] == 2 * rows["ticket:T-2"]["cost_usd"] > 0
