@@ -270,3 +270,30 @@ def test_trace_redaction_masks_phones_but_not_plain_ids():
     out = redact("call +44 20 7946 0958 or (555) 123-4567 about order 1042, ref 1234567890, ts 20261014")
     assert out.count("[PHONE]") == 2
     assert "1042" in out and "1234567890" in out and "20261014" in out
+
+
+async def test_a_refusal_marked_do_not_retry_is_not_retried_or_failed_over():
+    import httpx
+    import openai
+
+    from app.resilience import ResilientLLM
+
+    class Refusing:
+        model, calls = "gpt-5", 0
+
+        async def respond(self, **kwargs):
+            Refusing.calls += 1
+            req = httpx.Request("POST", "http://gw/v1/chat/completions")
+            resp = httpx.Response(
+                429, request=req, headers={"x-should-retry": "false", "x-switchboard-limit": "budget:app"}
+            )
+            raise openai.RateLimitError("budget used up", response=resp, body=None)
+
+    fallback = Refusing()
+    llm = ResilientLLM(Refusing(), fallback, sleep=lambda s: None)
+    try:
+        await llm.respond(system="", tools=[], messages=[], on_text=None)
+        raise AssertionError("expected the refusal to propagate")
+    except openai.RateLimitError:
+        pass
+    assert Refusing.calls == 1  # one attempt, no retries, no fallback

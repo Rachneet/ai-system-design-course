@@ -51,6 +51,12 @@ class CircuitBreaker:
             self.opened_at = self.clock()
 
 
+def do_not_retry(e: Exception) -> bool:
+    """Honour `x-should-retry: false`, which gateways such as Switchboard send with a spent-budget 429."""
+    headers = getattr(getattr(e, "response", None), "headers", None) or {}
+    return str(headers.get("x-should-retry", "")).lower() == "false"
+
+
 def retry_after(e: Exception) -> float | None:
     headers = getattr(getattr(e, "response", None), "headers", None) or {}
     try:
@@ -120,6 +126,8 @@ class ResilientLLM:
                 self.breaker.success()
                 return resp
             except RETRYABLE as e:
+                if do_not_retry(e):  # e.g. a gateway budget refusal: retrying or falling back cannot help
+                    raise
                 metrics.provider_errors.labels(model=self.model, type=type(e).__name__).inc()
                 self.breaker.failure()
                 if emitted:  # text already reached the user: a retry would duplicate it
