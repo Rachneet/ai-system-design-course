@@ -7,10 +7,12 @@ import time
 from dataclasses import dataclass, field
 
 import httpx
+import structlog
 
 from .upstream import Upstream, UpstreamError
 
 SEP = "__"
+log = structlog.get_logger("checkpoint")
 
 
 def slug(name: str) -> str:
@@ -52,38 +54,42 @@ class Catalog:
 
     async def refresh(self, force: bool = False) -> None:
         async with self.lock:
-            if not force and time.monotonic() - self.loaded_at < self.cfg.catalog_ttl_s:
-                return
-            entries = await self._approved()
-            fresh: dict[str, Server] = {}
-            for entry in entries:
-                doc = entry.get("server") or {}
-                remote = next((r for r in doc.get("remotes") or [] if r.get("type") == "streamable-http"), None)
-                if not remote or not str(remote.get("url", "")).startswith("https://"):
-                    continue  # Checkpoint reaches remote servers over HTTPS only
-                s = slug(doc["name"])
-                while s in fresh:
-                    s += "-x"
-                old = self.servers.get(s)
-                review = (entry.get("_meta") or {}).get("io.atlas/review") or {}
-                if old and old.name == doc["name"] and old.url == remote["url"]:
-                    old.digest = review.get("digest", "")
-                    fresh[s] = old
-                    continue
-                up = Upstream(
-                    doc["name"], remote["url"], self.cfg.upstream_credentials.get(doc["name"]), self.upstream_transport
-                )
-                fresh[s] = Server(doc["name"], s, remote["url"], review.get("digest", ""), up)
-            for s, server in self.servers.items():
-                if fresh.get(s) is not server:
-                    await server.upstream.close()
-            self.servers, self.loaded_at = fresh, time.monotonic()
+            if force or time.monotonic() - self.loaded_at >= self.cfg.catalog_ttl_s:
+                await self._reload()
+        # Servers whose tool list failed to load are retried on every refresh, not only after the TTL.
         await asyncio.gather(*(self._load_tools(s) for s in self.servers.values() if not s.tools))
+
+    async def _reload(self) -> None:
+        entries = await self._approved()
+        fresh: dict[str, Server] = {}
+        for entry in entries:
+            doc = entry.get("server") or {}
+            remote = next((r for r in doc.get("remotes") or [] if r.get("type") == "streamable-http"), None)
+            if not remote or not str(remote.get("url", "")).startswith("https://"):
+                continue  # Checkpoint reaches remote servers over HTTPS only
+            s = slug(doc["name"])
+            while s in fresh:
+                s += "-x"
+            old = self.servers.get(s)
+            review = (entry.get("_meta") or {}).get("io.atlas/review") or {}
+            if old and old.name == doc["name"] and old.url == remote["url"]:
+                old.digest = review.get("digest", "")
+                fresh[s] = old
+                continue
+            up = Upstream(
+                doc["name"], remote["url"], self.cfg.upstream_credentials.get(doc["name"]), self.upstream_transport
+            )
+            fresh[s] = Server(doc["name"], s, remote["url"], review.get("digest", ""), up)
+        for s, server in self.servers.items():
+            if fresh.get(s) is not server:
+                await server.upstream.close()
+        self.servers, self.loaded_at = fresh, time.monotonic()
 
     async def _load_tools(self, server: Server) -> None:
         try:
             result = await server.upstream.call("tools/list", {})
-        except (UpstreamError, httpx.HTTPError):
+        except (UpstreamError, httpx.HTTPError) as e:
+            log.warning("tools_list_failed", server=server.name, error=f"{type(e).__name__}: {e}")
             server.tools = {}
             return
         server.tools = {t["name"]: t for t in result.get("tools", []) if isinstance(t, dict) and t.get("name")}
