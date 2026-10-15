@@ -76,10 +76,10 @@ This is also why cost dashboards must sit next to quality dashboards. The eval s
 
 ### Joining cost to outcomes
 
-Switchboard's ledger records cost per request, by org, team, app and model. The ticketing system records which tickets were resolved. Cost per resolved ticket needs a key that joins them. Switchboard's `usage_events` table has a `request_id` but no ticket or conversation ID, so the join has to come from somewhere:
+Switchboard's ledger records cost per request, by org, team, app and model. The ticketing system records which tickets were resolved. Cost per resolved ticket needs a key that joins them. Each Switchboard ledger row has a `request_id`, and an optional `tag` the caller sends. Two ways to make the join:
 
 - **Trace IDs.** Every model call in a conversation shares a trace. Record the trace ID on the ticket and in the ledger, and join through it.
-- **A request tag.** Have the agent send the ticket ID in a header that the gateway stores with the usage row. This is a small extension to Switchboard, and the capstone asks for it.
+- **A request tag.** The agent sends `x-switchboard-tag: ticket:T-1042` with every model call for that ticket, and Switchboard stores it on the usage row. `GET /admin/usage?month=2026-10&group_by=tag&tag_prefix=ticket:` returns cost per ticket; Helpdesk OS joins that to its ticket outcomes.
 
 ```sql
 -- cost per resolved ticket, per app, for October
@@ -87,7 +87,7 @@ SELECT u.app_id,
        sum(u.cost_usd) / count(DISTINCT t.id) FILTER (WHERE t.resolved_by = 'agent'
                                                     AND t.reopened_at IS NULL) AS cost_per_resolved
 FROM usage_events u
-JOIN tickets t ON t.id = u.ticket_id          -- the tag you add
+JOIN tickets t ON u.tag = 'ticket:' || t.id     -- the x-switchboard-tag the agent sent
 WHERE u.ts >= '2026-10-01' AND u.ts < '2026-11-01'
 GROUP BY u.app_id;
 ```

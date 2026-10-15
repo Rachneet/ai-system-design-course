@@ -116,10 +116,10 @@ How to pin depends on what you install:
 |---|---|---|
 | Skill zip | SHA-256 of the exact bytes | Digest stored at publish; downloads carry it in `x-atlas-digest` and the ETag, so a loader can refuse a mismatch |
 | MCP server as a package | Exact version plus a hash: `fileSha256` for MCPB, `@sha256:` for OCI images | Unhashed MCPB is a `block`; an OCI image without a digest and an npm or PyPI package without a version are `warn` |
-| MCP server as a remote endpoint | The code runs elsewhere, so pin what you can observe: the `server.json` and the tool definitions it returns | Digest of the canonical `server.json` only |
+| MCP server as a remote endpoint | The code runs elsewhere, so pin what you can observe: the `server.json` and the tool definitions it returns | Digest of the canonical `server.json`, plus a digest of the reviewed tool list (`toolsDigest`) when the publisher submits it |
 | Agent card | The card's digest; a signed card where the A2A spec's card signing is used | Digest stored; an unsigned card is an `info` finding |
 
-> [!warn] For a remote MCP server, Atlas's digest covers the `server.json` it reviewed, not the tool descriptions the server returns at run time. Checkpoint fetches `tools/list` from the server and does not compare it with anything that was reviewed, and neither service scans tool descriptions. A server that adds an instruction to a tool description after approval is a rug pull this pair does not catch yet. The fix: record a hash of the tool list at review, and have the gateway refuse a server whose tool list hash changes until a new version is approved. The MCP spec allows a server's tool list to change over time ([tools spec](https://modelcontextprotocol.io/specification/2026-07-28/server/tools)), so a legitimate change becomes a new version, which is the point. You build this in the Lab 8 stretch goals.
+> [!warn] For a remote MCP server, the `server.json` digest says where the server lives, not what it tells models. Tool descriptions arrive from `tools/list` at run time, and the MCP spec allows a server's tool list to change at any time ([tools spec](https://modelcontextprotocol.io/specification/2026-07-28/server/tools)). A server that adds an instruction to a tool description the week after approval is a rug pull. Atlas and Checkpoint close it together ([Atlas ADR 0004](https://github.com/Rachneet/ai-system-design-course/blob/main/platform/atlas/docs/adr/0004-pin-tool-lists.md)): the publisher submits the `tools/list` result with the version, Atlas scans every tool's text like prompt text and publishes a canonical digest as `toolsDigest`, and Checkpoint lists each server's tools again on every refresh and quarantines a server whose live list no longer matches (its tools vanish and calls are logged as `tools_changed`). A legitimate change becomes a new version with a new review, which is the point. Two limits remain: a server can show the reviewer one list and the gateway another (the gateway's comparison is what catches that), and a server that generates tools on the fly cannot be pinned this way.
 
 ## Defence 3: automated checks, then a person
 
@@ -207,7 +207,7 @@ The team replaces the installer with a script that calls a rates API and publish
 | Syncing the public registry as approved | Every public server is one step from your agents | Import into review only (Atlas `source = upstream`) |
 | Trusting a clean scan | Evasive malware approved | Human review of behaviour against purpose; runtime limits |
 | Reviewers who approve everything | The review is theatre | Size the group; track approval rate and time per review |
-| Tool definitions not pinned for remote servers | Description changes after approval | Hash the tool list at review; gateway refuses changes |
+| Tool definitions not pinned for remote servers | Description changes after approval | Pin the tool list at review (Atlas `toolsDigest`); the gateway quarantines changes (Checkpoint) |
 | No inventory of dependencies | Days to answer "are we affected?" | SBOM per approved version |
 | Agents reaching servers directly | Registry and gateway bypassed | Network isolation; servers accept only the gateway's assertion |
 

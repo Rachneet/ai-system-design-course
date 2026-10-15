@@ -152,6 +152,8 @@ One provider key shared by all tenants means one rate limit shared by all tenant
 
 Give each tenant its own gateway identity. In Switchboard, an **app** is the unit: each has its own keys, `allowed_models`, `rpm` and `tpm` limits, and an optional monthly budget, nested under a team and an organisation, each with their own budgets. A tenant that exhausts its budget gets a 429 with `x-switchboard-limit: budget:app`, and nobody else notices.
 
+The tool gateway needs the same boundary. Checkpoint can bind an agent to one tenant: a bound agent that presents a user token from another tenant is refused before any policy runs, approvers bound to a tenant see only that tenant's queue, and the signed assertion each MCP server receives carries a `tenant` claim the server uses to scope its data. The check is built into the gateway rather than written as a policy, because policies are edited often and one typo would open every tenant.
+
 > [!numbers] Say your provider allows your organisation 2,000,000 tokens per minute and you serve 50 tenants. One tenant's backfill takes 1,800,000 TPM; the other 49 share 200,000, about 4,100 each. Cap every tenant at 25% (500,000 TPM): the backfill slows down, and the other 49 share 1,500,000, about **30,600 each**, 7.5 times more.
 
 Caps are the blunt tool. Fairer schemes give each tenant a guaranteed share and let it borrow unused capacity, and put bulk work on a separate, lower-priority queue (or a provider's batch API) so it never competes with live chats.

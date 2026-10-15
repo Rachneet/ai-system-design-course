@@ -216,12 +216,12 @@ The approver must see what will execute: `orders__issue_refund {"order_id": "552
 ### Decide who may approve
 
 - **Separate credentials.** In Checkpoint, approvers hold tokens with role `approver`, which cannot call tools, and agent tokens cannot approve (the lab shows the 401).
-- **Not the requester.** The person the agent acts for should not approve their own high-value action. Checkpoint does not enforce this yet: any approver token can approve any request. In production, compare the approver's identity with the request's `user_id`, and route by policy (refunds to finance, access grants to the resource owner).
+- **Not the requester.** The person the agent acts for should not approve their own high-value action. Checkpoint refuses, with a 403, an approver whose identity is the request's `user_id`. That only works if approvers and users share one identity namespace, which is one more reason to put approvers on SSO. In production, also route by policy (refunds to finance, access grants to the resource owner).
 - **Record the decision.** Checkpoint stores `decided_by`, `decided_at` and a free-text note with every approval.
 
 ### Time out
 
-A pending request should not wait forever, and an approved one should not stay usable for a week. Give pending requests an expiry (minutes for a live chat, hours for an email workflow), give approvals a short validity window after the decision, and tell the user when a request lapses. Checkpoint's approvals have no expiry today; adding one is a stretch goal in the lab.
+A pending request should not wait forever, and an approved one should not stay usable for a week. Give pending requests an expiry (minutes for a live chat, hours for an email workflow), give approvals a short validity window after the decision, and tell the user when a request lapses. In Checkpoint a pending request lapses after 30 minutes and an approval must be used within 5 (`CHECKPOINT_APPROVAL_PENDING_TTL_S` and `CHECKPOINT_APPROVAL_USE_TTL_S`). A lapsed row becomes `expired` and can never be used, and repeating the call makes a fresh request.
 
 ### Fight approval fatigue
 
