@@ -43,11 +43,10 @@
   --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   --cell: 18px;
   --rail: 304px;
-  /* Reading scale: type grows with the screen; the text column is measured in ems so a line stays about 80
-     characters at every size. Figures, tables, code and calculators use the wider sheet. */
-  --fs: clamp(17px, 0.42vw + 11px, 19px);
-  --text: calc(var(--fs) * 36); /* about 75 characters of Inter per full line */
-  --wide: clamp(1100px, 68vw, 1360px);
+  /* One column for everything (owner's choice): text, figures, tables and code share both edges. Type grows with
+     the screen and the column is measured in ems, so a full line stays about 90 characters at every width. */
+  --fs: clamp(17px, 0.55vw + 10.5px, 21px);
+  --col: calc(var(--fs) * 44);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -149,12 +148,8 @@ button { font: inherit; color: inherit; }
 
 /* ---------- Sheet ---------- */
 .topbar { display: none; }
-main { min-width: 0; padding-block: 40px 96px; padding-left: max(clamp(28px, 4.5vw, 80px), calc((100vw - var(--rail) - var(--wide)) / 2), env(safe-area-inset-left, 0px)); padding-right: max(28px, env(safe-area-inset-right, 0px)); }
-.sheet { max-width: var(--wide); margin: 0; background: var(--sheet); } /* anchored beside the index, not floating */
-/* One left edge for everything; prose keeps a readable line, wide blocks take the sheet's width. */
-article > .meta, article > h1, article > .lede, .sign-off, .pager, .cover > .meta, .cover > h1, .cover > .lede,
-.body > :not(figure):not(.codewrap):not(.table-wrap):not(.widget) { max-width: var(--text); }
-.body > .table-wrap { width: fit-content; min-width: min(100%, var(--text)); max-width: 100%; }
+main { min-width: 0; padding-block: 40px 96px; padding-left: max(28px, calc((100vw - var(--rail) - var(--col)) / 2), env(safe-area-inset-left, 0px)); padding-right: max(28px, env(safe-area-inset-right, 0px)); }
+.sheet { max-width: var(--col); margin: 0; background: var(--sheet); } /* centred beside the index by main's padding */
 .sheet-body { padding: 8px 0 0; }
 /* One centered column, about 75 characters wide, shared by text and figures so every edge lines up. */
 article { min-width: 0; }
@@ -200,8 +195,7 @@ figure.fig { margin: 1.8em 0; }
 .mmd { padding: 16px; border-radius: 10px; background: var(--sheet); border: 1px solid var(--rule); overflow-x: auto; text-align: center; font-family: var(--font-mono); font-size: 12px; white-space: pre; color: var(--ink-2); }
 .mmd[data-done] { white-space: normal; }
 .mmd svg { max-width: 100%; height: auto; }
-figure.tall { max-width: var(--text); } /* a portrait diagram at full width would fill more than a screen */
-figure.tall .mmd svg { max-height: 80vh; width: auto; }
+figure.tall .mmd svg { max-height: 80vh; width: auto; } /* same frame width as everything else, drawing kept within a screen */
 .mmd::-webkit-scrollbar { height: 8px; }
 .mmd::-webkit-scrollbar-thumb { background: var(--ink-2); }
 .mmd::-webkit-scrollbar-track { background: var(--box); }

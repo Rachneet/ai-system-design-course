@@ -198,8 +198,7 @@ rounded:
   panel: "12px"
 spacing:
   rail: "304px"
-  column: "36em of the body size (about 75 characters)"
-  wide: "clamp(1100px, 68vw, 1360px)"
+  column: "44em of the body size, shared by everything (about 90 characters)"
   frame: "28px"
   frame-phone: "16px"
   page-block: "40px 96px"
@@ -314,7 +313,7 @@ components:
 
 **Creative North Star: "The Quiet Page"**
 
-Each lesson is one calm page of prose: a readable column on white, anchored beside the rail, opened by a quiet line of facts (week, lesson number, minutes) and a plain, heavy title. Nothing frames the text. The index rail sits to the left as a soft gray panel that holds the course, the reader's progress, and the outline of the lesson being read, so the page itself carries nothing but the lesson.
+Each lesson is one calm page of prose: a single column on white, centred beside the rail, opened by a quiet line of facts (week, lesson number, minutes) and a plain, heavy title. Nothing frames the text. The index rail sits to the left as a soft gray panel that holds the course, the reader's progress, and the outline of the lesson being read, so the page itself carries nothing but the lesson.
 
 The system was rebuilt at the owner's request because the earlier worksheet look (black frames, ruled header strips, a second display face) felt heavy and cluttered. What remains is subtraction: one family, one accent, soft fills and hairlines instead of outlines, and a small set of gentle corners. Hierarchy comes from size and weight. The only expressive material left is the hand-drawn sketch figures, which keep their rough.js strokes and their fixed diagram inks.
 
@@ -323,7 +322,7 @@ Legibility leads. Text sits on flat white or a near-white fill, never on a patte
 **Key Characteristics:**
 - White page, quiet #f7f8fa index rail, no textures anywhere.
 - Inter for headings, interface and reading; JetBrains Mono for code; Kalam only inside sketch diagrams.
-- One left edge for everything: prose at about 75 characters per line, with figures, tables, code and calculators extending wider; the block centres in the space beside the rail on very wide screens.
+- One column for everything: text, figures, tables, code and calculators share both edges, centred in the space beside the rail.
 - No boxed strips, no heading rules, no black frames; soft fills, hairlines, small radii.
 - One accent (Ballpoint Blue) for links, focus and marks; a solid ink primary button.
 - Hand-drawn sketch figures with one meaning per ink.
@@ -334,7 +333,7 @@ These are the rules the reader follows. Every new surface is checked against the
 
 - **One family.** Inter sets headings, interface and body. Mono appears only for code and calculator values; the hand font appears only inside sketch diagrams.
 - **Body at 16 to 18px, line height 1.6 to 1.75.** Lesson body is 17px at 1.7 on every width.
-- **About 75 characters per line, with figures on the same edge.** Type scales from 17px to 19px with the screen and the prose column is 36em of it, so a full line stays about 75 characters at every width. Figures, tables, code and calculators start on the same left edge and extend to the wide measure (portrait diagrams stay at the text width), so wide screens are used without long lines.
+- **One width, about 90 characters per line.** Type scales from 17px to 21px with the screen and the single column is 44em of it, so a full line stays about 85 to 90 characters at every width. Text, figures, tables, code and calculators share both edges (the owner preferred one consistent width that fills large screens over a narrower prose measure). Portrait diagrams keep the full-width frame and draw within one screen's height.
 - **Hierarchy from size and weight, not from boxes or rules.** Headings are larger and heavier; they carry no underline, overline, frame or fill.
 - **At most one accent colour.** Ballpoint Blue is the accent. The diagram inks belong to figures and calculator readouts only; Margin Red is a small position mark, not a second accent.
 - **Secondary text at AA contrast.** Secondary Ink is about 6.4:1 on white, 5.9:1 on the soft fill and 6.0:1 on the rail; in dark it is about 8.7:1 on the page.
@@ -408,13 +407,13 @@ Every token swaps in place for its `*-dark` value: a near-black rail, a dark gra
 
 ## Layout
 
-A two-column grid: a sticky 304px index rail with a Hairline right edge, then the main area with 40px above and 96px below. Its left padding grows from 28px to centre the content block in the space beside the rail on very wide screens. The meta line, title, lede, prose, callouts and quizzes keep the text measure (36em, about 75 characters); figures, tables, code and calculators share the same left edge and extend to the wide measure, and portrait diagrams stay at the text measure. There is no right margin. The rail has a sticky header (title, search, progress); weeks fold, the current one open, each a single line with its number in the same column as lesson numbers; counts appear once there is progress. The lesson outline lives in the rail, nested under the current lesson behind a Hairline left edge; the section in view is set in Ink at 600 with a short Ballpoint Blue marker.
+A two-column grid: a sticky 304px index rail with a Hairline right edge, then the main area with 40px above and 96px below. Its left padding centres one column (44em of the body size) in the space beside the rail. The meta line, title, lede, prose, callouts, quizzes, figures, tables, code and calculators all share that column's two edges. There is no right margin. The rail has a sticky header (title, search, progress); weeks fold, the current one open, each a single line with its number in the same column as lesson numbers; counts appear once there is progress. The lesson outline lives in the rail, nested under the current lesson behind a Hairline left edge; the section in view is set in Ink at 600 with a short Ballpoint Blue marker.
 
 Home uses the same column: a meta line, the cover title and lede, one primary button, the five-lab sketch map, then each week as a row (a 96px numeral column beside the title, blurb, and an auto-filling list of lessons, at least 200px per column), separated by Hairlines.
 
 At 900px and below the rail becomes an off-canvas drawer (min(88vw, 340px)) behind an Index button in a sticky top bar, hidden from focus when closed, and the column runs edge to edge with 16px insets (more where safe-area insets require). Body stays at 17px.
 
-**The Shared Edge Rule.** Prose keeps the text measure; figures, tables, code and calculators share its left edge and take the wide measure. Nothing is centred on its own axis.
+**The Shared Edge Rule.** Everything shares one column and both of its edges. Nothing is pulled into a narrower or wider measure of its own.
 
 ## Elevation & Depth
 
@@ -463,7 +462,7 @@ Corners are small and graded by size: 2px on the focus outline, 3px on tick boxe
 
 ### Do:
 - **Do** set everything in Inter, with body at 17px and 1.7 line height.
-- **Do** keep text, tables, code and figures on one left edge: prose at the text measure, wide blocks at the wide measure.
+- **Do** keep text, tables, code and figures in the one shared column.
 - **Do** make hierarchy with size and weight alone.
 - **Do** use the soft fill or a Hairline to set a block apart, with a radius from the 2, 3, 4, 6, 8, 10, 12px scale.
 - **Do** keep secondary text at Secondary Ink or darker.

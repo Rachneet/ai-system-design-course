@@ -548,7 +548,7 @@
     "keyCharacteristics": [
       "White page, quiet #f7f8fa index rail, no textures anywhere.",
       "Inter for headings, interface and reading; JetBrains Mono for code; Kalam only inside sketch diagrams.",
-      "One left edge for everything: prose at about 75 characters per line, with figures, tables, code and calculators extending wider.",
+      "One column for everything: text, figures, tables, code and calculators share both edges, centred beside the rail.",
       "No boxed strips, no heading rules, no black frames; soft fills, hairlines, small radii.",
       "One accent (Ballpoint Blue) for links, focus and marks; a solid ink primary button.",
       "Hand-drawn sketch figures with one meaning per ink."
@@ -564,7 +564,7 @@
       },
       {
         "name": "About 65 to 80 characters per line, with figures on the same edge.",
-        "body": "Type scales from 17px to 19px with the screen and the prose column is 36em of it, so a full line stays about 75 characters. Figures, tables, code and calculators share its left edge and extend to the wide measure; portrait diagrams stay at the text width."
+        "body": "Type scales from 17px to 21px with the screen and the single column is 44em of it, so a full line stays about 85 to 90 characters. Everything shares both edges of that column."
       },
       {
         "name": "Hierarchy from size and weight, not from boxes or rules.",
@@ -610,7 +610,7 @@
       },
       {
         "name": "The Shared Edge Rule",
-        "body": "Prose keeps the text measure; figures, tables, code and calculators share its left edge and take the wide measure. Nothing is centred on its own axis.",
+        "body": "Everything shares one column and both of its edges. Nothing is pulled into a narrower or wider measure of its own.",
         "section": "layout"
       },
       {
@@ -626,7 +626,7 @@
     ],
     "dos": [
       "Do set everything in Inter, with body at 17px and 1.7 line height.",
-      "Do keep text, tables, code and figures on one left edge: prose at the text measure, wide blocks at the wide measure.",
+      "Do keep text, tables, code and figures in the one shared column.",
       "Do make hierarchy with size and weight alone.",
       "Do use the soft fill or a Hairline to set a block apart, with a radius from the 2, 3, 4, 6, 8, 10, 12px scale.",
       "Do keep secondary text at Secondary Ink or darker.",
