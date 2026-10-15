@@ -1,7 +1,5 @@
 """A goal-driven simulated customer for multi-turn cases (the tau-bench approach)."""
 
-from typing import Protocol
-
 from app.llm import StructuredLLM
 
 DONE = "###DONE###"
@@ -13,10 +11,6 @@ Facts you know (reveal one only when asked or when it is natural): {facts}
 Personality: {persona}
 Write only the customer's next message, one or two short sentences, as a real customer would. Never write the
 assistant's lines. When your goal is met or clearly impossible, end your message with {done}."""
-
-
-class Simulator(Protocol):
-    async def next_message(self, spec: dict, transcript: list[tuple[str, str]]) -> str: ...
 
 
 class ModelSimulator:

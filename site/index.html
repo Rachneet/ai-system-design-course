@@ -407,7 +407,6 @@ let justTicked = null;
 const byId = Object.fromEntries(COURSE.map(e => [e.id, e]));
 const trackable = COURSE.filter(e => e.week >= 0 && e.week < EXTRA);
 const sheetNo = Object.fromEntries(trackable.map((e, i) => [e.id, String(i + 1).padStart(2, "0")]));
-const pad2 = n => String(n).padStart(2, "0");
 
 /* ---------- Markdown ---------- */
 const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));

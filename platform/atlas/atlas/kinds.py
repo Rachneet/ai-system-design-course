@@ -240,7 +240,7 @@ def parse_skill(blob: bytes, version: str, max_bytes: int, max_files: int) -> Pa
         version=version,
         title=name,
         description=description,
-        document={k: v for k, v in meta.items()} | {"_body_lines": body.count("\n") + 1},
+        document=meta | {"_body_lines": body.count("\n") + 1},
         digest=hashlib.sha256(blob).hexdigest(),
         license=lic if isinstance(lic, str) else None,
         blob=blob,

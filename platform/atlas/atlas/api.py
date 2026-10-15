@@ -83,7 +83,7 @@ async def publish(request: Request, parsed, who, team_id, eval_report):
 
 
 def public(row: dict) -> dict:
-    return {k: v for k, v in row.items() if k not in ("id",)}
+    return {k: v for k, v in row.items() if k != "id"}
 
 
 @router.post("/v1/mcp-servers", status_code=201, tags=["publish"])
