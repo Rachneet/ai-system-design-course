@@ -1,0 +1,25 @@
+# Threat model (STRIDE)
+
+Scope: the `/mcp` endpoint, approvals and admin APIs, the policy file, assertions sent upstream, and Postgres.
+The gateway exists because agents read untrusted text: a prompt-injected agent will try to call whatever it can.
+
+| Threat | Example | Mitigation | Test or control |
+|---|---|---|---|
+| **Spoofing** an agent | Stolen or guessed agent token | Random 256-bit secrets, hash only, instant revocation; approver tokens cannot call tools | `test_transport_rules_are_enforced` |
+| Spoofing a user | Agent claims to act for an admin | User identity only from a verified JWT; forged tokens get 401 | `test_rate_limits_and_bad_user_tokens` |
+| Spoofing Checkpoint to a server | A server accepts any caller | Signed assertion with audience and 60 s expiry; JWKS published | `test_allowed_call_reaches_a_legacy_server_with_a_verifiable_assertion` |
+| **Tampering** in transit | Header says one tool, body calls another | Every mirrored header checked against the body | `test_transport_rules_are_enforced`, `test_tool_output_is_scanned_*` |
+| Tampering with an approval | Approve a $900 refund, then send $1,900 | Approval bound to agent, user, tool and argument digest; single use | `test_large_refunds_wait_for_a_person_*` |
+| **Repudiation** | "The agent did that on its own" | Every decision logged with agent, user, tool, outcome, policies and latency | `test_decisions_are_logged_*` |
+| **Information disclosure** via tool output | A page tells the agent to email data out | Instruction-like text marked, hidden Unicode stripped, secrets redacted | `test_tool_output_is_scanned_*` |
+| Disclosure of credentials | Agent learns a service key | Server credentials stay in Checkpoint; agents get none | `test_allowed_call_*` |
+| **Denial of service** | A looping agent hammers a tool | Per-agent, per-tool token buckets | `test_rate_limits_and_bad_user_tokens` |
+| **Elevation of privilege** | An injected agent calls a tool it should not | Default-deny Cedar; tools hidden from `tools/list` unless permitted; only Atlas-approved, HTTPS servers exist | `test_agents_see_only_tools_*`, `test_policy_denies_with_reasons` |
+| Bad policy rollout | A typo opens everything | A policy that does not parse never replaces the running one | `test_decisions_are_logged_and_bad_policies_never_load` |
+
+## Residual risks
+- Output scanning is a tripwire; least-privilege policies and approvals carry the weight (see the course's
+  prompt injection lesson).
+- Rate limits are per instance (N instances allow N times the limit).
+- The development assertion key is generated per process; production must set a persistent key and rotate it.
+- Admin and approver tokens are shared secrets; production should use SSO.

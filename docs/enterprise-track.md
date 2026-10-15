@@ -47,7 +47,7 @@ The catalog that says what exists, who owns it, and whether it is approved. **Bu
   into a private, curated sub-registry
 
 ### E3. Checkpoint: MCP and agent gateway with policy
-The control point every tool call passes through.
+The control point every tool call passes through. **Built:** `platform/checkpoint` (9 end-to-end tests, CI).
 - Fronts approved MCP servers from Atlas behind one MCP endpoint per agent
 - Agent identity: each agent authenticates with its own credentials; user context flows with OAuth token
   exchange (on-behalf-of), so tools see both "which agent" and "for which user"
