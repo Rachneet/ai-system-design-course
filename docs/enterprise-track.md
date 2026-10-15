@@ -1,6 +1,6 @@
 # Enterprise track: plan
 
-Status: proposal, 2026-10-14. Builds on the six-week course and the Relay reference implementation.
+Status: E1 to E4 built, 2026-10-15. Proposed 2026-10-14. Builds on the six-week course and the Relay reference implementation.
 
 ## Why this track
 
@@ -58,7 +58,8 @@ The control point every tool call passes through. **Built:** `platform/checkpoin
 - Tool search to keep large tool catalogs out of context
 
 ### E4. Helpdesk OS: a multi-tenant support platform on E1-E3
-The workload that proves the platform: agents that resolve people's issues end to end.
+The workload that proves the platform: agents that resolve people's issues end to end. **Built:** `platform/helpdesk`
+(73 tests, CI; the tests run the real E1 to E3 in process).
 - Tenants: an employee IT and HR helpdesk and an external customer-support desk, isolated per tenant
 - Specialist agents (IT access, HR policy, billing, returns) built from skills, coordinated over A2A, with
   handoffs and a human console for approvals and escalations

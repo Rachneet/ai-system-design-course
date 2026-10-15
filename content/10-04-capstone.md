@@ -190,8 +190,24 @@ Record a backup of the demo. Live identity providers and payment mocks fail at t
 ## What is not required
 
 - A production identity provider or real payment system: realistic mocks behind MCP are fine.
-- Every component of the reference services' "not built yet" lists. Build what your demo needs (for example the ticket tag in Switchboard's ledger), and record the rest in ADRs.
+- Every component of the reference services' "not built yet" lists. Build what your demo needs (for example token exchange instead of a two-audience token), and record the rest in ADRs.
 - A legal opinion. The risk assessments are engineering documents written to help counsel decide.
+
+## The reference implementation
+
+[Helpdesk OS](https://github.com/Rachneet/ai-system-design-course/tree/main/platform/helpdesk) is a working answer
+to this brief. Read it after your design doc, not before: it is one set of choices, and the review rubric rewards
+choices you can defend. It is built from the same parts: six agents, four MCP systems, `helpdesk.cedar`, the console,
+cost per resolved ticket from ticket tags, and an evidence pack. Three of its decisions are worth arguing with in
+your ADRs:
+
+- **Handoffs run in process, typed, not over A2A** (its ADR 0001). That fits agents deployed together, and stops fitting when another team owns one.
+- **Approved calls run with the requester's stored token** (its ADR 0002). That is fast, but a bearer token rests in a table; token exchange is the cleaner answer.
+- **Red-team suites script a fully compromised model** (its ADR 0004). They run in CI with no key and test the platform, not the prompt; your behavioural suites test the prompt.
+
+What it does not have is what Phase 4 asks you for: a load test, SLO dashboards, alerts with runbooks, and real
+SSO. Its tests start the real Switchboard, Atlas and Checkpoint in one process, which is also a quick way to try
+your own policies.
 
 ## Reference reading
 
