@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     user_jwks_url: str = ""  # RS256 from your identity provider in production
     user_jwt_issuer: str = ""
     user_jwt_audience: str = "checkpoint"
+    user_tenant_claim: str = "tenant"  # the claim naming the user's tenant (an IdP's organisation claim)
 
     # Assertions Checkpoint signs for upstream servers: they verify against /.well-known/jwks.json
     assertion_private_key: str = Field(default="", repr=False)  # PEM; generated per process if empty (dev only)

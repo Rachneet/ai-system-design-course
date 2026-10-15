@@ -14,9 +14,10 @@ what comes back. Part of the enterprise track of the [AI System Design Course](.
 | Tool pins | A server whose live `tools/list` differs from the list Atlas reviewed (`toolsDigest`, Atlas ADR 0004) is quarantined: its tools vanish and calls get `tools_changed`; `REQUIRE_PINNED_TOOLS` skips servers without a pin |
 | Agent identity | Each agent has its own token; approvers have separate tokens and cannot call tools |
 | User identity | The user's JWT (`X-User-Token`), verified with a shared secret in development or your IdP's JWKS |
+| Tenants | An agent or approver may be bound to a tenant (`tenant` claim in the user JWT, `USER_TENANT_CLAIM`); a bound agent acting for another tenant's user is refused before policy runs; approvers see only their tenant's queue; assertions carry `tenant` |
 | Policy | Cedar: default deny, forbid wins, decisions name their policies; `@approval("required")` holds a call for a person; a forbid that fails to evaluate denies, and evaluation errors are logged |
 | Approvals | Bound to agent, user, tool and exact arguments; single use; pending requests lapse after 30 minutes and approvals after 5 (`APPROVAL_PENDING_TTL_S`, `APPROVAL_USE_TTL_S`); nobody decides a request made on their own behalf; approver API |
-| Upstream identity | RS256 assertion (`sub` user, `act.sub` agent, `aud` server, 60 s) verifiable at `/.well-known/jwks.json`; server credentials stay in Checkpoint |
+| Upstream identity | RS256 assertion (`sub` user, `act.sub` agent, `aud` server, `tenant`, 60 s) verifiable at `/.well-known/jwks.json`; server credentials stay in Checkpoint |
 | Output | Hidden Unicode removed, secrets redacted, instruction-like text marked as data, flags in `_meta` |
 | Limits and audit | Per-agent, per-tool rate limits; every decision logged; Prometheus metrics |
 
@@ -70,7 +71,7 @@ CHECKPOINT_ADMIN_TOKEN=... CHECKPOINT_ATLAS_URL=https://atlas.internal CHECKPOIN
 CHECKPOINT_USER_JWKS_URL=https://idp.example/.well-known/jwks.json CHECKPOINT_ASSERTION_PRIVATE_KEY="$(cat key.pem)" \
 uv run uvicorn checkpoint.main:app
 
-curl -X POST localhost:8000/admin/agents -H "Authorization: Bearer $ADMIN" -H 'content-type: application/json' -d '{"id":"refunds"}'
+curl -X POST localhost:8000/admin/agents -H "Authorization: Bearer $ADMIN" -H 'content-type: application/json' -d '{"id":"refunds","tenant":"acme"}'
 curl -X POST localhost:8000/admin/agents -H "Authorization: Bearer $ADMIN" -H 'content-type: application/json' -d '{"id":"finance-lead","role":"approver"}'
 ```
 
@@ -80,10 +81,10 @@ bearer token and the user's JWT in `X-User-Token`. Approvers use `GET /approvals
 
 ## Tests
 
-`uv run pytest` runs 15 tests (11 end to end, 3 policy unit tests and a migration round trip) against a real Postgres, a mock Atlas, a modern MCP server and an
+`uv run pytest` runs 16 tests (12 end to end, 3 policy unit tests and a migration round trip) against a real Postgres, a mock Atlas, a modern MCP server and an
 initialize-era one: transport rules, catalog filtering, tool lists that drift from their pin, assertions verified against the published JWKS, Cedar
 denials with reasons, forbids that fail closed when they cannot evaluate, single-use approvals bound to arguments that expire, output scanning, `x-mcp-header` handling in both
-directions, rate limits, forged user tokens, the decision log and refusal of a broken policy file. CI adds ruff,
+directions, rate limits, forged user tokens, tenant-bound agents and approvers, the decision log and refusal of a broken policy file. CI adds ruff,
 bandit, pip-audit, an image build with Trivy and an SBOM, and a container smoke test.
 
 ## Engineering docs

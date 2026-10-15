@@ -2,7 +2,8 @@
 
 1. transport rules     headers must match the body (MCP 2026-07-28); unknown versions and methods rejected
 2. agent identity      the agent's own token; approvers cannot call tools
-3. user identity       the end user's JWT (X-User-Token), verified, if the agent acts for someone
+3. user identity       the end user's JWT (X-User-Token), verified, if the agent acts for someone; a tenant-bound
+                       agent acts only for users of its tenant
 4. catalog             only tools of servers approved in Atlas exist
 5. rate limit          per agent and tool
 6. Cedar policy        allow, deny, or allow-after-approval, from the agent, tool, arguments and user
@@ -48,8 +49,8 @@ async def record(
     latency = int((time.perf_counter() - started) * 1000) if started else None
     async with pool.connection() as c:
         await c.execute(
-            "INSERT INTO decisions (agent_id, user_id, action, tool, decision, policies, flags, latency_ms, errors) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)",
+            "INSERT INTO decisions (agent_id, user_id, action, tool, decision, policies, flags, latency_ms, errors, "
+            "tenant) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
             (
                 agent.id,
                 user.id if user else None,
@@ -60,6 +61,7 @@ async def record(
                 list(flags),
                 latency,
                 list(errors),
+                (user.tenant if user else "") or agent.tenant,
             ),
         )
     metrics.decisions.labels(action=action, decision=decision).inc()
@@ -68,10 +70,15 @@ async def record(
         log.warning("policy_errors", agent=agent.id, tool=tool, decision=decision, errors=list(errors))
 
 
-def context(user: User | None, args: dict, server: str) -> dict:
+def context(agent: Agent, user: User | None, args: dict, server: str) -> dict:
     return {
         "args": args,
-        "user": {"id": user.id if user else "", "roles": list(user.roles) if user else []},
+        "user": {
+            "id": user.id if user else "",
+            "roles": list(user.roles) if user else [],
+            "tenant": user.tenant if user else "",
+        },
+        "agent": {"tenant": agent.tenant or ""},
         "server": server,
     }
 
@@ -113,13 +120,20 @@ async def handle(request: Request) -> Response:
                 mcp.ProtocolError(401, mcp.INVALID_PARAMS, f"invalid user token: {e}", rid=rid).body(), status_code=401
             )
 
+    if user and agent.tenant and user.tenant != agent.tenant:
+        # Built in, not left to policy: a tenant-bound agent never acts for another tenant's user.
+        await record(state.pool, agent, user, method, str(params.get("name", "")), "tenant_mismatch")
+        e = mcp.ProtocolError(
+            403, mcp.INVALID_PARAMS, "the user belongs to a different tenant than this agent", rid=rid
+        )
+        return JSONResponse(e.body(), status_code=403)
     if method == "ping":
         return JSONResponse(mcp.result(rid, {}))
     if method == "tools/list":
         await state.catalog.refresh()
         tools = []
         for name, server, tool in state.catalog.all_tools():
-            if state.policy.decide(agent.id, "list", name, context(user, {}, server.name)).allowed:
+            if state.policy.decide(agent.id, "list", name, context(agent, user, {}, server.name)).allowed:
                 tools.append(
                     tool | {"name": name, "description": f"[{server.name}] {tool.get('description', '')}".strip()}
                 )
@@ -163,7 +177,7 @@ async def call_tool(request: Request, rid, params: dict, agent: Agent, user: Use
         await record(state.pool, agent, user, "call", name, "rate_limited", started=started)
         return tool_error(rid, f"Rate limit reached for {name}. Retry in {int(wait) + 1} s.")
 
-    decision = state.policy.decide(agent.id, "call", name, context(user, args, server.name))
+    decision = state.policy.decide(agent.id, "call", name, context(agent, user, args, server.name))
     if not decision.allowed:
         await record(
             state.pool, agent, user, "call", name, "deny", decision.policies, started=started, errors=decision.errors
@@ -242,10 +256,19 @@ async def approval_gate(state, rid, params, agent: Agent, user: User | None, nam
         if not row:
             row = await (
                 await c.execute(
-                    "INSERT INTO approvals (agent_id, user_id, tool, args, args_digest, status, policies, expires_at) "
-                    "VALUES (%s, %s, %s, %s, %s, 'pending', %s, now() + make_interval(secs => %s)) "
+                    "INSERT INTO approvals (agent_id, user_id, tool, args, args_digest, status, policies, expires_at, "
+                    "tenant) VALUES (%s, %s, %s, %s, %s, 'pending', %s, now() + make_interval(secs => %s), %s) "
                     "RETURNING id, status, expires_at",
-                    (agent.id, user.id, name, Jsonb(args), digest, policies, state.settings.approval_pending_ttl_s),
+                    (
+                        agent.id,
+                        user.id,
+                        name,
+                        Jsonb(args),
+                        digest,
+                        policies,
+                        state.settings.approval_pending_ttl_s,
+                        user.tenant or agent.tenant,
+                    ),
                 )
             ).fetchone()
     status, expires = row["status"], row["expires_at"].isoformat()

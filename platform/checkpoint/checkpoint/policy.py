@@ -2,7 +2,7 @@
 
 Entities: Agent::"<id>" is the principal, Tool::"<server>__<tool>" the resource, and the actions are
 Action::"list" (the tool appears in tools/list) and Action::"call". The request context carries
-{args, user: {id, roles}, server}. Cedar denies by default and any matching forbid wins.
+{args, user: {id, roles, tenant}, agent: {tenant}, server}. Cedar denies by default and any matching forbid wins.
 
 A permit annotated @approval("required") allows the call only after a person approves that exact call.
 Every decision names the policies that produced it, by their @id annotation, for the audit log.

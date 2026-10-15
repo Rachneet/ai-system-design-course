@@ -7,6 +7,7 @@ The gateway exists because agents read untrusted text: a prompt-injected agent w
 |---|---|---|---|
 | **Spoofing** an agent | Stolen or guessed agent token | Random 256-bit secrets, hash only, instant revocation; approver tokens cannot call tools | `test_transport_rules_are_enforced` |
 | Spoofing a user | Agent claims to act for an admin | User identity only from a verified JWT; forged tokens get 401 | `test_rate_limits_and_bad_user_tokens` |
+| Crossing tenants | Tenant A's agent is handed a tenant B user's token, or B's approver browses A's queue | Tenant-bound agents refuse other tenants' users before policy; approvals, decisions and assertions carry the tenant; approvers see their tenant only | `test_tenant_bound_agents_act_only_for_their_tenant` |
 | Spoofing Checkpoint to a server | A server accepts any caller | Signed assertion with audience and 60 s expiry; JWKS published | `test_allowed_call_reaches_a_legacy_server_with_a_verifiable_assertion` |
 | **Tampering** in transit | Header says one tool, body calls another | Every mirrored header checked against the body | `test_transport_rules_are_enforced`, `test_tool_output_is_scanned_*` |
 | Tampering with an approval | Approve a $900 refund, then send $1,900 | Approval bound to agent, user, tool and argument digest; single use | `test_large_refunds_wait_for_a_person_*` |

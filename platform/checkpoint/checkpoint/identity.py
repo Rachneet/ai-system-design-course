@@ -1,7 +1,8 @@
 """Who is calling. Agents authenticate with their own token (ckp_<id>_<secret>, only a hash stored). The end user
 the agent acts for arrives as a JWT in X-User-Token and is verified here, never trusted as a plain header.
 Upstream servers then receive a short-lived assertion signed by Checkpoint naming both: sub is the user, act.sub
-the agent (the RFC 8693 actor claim), aud the server. Agents never hold upstream credentials."""
+the agent (the RFC 8693 actor claim), aud the server, tenant the tenant whose data the call may touch. Agents never
+hold upstream credentials."""
 
 import hashlib
 import hmac
@@ -18,12 +19,14 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 class Agent:
     id: str
     role: str  # agent | approver
+    tenant: str | None = None  # a tenant-bound agent acts only for users of its tenant
 
 
 @dataclass(frozen=True)
 class User:
     id: str
     roles: tuple[str, ...]
+    tenant: str = ""
 
 
 def digest(secret: str) -> str:
@@ -41,11 +44,13 @@ async def resolve(pool, presented: str) -> Agent | None:
         return None
     async with pool.connection() as c:
         row = await (
-            await c.execute("SELECT id, role, token_hash FROM agents WHERE id = %s AND revoked_at IS NULL", (parts[1],))
+            await c.execute(
+                "SELECT id, role, tenant, token_hash FROM agents WHERE id = %s AND revoked_at IS NULL", (parts[1],)
+            )
         ).fetchone()
     if not row or not hmac.compare_digest(row["token_hash"], digest(parts[2])):
         return None
-    return Agent(row["id"], row["role"])
+    return Agent(row["id"], row["role"], row["tenant"])
 
 
 class UserVerifier:
@@ -65,7 +70,10 @@ class UserVerifier:
         else:
             raise jwt.InvalidTokenError("no user token verification configured")
         roles = claims.get("roles") or []
-        return User(str(claims["sub"]), tuple(r for r in roles if isinstance(r, str)))
+        tenant = claims.get(self.cfg.user_tenant_claim)
+        return User(
+            str(claims["sub"]), tuple(r for r in roles if isinstance(r, str)), tenant if isinstance(tenant, str) else ""
+        )
 
 
 class Signer:
@@ -92,6 +100,7 @@ class Signer:
             "aud": server,
             "sub": user.id if user else f"agent:{agent.id}",
             "act": {"sub": agent.id},
+            "tenant": (user.tenant if user else "") or agent.tenant or "",
             "tool": tool,
             "iat": now,
             "exp": now + self.ttl_s,

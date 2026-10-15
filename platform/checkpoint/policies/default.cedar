@@ -1,6 +1,6 @@
 // Checkpoint policies (Cedar). Default deny: a tool is unreachable until a permit names it.
 // Principal: Agent::"<agent id>"  Resource: Tool::"<server>__<tool>"  Actions: list, call
-// Context: { args: <tool arguments>, user: { id, roles }, server: "<MCP server name>" }
+// Context: { args: <tool arguments>, user: { id, roles, tenant }, agent: { tenant }, server: "<MCP server name>" }
 
 // Every agent may see and call read-only weather tools.
 @id("weather-read")

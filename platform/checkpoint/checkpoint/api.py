@@ -59,9 +59,10 @@ async def list_approvals(request: Request, status: str = "pending", who: Agent =
         await expire(c)
         rows = await (
             await c.execute(
-                "SELECT id, agent_id, user_id, tool, args, status, policies, requested_at, decided_by, decided_at, "
-                "note, expires_at FROM approvals WHERE status = %s ORDER BY requested_at LIMIT 200",
-                (status,),
+                "SELECT id, tenant, agent_id, user_id, tool, args, status, policies, requested_at, decided_by, "
+                "decided_at, note, expires_at FROM approvals WHERE status = %s AND (%s::text IS NULL OR tenant = %s) "
+                "ORDER BY requested_at LIMIT 200",
+                (status, who.tenant, who.tenant),
             )
         ).fetchall()
     return {"approvals": rows}
@@ -87,8 +88,9 @@ async def decide(approval_id: int, body: DecisionIn, request: Request, who: Agen
             await c.execute(
                 "UPDATE approvals SET status = %s, decided_by = %s, decided_at = now(), note = %s, "
                 "expires_at = CASE WHEN %s = 'approved' THEN now() + make_interval(secs => %s) ELSE expires_at END "
-                "WHERE id = %s AND status = 'pending' RETURNING id, status, tool, user_id, expires_at",
-                (status, who.id, body.note, status, use_s, approval_id),
+                "WHERE id = %s AND status = 'pending' AND (%s::text IS NULL OR tenant = %s) "
+                "RETURNING id, status, tool, user_id, expires_at",
+                (status, who.id, body.note, status, use_s, approval_id, who.tenant, who.tenant),
             )
         ).fetchone()
     if not row:
@@ -100,6 +102,7 @@ async def decide(approval_id: int, body: DecisionIn, request: Request, who: Agen
 class AgentIn(Strict):
     id: str = Field(pattern=ID)
     role: Literal["agent", "approver"] = "agent"
+    tenant: str | None = Field(default=None, pattern=ID)  # bind an agent (or approver) to one tenant
 
 
 @router.post("/admin/agents", status_code=201, tags=["admin"])
@@ -109,9 +112,13 @@ async def create_agent(body: AgentIn, request: Request, _: str = ADMIN):
         exists = await (await c.execute("SELECT 1 FROM agents WHERE id = %s", (body.id,))).fetchone()
         if exists:
             raise HTTPException(409, "agent exists; revoke it to rotate")
-        await c.execute("INSERT INTO agents (id, role, token_hash) VALUES (%s, %s, %s)", (body.id, body.role, hashed))
+        await c.execute(
+            "INSERT INTO agents (id, role, tenant, token_hash) VALUES (%s, %s, %s, %s)",
+            (body.id, body.role, body.tenant, hashed),
+        )
     # The token id is the agent id, so policies name agents by a stable, readable id.
-    return {"id": body.id, "token": token.replace(f"ckp_{tid}_", f"ckp_{body.id}_", 1), "note": "shown once"}
+    token = token.replace(f"ckp_{tid}_", f"ckp_{body.id}_", 1)
+    return {"id": body.id, "tenant": body.tenant, "token": token, "note": "shown once"}
 
 
 @router.delete("/admin/agents/{agent_id}", status_code=204, tags=["admin"])
@@ -132,7 +139,19 @@ async def reload_policy(request: Request, _: str = ADMIN):
 
 
 @router.get("/admin/decisions", tags=["admin"])
-async def decisions(request: Request, limit: int = Query(default=100, ge=1, le=1000), _: str = ADMIN):
+async def decisions(
+    request: Request,
+    limit: int = Query(default=100, ge=1, le=1000),
+    tenant: str | None = None,
+    user: str | None = None,
+    _: str = ADMIN,
+):
     async with request.app.state.pool.connection() as c:
-        rows = await (await c.execute("SELECT * FROM decisions ORDER BY id DESC LIMIT %s", (limit,))).fetchall()
+        rows = await (
+            await c.execute(
+                "SELECT * FROM decisions WHERE (%s::text IS NULL OR tenant = %s) AND (%s::text IS NULL OR user_id = %s) "
+                "ORDER BY id DESC LIMIT %s",
+                (tenant, tenant, user, user, limit),
+            )
+        ).fetchall()
     return {"decisions": rows}

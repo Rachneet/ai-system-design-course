@@ -85,17 +85,16 @@ async def gw(pg_uri, schema):
         yield c
 
 
-async def agent(client, agent_id="refunds", role="agent") -> dict:
-    r = await client.post("/admin/agents", json={"id": agent_id, "role": role}, headers=ADMIN)
+async def agent(client, agent_id="refunds", role="agent", tenant=None) -> dict:
+    r = await client.post("/admin/agents", json={"id": agent_id, "role": role, "tenant": tenant}, headers=ADMIN)
     assert r.status_code == 201, r.text
     return {"Authorization": f"Bearer {r.json()['token']}"}
 
 
-def user_token(sub="u1", roles=("support",), secret=USER_SECRET) -> str:
+def user_token(sub="u1", roles=("support",), secret=USER_SECRET, tenant=None) -> str:
     now = int(time.time())
-    return jwt.encode(
-        {"sub": sub, "roles": list(roles), "aud": "checkpoint", "iat": now, "exp": now + 300}, secret, "HS256"
-    )
+    claims = {"sub": sub, "roles": list(roles), "aud": "checkpoint", "iat": now, "exp": now + 300}
+    return jwt.encode(claims | ({"tenant": tenant} if tenant else {}), secret, "HS256")
 
 
 _rid = iter(range(1, 10_000))

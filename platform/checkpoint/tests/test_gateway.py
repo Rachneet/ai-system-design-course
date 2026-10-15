@@ -213,3 +213,31 @@ async def test_unpinned_servers_can_be_refused(pg_uri, schema):
     async with Gateway(settings(pg_uri, schema, require_pinned_tools=True)) as gw:
         mock_servers.state["pins"] = {"io.github.acme/weather": WEATHER_PIN}
         assert await tools(gw, await agent(gw)) == ["weather__get_forecast"]  # payments has no pin
+
+
+async def test_tenant_bound_agents_act_only_for_their_tenant(gw):
+    a = await agent(gw, "refunds", tenant="acme")
+    acme_lead = await agent(gw, "acme-lead", role="approver", tenant="acme")
+    globex_lead = await agent(gw, "globex-lead", role="approver", tenant="globex")
+
+    other = await call(gw, a, "payments__refund", {"amount": 5, "customer_id": "c1"}, user_token(tenant="globex"))
+    assert other.status_code == 403 and "different tenant" in other.text
+    untagged = await call(gw, a, "payments__refund", {"amount": 5, "customer_id": "c1"}, user_token())
+    assert untagged.status_code == 403  # a user with no tenant is not a user of this tenant
+
+    ok = await call(gw, a, "payments__refund", {"amount": 5, "customer_id": "c1"}, user_token(tenant="acme"))
+    assert ok.json()["result"]["content"][0]["text"] == "Refunded 5"
+    sent = next(s for s in mock_servers.seen if s["body"].get("method") == "tools/call")
+    claims = jwt.decode(sent["headers"]["x-checkpoint-assertion"], options={"verify_signature": False})
+    assert claims["tenant"] == "acme"  # the server scopes its data by the tenant Checkpoint vouches for
+
+    held = await call(gw, a, "payments__refund", {"amount": 900, "customer_id": "c1"}, user_token(tenant="acme"))
+    approval_id = held.json()["result"]["structuredContent"]["approvalId"]
+    assert (await gw.get("/approvals", headers=globex_lead)).json()["approvals"] == []
+    foreign = await gw.post(f"/approvals/{approval_id}/decision", json={"decision": "approve"}, headers=globex_lead)
+    assert foreign.status_code == 409  # another tenant's request looks unknown
+    mine = (await gw.get("/approvals", headers=acme_lead)).json()["approvals"]
+    assert [(r["id"], r["tenant"]) for r in mine] == [(approval_id, "acme")]
+
+    log = (await gw.get("/admin/decisions?tenant=globex", headers=ADMIN)).json()["decisions"]
+    assert [d["decision"] for d in log] == ["tenant_mismatch"]
