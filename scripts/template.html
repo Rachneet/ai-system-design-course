@@ -4,9 +4,9 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400..700;1,14..32,400&family=JetBrains+Mono:wght@400;600&family=Kalam:wght@400;700&display=swap">
 <style>
-/* Layout: a plain neutral frame (index rail, outer margin); each lesson is a numbered worksheet on a white sheet
-   with text, figures, tables and code all using the full lesson width. The lesson outline lives in the index
-   rail under the current lesson. High contrast first: no textures behind text. */
+/* Layout: a quiet index rail and a white page with one centered column that text, figures, tables and code
+   share, so every edge lines up. One family (Inter), soft fills instead of frames, one accent colour.
+   The lesson outline lives in the rail under the current lesson. See DESIGN.md, "Reading principles". */
 :root {
   --pad: #f7f8fa;          /* the index rail */
   --pad-line: #e3e5e9;
@@ -112,7 +112,7 @@ button { font: inherit; color: inherit; }
 .tick.draw path { stroke-dasharray: 26; stroke-dashoffset: 26; animation: pen 420ms cubic-bezier(.2,.7,.2,1) forwards; }
 @keyframes pen { to { stroke-dashoffset: 0; } }
 
-.results { list-style: none; padding: 0; margin: 12px 0 0; background: var(--sheet); border: 1px solid var(--rule); }
+.results { list-style: none; padding: 0; margin: 12px 0 0; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; overflow: hidden; }
 .results a { display: block; padding: 9px 10px; color: var(--ink); text-decoration: none; border-bottom: 1px solid var(--rule); }
 .results li:last-child a { border-bottom: 0; }
 .results a:hover { background: var(--box); }
@@ -125,7 +125,7 @@ button { font: inherit; color: inherit; }
 /* ---------- Sheet ---------- */
 .topbar { display: none; }
 main { min-width: 0; padding-block: 40px 96px; padding-left: max(28px, env(safe-area-inset-left, 0px)); padding-right: max(28px, env(safe-area-inset-right, 0px)); }
-.sheet { max-width: 760px; margin: 0 auto; background: var(--sheet); }
+.sheet { max-width: 680px; margin: 0 auto; background: var(--sheet); } /* about 84 characters of 17px Inter */
 .sheet-body { padding: 8px 0 0; }
 /* One centered column, about 75 characters wide, shared by text and figures so every edge lines up. */
 article { min-width: 0; }
@@ -219,15 +219,15 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
 .widget-body { padding: 14px 16px 16px; display: grid; gap: 14px; }
 .w-inputs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px 14px; }
 .w-inputs label { display: grid; gap: 4px; font-size: 13px; color: var(--ink-2); font-weight: 600; }
-.w-inputs input, .w-inputs select { font: 15px var(--font-mono); color: var(--ink); background: var(--sheet); border: 1px solid var(--ink-2); border-radius: 0; padding: 6px 8px; width: 100%; }
+.w-inputs input, .w-inputs select { font: 15px var(--font-mono); color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 6px 8px; width: 100%; }
 .w-inputs input[type="range"] { padding: 0; border: 0; accent-color: var(--pen); }
 .w-out { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
-.w-out div { border: 1px solid var(--rule); padding: 10px 12px; }
+.w-out div { background: var(--box); border-radius: 8px; padding: 10px 12px; }
 .w-out small { display: block; font-size: 12px; color: var(--ink-2); font-weight: 600; }
 .w-out b { display: block; font: 700 22px var(--font-mono); font-variant-numeric: tabular-nums; margin-top: 2px; }
 .w-out b.ok { color: var(--vz-good); } .w-out b.bad { color: var(--vz-bad); }
 .w-note { margin: 0; font-size: 14px; color: var(--ink-2); line-height: 1.5; }
-.w-meter { height: 12px; border: 1px solid var(--ink-2); position: relative; }
+.w-meter { height: 8px; background: var(--box); border-radius: 4px; overflow: hidden; position: relative; }
 .w-meter i { position: absolute; inset: 0 auto 0 0; background: var(--vz-memory); }
 .w-meter i.c { background: var(--vz-compute); }
 
@@ -345,7 +345,7 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
   .wk-no small { display: inline; margin-left: 10px; }
   .library a { grid-template-columns: minmax(0, 1fr); gap: 4px; }
   .pager { grid-template-columns: minmax(0, 1fr); }
-  .pager .prev { border-right: 0; border-bottom: 1px solid var(--ink); }
+
   .pager .next { grid-column: 1; }
 }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } .tick.draw path { stroke-dashoffset: 0; } }
