@@ -10,7 +10,8 @@ what comes back. Part of the enterprise track of the [AI System Design Course](.
 | Concern | How |
 |---|---|
 | Protocol | MCP 2026-07-28 (stateless) to agents, with every mirrored header checked against the body; modern and initialize-era servers upstream |
-| Catalog | Only Atlas-approved servers on HTTPS; tools namespaced `server__tool`; refreshed on a TTL |
+| Catalog | Only Atlas-approved servers on HTTPS; tools namespaced `server__tool`; every server's tools listed again on each TTL refresh |
+| Tool pins | A server whose live `tools/list` differs from the list Atlas reviewed (`toolsDigest`, Atlas ADR 0004) is quarantined: its tools vanish and calls get `tools_changed`; `REQUIRE_PINNED_TOOLS` skips servers without a pin |
 | Agent identity | Each agent has its own token; approvers have separate tokens and cannot call tools |
 | User identity | The user's JWT (`X-User-Token`), verified with a shared secret in development or your IdP's JWKS |
 | Policy | Cedar: default deny, forbid wins, decisions name their policies; `@approval("required")` holds a call for a person; a forbid that fails to evaluate denies, and evaluation errors are logged |
@@ -79,8 +80,8 @@ bearer token and the user's JWT in `X-User-Token`. Approvers use `GET /approvals
 
 ## Tests
 
-`uv run pytest` runs 13 tests (9 end to end, 3 policy unit tests and a migration round trip) against a real Postgres, a mock Atlas, a modern MCP server and an
-initialize-era one: transport rules, catalog filtering, assertions verified against the published JWKS, Cedar
+`uv run pytest` runs 15 tests (11 end to end, 3 policy unit tests and a migration round trip) against a real Postgres, a mock Atlas, a modern MCP server and an
+initialize-era one: transport rules, catalog filtering, tool lists that drift from their pin, assertions verified against the published JWKS, Cedar
 denials with reasons, forbids that fail closed when they cannot evaluate, single-use approvals bound to arguments that expire, output scanning, `x-mcp-header` handling in both
 directions, rate limits, forged user tokens, the decision log and refusal of a broken policy file. CI adds ruff,
 bandit, pip-audit, an image build with Trivy and an SBOM, and a container smoke test.

@@ -143,6 +143,13 @@ async def call_tool(request: Request, rid, params: dict, agent: Agent, user: Use
     if not found:
         await state.catalog.refresh(force=True)  # a server may have been approved since the last refresh
         found = state.catalog.find(name)
+    if not found and (drifted := state.catalog.quarantined(name)):
+        await record(state.pool, agent, user, "call", name, "tools_changed", started=started)
+        return tool_error(
+            rid,
+            f"The {drifted.name} server's tools changed since they were reviewed, so its tools are unavailable until "
+            "a version with the new tools is approved. Do not retry; tell the user this action is unavailable.",
+        )
     if not found:
         await record(state.pool, agent, user, "call", name, "unknown_tool", started=started)
         raise mcp.ProtocolError(

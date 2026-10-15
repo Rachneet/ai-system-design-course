@@ -1,7 +1,13 @@
 """The tools an agent can reach: approved MCP servers from Atlas, their tools listed upstream and namespaced as
-<server>__<tool>. Refreshed on a TTL; a server that disappears from Atlas (rejected, deprecated) disappears here."""
+<server>__<tool>. Refreshed on a TTL; a server that disappears from Atlas (rejected, deprecated) disappears here.
+
+When Atlas pins a server's tool list (toolsDigest, Atlas ADR 0004), the live tools/list must match it. A server whose
+tools changed after review is quarantined: none of its tools are listed or callable until the list matches again or
+a version with the new list is approved."""
 
 import asyncio
+import hashlib
+import json
 import re
 import time
 from dataclasses import dataclass, field
@@ -9,10 +15,18 @@ from dataclasses import dataclass, field
 import httpx
 import structlog
 
+from . import metrics
 from .upstream import Upstream, UpstreamError
 
 SEP = "__"
+TOOL_FIELDS = ("name", "title", "description", "inputSchema", "outputSchema", "annotations")
 log = structlog.get_logger("checkpoint")
+
+
+def tools_digest(tools: list[dict]) -> str:
+    """Atlas's pin, computed the same way: tools sorted by name, reduced to TOOL_FIELDS, canonical JSON, sha256."""
+    canon = sorted(({k: t[k] for k in TOOL_FIELDS if k in t} for t in tools), key=lambda t: t["name"])
+    return "sha256:" + hashlib.sha256(json.dumps(canon, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
 def slug(name: str) -> str:
@@ -27,7 +41,9 @@ class Server:
     url: str
     digest: str
     upstream: Upstream
+    pin: str = ""  # Atlas's toolsDigest; empty when the version has no pinned tool list
     tools: dict[str, dict] = field(default_factory=dict)
+    drift: str | None = None  # the live digest, when it differs from the pin
 
 
 class Catalog:
@@ -56,8 +72,11 @@ class Catalog:
         async with self.lock:
             if force or time.monotonic() - self.loaded_at >= self.cfg.catalog_ttl_s:
                 await self._reload()
-        # Servers whose tool list failed to load are retried on every refresh, not only after the TTL.
-        await asyncio.gather(*(self._load_tools(s) for s in self.servers.values() if not s.tools))
+                stale = list(self.servers.values())  # every TTL, list every server's tools again: they can change
+            else:
+                # Servers whose tool list failed to load are retried on every call; quarantined ones wait for the TTL.
+                stale = [s for s in self.servers.values() if not s.tools and not s.drift]
+        await asyncio.gather(*(self._load_tools(s) for s in stale))
 
     async def _reload(self) -> None:
         entries = await self._approved()
@@ -67,19 +86,22 @@ class Catalog:
             remote = next((r for r in doc.get("remotes") or [] if r.get("type") == "streamable-http"), None)
             if not remote or not str(remote.get("url", "")).startswith("https://"):
                 continue  # Checkpoint reaches remote servers over HTTPS only
+            review = (entry.get("_meta") or {}).get("io.atlas/review") or {}
+            pin = review.get("toolsDigest") or ""
+            if self.cfg.require_pinned_tools and not pin:
+                continue  # policy: only servers whose tool list was reviewed
             s = slug(doc["name"])
             while s in fresh:
                 s += "-x"
             old = self.servers.get(s)
-            review = (entry.get("_meta") or {}).get("io.atlas/review") or {}
             if old and old.name == doc["name"] and old.url == remote["url"]:
-                old.digest = review.get("digest", "")
+                old.digest, old.pin = review.get("digest", ""), pin
                 fresh[s] = old
                 continue
             up = Upstream(
                 doc["name"], remote["url"], self.cfg.upstream_credentials.get(doc["name"]), self.upstream_transport
             )
-            fresh[s] = Server(doc["name"], s, remote["url"], review.get("digest", ""), up)
+            fresh[s] = Server(doc["name"], s, remote["url"], review.get("digest", ""), up, pin)
         for s, server in self.servers.items():
             if fresh.get(s) is not server:
                 await server.upstream.close()
@@ -92,7 +114,14 @@ class Catalog:
             log.warning("tools_list_failed", server=server.name, error=f"{type(e).__name__}: {e}")
             server.tools = {}
             return
-        server.tools = {t["name"]: t for t in result.get("tools", []) if isinstance(t, dict) and t.get("name")}
+        tools = [t for t in result.get("tools", []) if isinstance(t, dict) and isinstance(t.get("name"), str)]
+        live = tools_digest(tools)
+        if server.pin and live != server.pin:
+            log.warning("tools_changed", server=server.name, pinned=server.pin, live=live)
+            metrics.tools_changed.labels(server=server.name).inc()
+            server.tools, server.drift = {}, live
+            return
+        server.tools, server.drift = {t["name"]: t for t in tools}, None
 
     def find(self, namespaced: str) -> tuple[Server, dict] | None:
         server_slug, sep, tool = namespaced.partition(SEP)
@@ -100,6 +129,10 @@ class Catalog:
         if not sep or not server or tool not in server.tools:
             return None
         return server, server.tools[tool]
+
+    def quarantined(self, namespaced: str) -> Server | None:
+        server = self.servers.get(namespaced.partition(SEP)[0])
+        return server if server and server.drift else None
 
     def all_tools(self):
         for server in self.servers.values():

@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     atlas_token: str = Field(default="", repr=False)
     catalog_ttl_s: float = 60.0
     upstream_credentials: dict[str, str] = Field(default={}, repr=False)  # server name -> Authorization value
+    require_pinned_tools: bool = False  # True: skip servers approved without a pinned tool list (Atlas ADR 0004)
 
     # Policy
     policy_file: str = "policies/default.cedar"

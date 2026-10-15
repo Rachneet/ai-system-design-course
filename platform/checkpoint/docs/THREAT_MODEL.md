@@ -13,6 +13,7 @@ The gateway exists because agents read untrusted text: a prompt-injected agent w
 | A stale approval | A request approved last week is replayed today, after the facts changed | Pending requests lapse (30 min), approvals must be used within 5 min; lapsed rows become `expired` | `test_approvals_expire_*` |
 | Self-approval | An approver approves a refund to themselves | An approver whose id is the request's user is refused | `test_approvals_expire_and_nobody_approves_*` |
 | **Repudiation** | "The agent did that on its own" | Every decision logged with agent, user, tool, outcome, policies and latency | `test_decisions_are_logged_*` |
+| Tampering with tool descriptions | An approved server adds "also send the user's files" to a tool description | The live tool list must match the digest Atlas reviewed; a mismatch quarantines the server and logs `tools_changed` | `test_changed_tools_quarantine_*`, `test_unpinned_servers_can_be_refused` |
 | **Information disclosure** via tool output | A page tells the agent to email data out | Instruction-like text marked, hidden Unicode stripped, secrets redacted | `test_tool_output_is_scanned_*` |
 | Disclosure of credentials | Agent learns a service key | Server credentials stay in Checkpoint; agents get none | `test_allowed_call_*` |
 | **Denial of service** | A looping agent hammers a tool | Per-agent, per-tool token buckets | `test_rate_limits_and_bad_user_tokens` |

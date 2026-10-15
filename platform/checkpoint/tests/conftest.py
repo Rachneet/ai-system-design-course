@@ -63,7 +63,7 @@ def settings(pg_uri, schema, **over):
 class Gateway:
     def __init__(self, cfg, policy=POLICY):
         mock_servers.seen.clear()
-        mock_servers.state.update(sessions=set(), initializes=0)
+        mock_servers.state.update(sessions=set(), initializes=0, pins={}, weather_description=None)
         t = httpx.ASGITransport(app=mock_servers.app)
         self.app = create_app(cfg, atlas_transport=t, upstream_transport=t, policy_text=policy)
 

@@ -4,3 +4,4 @@ decisions = Counter("checkpoint_decisions_total", "Policy decisions", ["action",
 upstream_seconds = Histogram("checkpoint_upstream_seconds", "Upstream tool call latency", ["server"])
 flags = Counter("checkpoint_output_flags_total", "Tool output findings", ["flag"])
 policy_errors = Counter("checkpoint_policy_errors_total", "Cedar policies that failed to evaluate")
+tools_changed = Counter("checkpoint_tools_changed_total", "Servers whose tools differ from the pin", ["server"])
