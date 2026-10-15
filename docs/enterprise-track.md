@@ -29,7 +29,7 @@ Each project is a separate service in a `platform/` monorepo, built to the same 
 with its own design doc, threat model, ADRs, OpenAPI spec, tests, eval suite where relevant, container, and CI.
 
 ### E1. Switchboard: AI gateway
-One endpoint between every internal app and every model provider.
+One endpoint between every internal app and every model provider. **Built:** `platform/switchboard` (33 tests, CI).
 - Anthropic- and OpenAI-compatible APIs, streaming passthrough, prompt-cache-safe (no prefix rewriting)
 - Virtual keys with hierarchical budgets (org → team → app), RPM and TPM limits, model allow-lists
 - Routing, retries, circuit breakers, cross-provider fallback; per-tenant data residency rules
@@ -38,7 +38,7 @@ One endpoint between every internal app and every model provider.
 - Load-tested overhead budget (target: under 10 ms p95 added latency, excluding provider time)
 
 ### E2. Atlas: agent, tool and skill registry
-The catalog that says what exists, who owns it, and whether it is approved.
+The catalog that says what exists, who owns it, and whether it is approved. **Built:** `platform/atlas` (28 tests, CI).
 - Resource types: A2A Agent Cards, MCP servers (`server.json`-compatible), Agent Skills (`SKILL.md` packages)
 - Versioning, ownership, publish → automated checks → human review → approved → deprecated lifecycle
 - Automated checks: schema validation, skill static analysis (network calls, file writes, shell use, secrets),
