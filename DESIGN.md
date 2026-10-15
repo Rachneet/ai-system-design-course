@@ -447,7 +447,7 @@ Corners are small and graded by size: 2px on the focus outline, 3px on tick boxe
 - **Search:** White Page, Hairline border, 8px corners, 14px Inter, red caret; focus draws the 2px Ballpoint Blue outline at a 2px offset.
 
 ### Navigation
-- **Index rail:** the course title, search, a progress tally, then weeks under 600 13px group heads with a count. Each row is a tick box, a lesson number and the title, 6px corners; hover lays a 5% ink wash. The current row sits on White Page with a Hairline ring, its number in Margin Red, its title at 600, and the lesson outline nested beneath it.
+- **Index rail:** a sticky header (course title, search, progress tally), then track labels and folding weeks: each week one line with its number in the number column, a short title at 600 14px, and a count once there is progress. Lessons are numbered within their week (Week 1 has lessons 1 to 5), with a tick in place of the number once done; the current lesson's number is Margin Red. The lesson outline nests under the current lesson with a sliding Ballpoint Blue marker. Figures are numbered week.lesson.figure (Fig. 7.1.2); the meta line reads "Lesson 1 of 5".
 - **Meta line:** one line of 13.5px Secondary Ink facts above the title (week, lesson n of N, minutes, done), separated by Hairline dots. It is metadata, never a category label.
 
 ### Sketch figures

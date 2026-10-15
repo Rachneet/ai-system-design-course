@@ -438,6 +438,10 @@ let justTicked = null;
 const byId = Object.fromEntries(COURSE.map(e => [e.id, e]));
 const trackable = COURSE.filter(e => e.week >= 0 && e.week < EXTRA);
 const sheetNo = Object.fromEntries(trackable.map((e, i) => [e.id, String(i + 1).padStart(2, "0")]));
+// Lessons are numbered within their week (Week 1 has lessons 1 to 5); the course-wide count is only for progress.
+const inWeek = {}, weekSize = {};
+for (const e of trackable) { weekSize[e.week] = (weekSize[e.week] || 0) + 1; inWeek[e.id] = weekSize[e.week]; }
+const lessonLabel = e => `${e.week === 0 ? "Start" : `Week ${e.week}`}, lesson ${inWeek[e.id]}`;
 
 /* ---------- Markdown ---------- */
 const esc = s => s.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -684,7 +688,7 @@ function renderNav(current) {
     if (TRACKS[w]) html += `<p class="track-label">${TRACKS[w]}</p>`;
     html += `<details class="group" data-w="${w}"${w === here || openWeeks.has(w) ? " open" : ""}><summary class="group-head">${label}<small>${w < EXTRA && count ? `${count}/${items.length}` : ""}</small></summary><ul class="nav">`;
     html += items.map(e => {
-      const mark = e.week >= EXTRA ? refMark : done.has(e.id) ? TICK : Number(sheetNo[e.id]);
+      const mark = e.week >= EXTRA ? refMark : done.has(e.id) ? TICK : inWeek[e.id];
       const cls = e.week < EXTRA && done.has(e.id) ? "no ok" : "no";
       return `<li><a href="#${e.id}" ${e.id === current ? 'aria-current="page"' : ""}><span class="${cls}">${mark}</span><span class="t">${esc(e.short || e.title)}${e.kind === "lab" ? '<span class="lab-tag">lab</span>' : ""}</span></a></li>`;
     }).join("");
@@ -703,10 +707,9 @@ function renderHome() {
   const week = w => {
     const items = g[w] || [];
     const c = items.filter(e => done.has(e.id)).length;
-    const first = sheetNo[items[0]?.id], last = sheetNo[items[items.length - 1]?.id];
-    return `<section class="wk"><div class="wk-no"><b>${w === 0 ? "Start" : `Week ${w}`}</b><small>Lessons ${Number(first)}-${Number(last)}</small><small>${c} of ${items.length} done</small></div><div>
+    return `<section class="wk"><div class="wk-no"><b>${w === 0 ? "Start" : `Week ${w}`}</b><small>${items.length} lessons</small><small>${c} of ${items.length} done</small></div><div>
       <h2>${esc(WEEKS[w].title)}</h2><p>${esc(WEEKS[w].blurb)}</p>
-      <ul class="sheets">${items.map(e => `<li><a href="#${e.id}"${e.id === next.id ? ' class="next-up"' : ""}>${tickBox(done.has(e.id))}<span class="no">${sheetNo[e.id]}</span><span class="t">${esc(e.short || e.title)}${e.kind === "lab" ? '<span class="lab-tag">lab</span>' : ""}</span></a></li>`).join("")}</ul>
+      <ul class="sheets">${items.map(e => `<li><a href="#${e.id}"${e.id === next.id ? ' class="next-up"' : ""}>${tickBox(done.has(e.id))}<span class="no">${inWeek[e.id]}</span><span class="t">${esc(e.short || e.title)}${e.kind === "lab" ? '<span class="lab-tag">lab</span>' : ""}</span></a></li>`).join("")}</ul>
     </div></section>`;
   };
   const reference = (w, heading, label) => {
@@ -723,7 +726,7 @@ function renderHome() {
     <h1>Design AI systems that survive production.</h1>
     <p class="lede">Twelve weeks. The first six take one agent from prototype to monitored production service: agents, retrieval, evals, security, deployment and operations. The next six build the platform companies run agents on, ending with coding agents that turn issues into tested, reviewed changes. Free, with tested reference code for every lab.</p>
     <div class="resume">
-      <a class="go" href="#${next.id}">${n ? `Continue with lesson ${Number(sheetNo[next.id])}` : "Start the course"}</a>
+      <a class="go" href="#${next.id}">${n ? `Continue: ${esc(next.short || next.title)}` : "Start the course"}</a>
     </div>
     <section class="map"><h2>One system, built in five labs</h2>
       <p>Every lab adds a layer to Relay, a support agent for an online store, until it is a monitored production service. Use any model provider.</p>
@@ -749,13 +752,13 @@ function renderEntry(e) {
   const idx = COURSE.indexOf(e);
   const prev = COURSE[idx - 1], next = COURSE[idx + 1];
   const no = sheetNo[e.id];
-  figPrefix = no ? `${Number(no)}.` : "";
+  figPrefix = no ? `${e.week}.${inWeek[e.id]}.` : "";
   const body = marked.parse(e.body);
   const tracked = e.week < EXTRA;
   const kind = { lesson: "Lesson", lab: "Lab", page: "Reference" }[e.kind] || e.kind;
   const weekCell = e.week >= 1 && e.week < EXTRA ? `Week ${e.week}: ${WEEKS[e.week].title}` : groupName(e.week);
-  const strip = `<p class="meta"><span>${esc(weekCell)}</span><span>${no ? `Lesson ${Number(no)} of ${trackable.length}` : "Reference"}</span>${e.minutes ? `<span>${e.minutes} min</span>` : ""}${tracked && done.has(e.id) ? "<span>Done</span>" : ""}</p>`;
-  const nextLabel = n => `${sheetNo[n.id] ? `Lesson ${Number(sheetNo[n.id])}` : groupName(n.week)}`;
+  const strip = `<p class="meta"><span>${esc(weekCell)}</span><span>${no ? `Lesson ${inWeek[e.id]} of ${weekSize[e.week]}` : "Reference"}</span>${e.minutes ? `<span>${e.minutes} min</span>` : ""}${tracked && done.has(e.id) ? "<span>Done</span>" : ""}</p>`;
+  const nextLabel = n => sheetNo[n.id] ? lessonLabel(n) : groupName(n.week);
   return `<div class="sheet"><div class="sheet-body"><article>
     ${strip}
     <h1>${esc(e.title)}</h1>
@@ -886,7 +889,7 @@ qInput.addEventListener("input", ev => {
   out.innerHTML = hits.length ? hits.map(({ e, text }) => {
     const i = text.indexOf(terms[0]);
     const snip = e.body.slice(Math.max(0, i - 50), i + 90).replace(/[#*`>\[\]]/g, "").replace(/\s+/g, " ");
-    return `<li><a href="#${e.id}">${sheetNo[e.id] ? `${sheetNo[e.id]} · ` : ""}${esc(e.title)}<small>…${esc(snip)}…</small></a></li>`;
+    return `<li><a href="#${e.id}">${sheetNo[e.id] ? `${esc(lessonLabel(e))} · ` : ""}${esc(e.title)}<small>…${esc(snip)}…</small></a></li>`;
   }).join("") : `<li class="empty">Nothing matches “${esc(q)}”. Try a shorter term such as “cache” or “judge”.</li>`;
   out.hidden = false; nav.hidden = true;
 });
