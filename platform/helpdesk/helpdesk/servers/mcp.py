@@ -27,6 +27,7 @@ class Caller:
     user: str
     agent: str
     tenant: str
+    approval: int | None = None  # set when a person approved exactly this call in Checkpoint
 
 
 class ToolError(Exception):
@@ -106,7 +107,8 @@ class AssertionVerifier:
         )
         if claims.get("tool") != tool:
             raise jwt.InvalidTokenError("assertion is for a different tool")
-        return Caller(str(claims["sub"]), str((claims.get("act") or {}).get("sub", "")), str(claims.get("tenant", "")))
+        actor = str((claims.get("act") or {}).get("sub", ""))
+        return Caller(str(claims["sub"]), actor, str(claims.get("tenant", "")), claims.get("approval"))
 
     async def close(self) -> None:
         await self.client.aclose()

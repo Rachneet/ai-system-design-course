@@ -14,6 +14,7 @@ from .mcp import Caller, Server, Tool, ToolError
 SENSITIVE_GROUPS = ("finance-admins", "prod-admins", "hr-records")
 STANDARD_GROUPS = ("vpn-users", "design-tools", "analytics-readers", "wiki-editors")
 RETURN_WINDOW_DAYS = 30
+UNATTENDED_REFUND_CENTS = 5000  # per order, in total, without a person's approval
 
 
 def seed_accounts() -> dict:
@@ -225,6 +226,9 @@ def orders_system(store: Store) -> Server:
         o = own(caller, order_id)
         if amount_cents <= 0 or o["refunded_cents"] + amount_cents > o["total_cents"]:
             raise ToolError("refund exceeds what was paid for this order")
+        if caller.approval is None and o["refunded_cents"] + amount_cents > UNATTENDED_REFUND_CENTS:
+            # Policy limits each call; only the order knows the running total, so splitting a refund is stopped here.
+            raise ToolError("refunds on one order above 50 EUR in total need a person's approval")
         o["refunded_cents"] += amount_cents
         return {"order_id": order_id, "refunded_cents": amount_cents, "total_refunded_cents": o["refunded_cents"]}
 
