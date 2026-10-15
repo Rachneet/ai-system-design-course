@@ -18,7 +18,7 @@ from .kinds import Parsed
 
 FIELDS = sql.SQL(
     "id, kind, name, version, team_id, status, source, title, description, tags, license, document, digest, eval, "
-    "submitted_by, reviewed_by, reviewed_at, review_note, created_at"
+    "submitted_by, reviewed_by, reviewed_at, review_note, created_at, tools, tools_digest"
 )
 
 
@@ -68,8 +68,8 @@ async def publish(
             await c.execute(
                 sql.SQL(
                     "INSERT INTO artifacts (kind, name, version, team_id, status, source, title, description, tags, "
-                    "license, document, digest, package, eval, submitted_by, review_note) "
-                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING {}"
+                    "license, document, digest, package, eval, submitted_by, review_note, tools, tools_digest) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s) RETURNING {}"
                 ).format(FIELDS),
                 (
                     p.kind,
@@ -88,6 +88,8 @@ async def publish(
                     Jsonb(eval_report) if eval_report else None,
                     who.id,
                     note,
+                    Jsonb(p.tools) if p.tools is not None else None,
+                    p.tools_digest,
                 ),
             )
         ).fetchone()
@@ -96,7 +98,8 @@ async def publish(
                 "INSERT INTO findings (artifact_id, check_name, severity, message, location) VALUES (%s, %s, %s, %s, %s)",
                 (row["id"], f.check, f.severity, f.message, f.location),
             )
-        await audit(c, who.id, "publish", target(p.kind, p.name, p.version), {"status": status, "digest": p.digest})
+        details = {"status": status, "digest": p.digest} | ({"tools_digest": p.tools_digest} if p.tools_digest else {})
+        await audit(c, who.id, "publish", target(p.kind, p.name, p.version), details)
     metrics.submissions.labels(kind=p.kind, outcome=status).inc()
     return row | {"findings": [asdict(f) for f in found]}
 

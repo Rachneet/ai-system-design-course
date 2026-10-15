@@ -39,6 +39,7 @@ class EvalReport(Strict):
 
 class McpIn(Strict):
     server: dict
+    tools: list | None = Field(default=None, description="The tools/list result to review and pin (remote servers)")
     team_id: str | None = None
     eval: EvalReport | None = None
 
@@ -88,7 +89,7 @@ def public(row: dict) -> dict:
 @router.post("/v1/mcp-servers", status_code=201, tags=["publish"])
 async def publish_mcp(body: McpIn, request: Request, who: Principal = Depends(PUBLISHER)):
     try:
-        parsed = parse_mcp_server(body.server)
+        parsed = parse_mcp_server(body.server, body.tools)
     except Invalid as e:
         raise HTTPException(422, {"problems": e.problems}) from None
     ev = body.eval.model_dump() if body.eval else None
@@ -223,6 +224,7 @@ def server_entry(row: dict) -> dict:
                 "team": row["team_id"],
                 "source": row["source"],
                 "digest": f"sha256:{row['digest']}",
+                "toolsDigest": f"sha256:{row['tools_digest']}" if row["tools_digest"] else None,
                 "reviewedBy": row["reviewed_by"],
                 "reviewedAt": row["reviewed_at"].isoformat() if row["reviewed_at"] else None,
             }

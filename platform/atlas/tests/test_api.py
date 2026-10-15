@@ -3,6 +3,7 @@
 import hashlib
 import json
 
+from atlas.kinds import tools_digest
 from tests.conftest import ADMIN, card, make_client, server, settings, skill_zip, token
 
 
@@ -38,6 +39,20 @@ async def test_publish_review_and_discover_an_mcp_server(client):
     assert entry["server"]["name"] == "io.github.acme/weather"
     assert entry["_meta"]["io.atlas/review"]["status"] == "approved"
     assert entry["_meta"]["io.atlas/review"]["digest"].startswith("sha256:")
+    assert entry["_meta"]["io.atlas/review"]["toolsDigest"] is None  # published without a tool list
+
+
+async def test_a_reviewed_tool_list_is_pinned_in_discovery(client):
+    pub, rev = await staff(client)
+    tools = [{"name": "get_forecast", "description": "Forecast", "inputSchema": {"type": "object"}}]
+    r = await client.post("/v1/mcp-servers", json={"server": server(), "tools": tools}, headers=pub)
+    assert r.status_code == 201 and r.json()["tools"] == tools
+    p = path("mcp_server", "io.github.acme/weather", "1.0.0")
+    await client.post(p + "/review", json={"decision": "approve", "acknowledge_warnings": True}, headers=rev)
+    pin = (await client.get("/v0/servers", headers=pub)).json()["servers"][0]["_meta"]["io.atlas/review"]
+    assert pin["toolsDigest"] == f"sha256:{tools_digest(tools)}"
+    bad = await client.post("/v1/mcp-servers", json={"server": server(version="1.0.1"), "tools": [{}]}, headers=pub)
+    assert bad.status_code == 422 and "needs a name" in bad.text
 
 
 async def test_versions_are_immutable_and_names_belong_to_their_team(client):

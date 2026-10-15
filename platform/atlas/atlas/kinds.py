@@ -46,10 +46,36 @@ class Parsed:
     tags: list[str] = field(default_factory=list)
     blob: bytes | None = None  # skill packages only
     files: dict[str, bytes] = field(default_factory=dict)  # skill packages only, for static checks
+    tools: list[dict] | None = None  # MCP servers only: the reviewed tools/list result, pinned by tools_digest
+    tools_digest: str | None = None
 
 
-def canonical_digest(doc: dict) -> str:
+def canonical_digest(doc) -> str:
     return hashlib.sha256(json.dumps(doc, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+TOOL_FIELDS = ("name", "title", "description", "inputSchema", "outputSchema", "annotations")
+
+
+def tools_digest(tools: list[dict]) -> str:
+    """The pin for a server's tool list: what a model reads and what it may send, sorted by name, canonical JSON.
+    Gateways compute the same digest over the live tools/list result (Checkpoint's catalog.tools_digest)."""
+    return canonical_digest(sorted(({k: t[k] for k in TOOL_FIELDS if k in t} for t in tools), key=lambda t: t["name"]))
+
+
+def check_tools(tools: list, problems: list[str]) -> None:
+    names = set()
+    if len(tools) > 500:
+        problems.append("tools: at most 500 tools")
+    for i, t in enumerate(tools):
+        if not isinstance(t, dict) or not isinstance(t.get("name"), str) or not t["name"]:
+            problems.append(f"tools[{i}] needs a name")
+            continue
+        if not isinstance(t.get("inputSchema"), dict):
+            problems.append(f"tools[{i}] ({t['name']}) needs an inputSchema object")
+        if t["name"] in names:
+            problems.append(f"tools[{i}] repeats the name {t['name']!r}")
+        names.add(t["name"])
 
 
 def check_version(version: str, problems: list[str]) -> None:
@@ -62,12 +88,14 @@ def check_version(version: str, problems: list[str]) -> None:
         problems.append(f"version {version!r} must be one exact version, not a range or wildcard")
 
 
-def parse_mcp_server(doc: dict) -> Parsed:
+def parse_mcp_server(doc: dict, tools: list | None = None) -> Parsed:
     problems = [
         f"{'/'.join(map(str, e.absolute_path)) or 'server.json'}: {e.message}"
         for e in sorted(_SERVER.iter_errors(doc), key=lambda e: list(e.absolute_path))
     ]
     check_version(str(doc.get("version", "")), problems)
+    if tools is not None:
+        check_tools(tools, problems)
     if problems:
         raise Invalid(problems)
     return Parsed(
@@ -78,6 +106,8 @@ def parse_mcp_server(doc: dict) -> Parsed:
         description=doc["description"],
         document=doc,
         digest=canonical_digest(doc),
+        tools=[{k: t[k] for k in TOOL_FIELDS if k in t} for t in tools] if tools is not None else None,
+        tools_digest=tools_digest(tools) if tools is not None else None,
     )
 
 

@@ -5,6 +5,7 @@ nothing obvious was found, and a human still decides.
 Skills are installed software (they can ship scripts an agent will run), so they get the deepest scan.
 """
 
+import json
 import re
 from dataclasses import dataclass
 
@@ -109,6 +110,15 @@ def run(p: Parsed, licenses_allowed: list[str], require_auth_on_agents: bool) ->
                 out.append(Finding("integrity", "warn", "pin the package version", where))
         if not p.document.get("repository"):
             out.append(Finding("provenance", "info", "no source repository listed", "repository"))
+        if p.tools is None:
+            if p.document.get("remotes"):
+                out.append(
+                    Finding("tool_pin", "info", "no tool list submitted: gateways cannot detect changed tools", "tools")
+                )
+        else:
+            # Tool descriptions and schemas go straight into the model's context: scan them like any prompt text.
+            for t in p.tools:
+                _text_checks(json.dumps(t, ensure_ascii=False), f"tools/{t['name']}", out)
 
     if p.kind == "a2a_agent":
         for i, iface in enumerate(p.document.get("supportedInterfaces") or []):

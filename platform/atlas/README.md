@@ -12,7 +12,8 @@ track of the [AI System Design Course](../../README.md); the MCP gateway (Checkp
 | Formats | MCP `server.json` validated with the official registry schema; A2A Agent Cards (spec 1.0 required fields); Agent Skills zips (`<name>/SKILL.md`, frontmatter rules from agentskills.io) |
 | Versions | Exact versions only (no ranges or `latest`); a published version never changes; content addressed by sha256 |
 | Ownership | A name belongs to the team that first published it; publishers act only for their team |
-| Checks | Spec validation; safe unzip (traversal, symlinks, zip bombs); script scan (download-and-run, hidden decode-and-run, broad deletes, credential paths, network and shell use); hidden Unicode; secrets; injection phrasing; licence allow-list; HTTPS-only endpoints; authenticated agents; pinned and hashed packages |
+| Checks | Spec validation; safe unzip (traversal, symlinks, zip bombs); script scan (download-and-run, hidden decode-and-run, broad deletes, credential paths, network and shell use); hidden Unicode; secrets; injection phrasing; licence allow-list; HTTPS-only endpoints; authenticated agents; pinned and hashed packages; tool descriptions scanned like prompts |
+| Tool pins | A remote server's reviewed `tools/list` is stored with its version and its digest published as `toolsDigest`, so a gateway can refuse changed tools ([ADR 0004](docs/adr/0004-pin-tool-lists.md)) |
 | Review | `block` findings reject at once; humans approve the rest, acknowledging warnings; never your own submission; optional eval-score gate |
 | Discovery | `GET /v0/servers` in the MCP registry format; agent cards; skill zips with digest headers; ranked full-text search |
 | Supply | `POST /admin/sync/mcp` imports the public MCP registry into review, never approved |
@@ -50,7 +51,8 @@ curl -X POST localhost:8000/admin/principals -H "$A" -H "$J" -d '{"label":"sec-r
 
 curl -X POST localhost:8000/v1/mcp-servers -H "Authorization: Bearer $PUBLISHER" -H "$J" -d '{"server": {
   "name": "io.github.acme/weather", "description": "Weather forecasts for agents", "version": "1.0.0",
-  "remotes": [{"type": "streamable-http", "url": "https://mcp.acme.example/weather"}]}}'
+  "remotes": [{"type": "streamable-http", "url": "https://mcp.acme.example/weather"}]},
+  "tools": [{"name": "get_forecast", "description": "Forecast for a city", "inputSchema": {"type": "object"}}]}'
 curl -X POST localhost:8000/v1/skills -H "Authorization: Bearer $PUBLISHER" -F package=@pdf-forms.zip -F version=1.0.0
 curl -X POST "localhost:8000/v1/artifacts/mcp_server/io.github.acme/weather/versions/1.0.0/review" \
   -H "Authorization: Bearer $REVIEWER" -H "$J" -d '{"decision":"approve","acknowledge_warnings":true}'
@@ -62,8 +64,8 @@ list), `REQUIRE_AUTH_ON_AGENTS`, `MAX_SKILL_BYTES`, `MAX_SKILL_FILES`, `UPSTREAM
 
 ## Tests
 
-`uv run pytest` runs 28 tests against a real Postgres (embedded via `pgserver`, no Docker): spec validation, every
-check, the full publish, review and discover lifecycle, ownership, roles and revocation, the eval gate, upstream sync
+`uv run pytest` runs 31 tests against a real Postgres (embedded via `pgserver`, no Docker): spec validation, every
+check, the full publish, review and discover lifecycle, tool-list pins, ownership, roles and revocation, the eval gate, upstream sync
 against a mock registry, and the migration round trip. CI adds ruff, bandit, pip-audit, an image build with a Trivy
 scan and SBOM, and a smoke test of the real container.
 
@@ -72,6 +74,7 @@ scan and SBOM, and a smoke test of the real container.
 - [ADR 0001](docs/adr/0001-postgres-for-metadata-and-packages.md): Postgres for metadata and skill packages
 - [ADR 0002](docs/adr/0002-checks-are-tripwires-humans-approve.md): checks are tripwires; a second person approves
 - [ADR 0003](docs/adr/0003-registry-compatible-discovery.md): discovery in the formats clients already speak
+- [ADR 0004](docs/adr/0004-pin-tool-lists.md): pin each remote server's tool list at review
 - [Threat model](docs/THREAT_MODEL.md) and [security policy](SECURITY.md)
 
 `atlas/schemas/server.schema.json` is the MCP registry's published schema (2025-12-11), copied unchanged from
