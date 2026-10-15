@@ -1,0 +1,21 @@
+issue = "parse_iso('2026-10-15') raises 'month must be in 1..12'. ISO dates are year-month-day."
+check = "python -m pytest -q _hidden_test.py"
+hidden_test = """from datetime import date
+
+from dates import parse_iso
+
+
+def test_parses_year_month_day():
+    assert parse_iso("2026-10-15") == date(2026, 10, 15)
+    assert parse_iso("2026-01-02") == date(2026, 1, 2)
+"""
+
+[reference]
+"dates.py" = '''from datetime import date
+
+
+def parse_iso(text: str) -> date:
+    """Parse an ISO 8601 date such as 2026-10-15."""
+    year, month, day = (int(part) for part in text.split("-"))
+    return date(year, month, day)
+'''

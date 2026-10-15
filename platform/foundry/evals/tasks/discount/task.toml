@@ -1,0 +1,24 @@
+issue = "apply_discount accepts any percent, so a 150% discount gives a negative price. Reject percents outside 0 to 100 with ValueError."
+check = "python -m pytest -q _hidden_test.py"
+hidden_test = """import pytest
+
+from pricing import apply_discount
+
+
+def test_normal_discount():
+    assert apply_discount(1000, 25) == 750
+
+
+@pytest.mark.parametrize("percent", [-1, 101, 150])
+def test_rejects_out_of_range(percent):
+    with pytest.raises(ValueError):
+        apply_discount(1000, percent)
+"""
+
+[reference]
+"pricing.py" = '''def apply_discount(price_cents: int, percent: int) -> int:
+    """Price after a percentage discount, in cents."""
+    if not 0 <= percent <= 100:
+        raise ValueError("percent must be between 0 and 100")
+    return price_cents - price_cents * percent // 100
+'''

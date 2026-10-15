@@ -1,0 +1,22 @@
+[project]
+name = "foundry"
+version = "0.1.0"
+description = "A coding-agent harness and a software factory: issues in, tested and reviewed changes out."
+requires-python = ">=3.12"
+dependencies = ["httpx>=0.28"]
+
+[project.scripts]
+foundry = "foundry.cli:main"
+
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = ["bandit>=1.9.4", "pip-audit>=2.10.1", "pytest>=9.1.1", "ruff>=0.17.0"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

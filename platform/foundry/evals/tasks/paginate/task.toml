@@ -1,0 +1,19 @@
+issue = "paginate(items, page=1, size=10) skips the first ten items. Pages are meant to be numbered from 1."
+check = "python -m pytest -q _hidden_test.py"
+hidden_test = """from pages import paginate
+
+
+def test_first_page():
+    assert paginate(list(range(25)), 1, 10) == list(range(10))
+
+
+def test_last_page():
+    assert paginate(list(range(25)), 3, 10) == [20, 21, 22, 23, 24]
+"""
+
+[reference]
+"pages.py" = '''def paginate(items, page, size):
+    """Return page `page` (1-based) of `items`, `size` items per page."""
+    start = (page - 1) * size
+    return items[start : start + size]
+'''

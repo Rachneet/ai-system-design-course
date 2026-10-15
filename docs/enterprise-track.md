@@ -1,6 +1,6 @@
 # Enterprise track: plan
 
-Status: E1 to E4 built, 2026-10-15. Proposed 2026-10-14. Builds on the six-week course and the Relay reference implementation.
+Status: E1 to E5 built, 2026-10-15. Proposed 2026-10-14. Builds on the six core weeks and the Relay reference implementation.
 
 ## Why this track
 
@@ -67,7 +67,18 @@ The workload that proves the platform: agents that resolve people's issues end t
   order systems; every write through Checkpoint policy
 - SSO, audit, SLOs, eval suites per agent, red-team suites per tenant, cost per resolved ticket
 
-### Relay migration
+### E5. Foundry: a coding-agent harness and a software factory on E1-E4
+The workload companies run agents on first: issues in, reviewed and tested changes out. **Built:** `platform/foundry`.
+- Harness: an agent loop over five tools (read, list, search, edit, run) in a throwaway clone of the repository; a
+  permission policy (deny, then ask, then allow) and pre-tool hooks; a sandbox with a scrubbed environment, time and
+  output limits and a configurable wrapper (bubblewrap, `sandbox-exec`, a container) for real isolation
+- Factory: issue to branch; deterministic gates (tests pass, diff size, protected paths, no deleted tests, no
+  secrets); a reviewer model that sees only the issue and the diff; merge only when every gate passes, otherwise the
+  branch waits for a person; provenance on every change (job, roles, models, prompt digests, gate results)
+- Every model call through Switchboard, tagged per job and role, with a token budget per job
+- Evals: a task suite built from the repository's own history, not a public leaderboard
+
+
 Relay moves onto the platform: model calls through Switchboard, tools through Checkpoint, its agent card and
 skills in Atlas. The before/after is a lesson in itself.
 
@@ -82,6 +93,10 @@ skills in Atlas. The before/after is a lesson in itself.
 7. Platform engineering for agents: the paved path, templates, golden pipelines, internal developer portal
 8. Governance: audit, retention, EU AI Act and NIST AI RMF obligations, model and prompt change control
 9. AI FinOps: chargeback, unit economics (cost per resolved issue), budget enforcement
+10. Coding-agent harnesses: the loop, the agent-computer interface, context and AGENTS.md, permissions, hooks,
+    sandboxes, subagents; evaluating coding agents after SWE-bench Verified (week 11)
+11. The software factory: issue to merged change, gates, reviewers, provenance, and the security of agent-written
+    code (week 12)
 
 ## Engineering standard for every project
 
@@ -105,6 +120,7 @@ skills in Atlas. The before/after is a lesson in itself.
 | 2 | E2 Atlas | E3 needs to know what is approved |
 | 3 | E3 Checkpoint | The hardest security work; builds on E1 and E2 |
 | 4 | E4 Helpdesk OS | Exercises everything; becomes the capstone |
+| 5 | E5 Foundry | Agents that change code: the highest-leverage and highest-risk workload; the final capstone |
 
 Each project ships the same way as Relay's labs: a lesson set, a lab, and a tested reference implementation
 with tags per milestone.

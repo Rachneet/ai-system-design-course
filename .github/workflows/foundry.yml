@@ -1,0 +1,30 @@
+name: foundry
+on:
+  push:
+    paths: ["platform/foundry/**", ".github/workflows/foundry.yml"]
+  pull_request:
+    paths: ["platform/foundry/**", ".github/workflows/foundry.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: platform/foundry
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run ruff check . && uv run ruff format --check .
+      - run: uv run pytest -q
+      - name: Static security analysis
+        run: uv run bandit -q -r foundry -ll
+      - name: Known vulnerabilities in locked dependencies
+        run: |
+          uv export --frozen --no-dev --no-hashes -q > /tmp/requirements.txt
+          uv run pip-audit -r /tmp/requirements.txt --no-deps --disable-pip
