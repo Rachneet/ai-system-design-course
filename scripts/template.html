@@ -392,9 +392,10 @@ const WEEKS = {
   8: { title: "Policy & the Agent Supply Chain", blurb: "Policy as code for tool calls, human approvals, and registries that vet MCP servers, agents and skills." },
   9: { title: "Multi-Agent Systems & Multi-Tenancy", blurb: "Agents that delegate to agents, and one platform serving many teams and customers in isolation." },
   10: { title: "Platform, Governance & FinOps", blurb: "The paved path for agent teams, regulation and audit, and the unit economics of AI in production." },
+  98: { title: "Under the hood", blurb: "Optional: what happens inside the model, built from scratch in small runnable code, and the system decisions each idea explains." },
   99: { title: "Library", blurb: "Reference pages to use alongside any week. They are not counted in your progress." },
 };
-const LIBRARY = 99;
+const LIBRARY = 99, EXTRA = 98; // weeks from EXTRA up are optional reference pages, not counted in progress
 const CORE = [0, 1, 2, 3, 4, 5, 6], ENTERPRISE = [7, 8, 9, 10];
 
 const store = {
@@ -404,7 +405,7 @@ const store = {
 let done = new Set(store.get("aisd.done", []));
 let justTicked = null;
 const byId = Object.fromEntries(COURSE.map(e => [e.id, e]));
-const trackable = COURSE.filter(e => e.week >= 0 && e.week < LIBRARY);
+const trackable = COURSE.filter(e => e.week >= 0 && e.week < EXTRA);
 const sheetNo = Object.fromEntries(trackable.map((e, i) => [e.id, String(i + 1).padStart(2, "0")]));
 const pad2 = n => String(n).padStart(2, "0");
 
@@ -637,17 +638,17 @@ function weekGroups() {
   for (const e of COURSE) (g[e.week] ||= []).push(e);
   return g;
 }
-const groupName = w => w == 0 ? "Start" : w == LIBRARY ? "Library" : `Week ${w}`;
+const groupName = w => w == 0 ? "Start" : w >= EXTRA ? WEEKS[w].title : `Week ${w}`;
 function renderNav(current) {
   const g = weekGroups();
   let html = "";
   for (const w of Object.keys(g).sort((a, b) => a - b)) {
     const items = g[w];
     const count = items.filter(e => done.has(e.id)).length;
-    html += `<section class="group"><div class="group-head"><b>${w >= 1 && w < LIBRARY ? `${groupName(w)}: ${esc(WEEKS[w].title)}` : groupName(w)}</b>${w < LIBRARY ? `<small>${count}/${items.length}</small>` : ""}</div><ul class="nav">`;
+    html += `<section class="group"><div class="group-head"><b>${w >= 1 && w < EXTRA ? `${groupName(w)}: ${esc(WEEKS[w].title)}` : groupName(w)}</b>${w < EXTRA ? `<small>${count}/${items.length}</small>` : ""}</div><ul class="nav">`;
     html += items.map(e => {
       const no = sheetNo[e.id] || "";
-      const tracked = e.week < LIBRARY;
+      const tracked = e.week < EXTRA;
       return `<li><a href="#${e.id}" ${e.id === current ? 'aria-current="page"' : ""}>${tracked ? tickBox(done.has(e.id)) : refMark}<span class="no">${no}</span><span class="t">${esc(e.title)}${e.kind === "lab" ? '<span class="lab-tag">lab</span>' : ""}</span></a></li>`;
     }).join("");
     html += `</ul></section>`;
@@ -671,11 +672,14 @@ function renderHome() {
       <ul class="sheets">${items.map(e => `<li><a href="#${e.id}"${e.id === next.id ? ' class="next-up"' : ""}>${tickBox(done.has(e.id))}<span class="no">${sheetNo[e.id]}</span><span class="t">${esc(e.short || e.title)}${e.kind === "lab" ? '<span class="lab-tag">lab</span>' : ""}</span></a></li>`).join("")}</ul>
     </div></section>`;
   };
-  const library = g[LIBRARY] || [];
-  const extras = `<section class="wk"><div class="wk-no"><b>Library</b><small>${library.length} pages</small><small>Not tracked</small></div><div>
-      <h2>Drills, glossary and reading</h2><p>${esc(WEEKS[LIBRARY].blurb)}</p>
-      <ul class="sheets">${library.map(e => `<li><a href="#${e.id}">${refMark}<span class="no"></span><span class="t">${esc(e.short || e.title)}</span></a></li>`).join("")}</ul>
-    </div></section>`;
+  const reference = (w, heading, label) => {
+    const items = g[w] || [];
+    return items.length ? `<section class="wk"><div class="wk-no"><b>${esc(WEEKS[w].title)}</b><small>${label(items.length)}</small><small>Not tracked</small></div><div>
+      <h2>${esc(heading)}</h2><p>${esc(WEEKS[w].blurb)}</p>
+      <ul class="sheets">${items.map(e => `<li><a href="#${e.id}">${refMark}<span class="no"></span><span class="t">${esc(e.short || e.title)}</span></a></li>`).join("")}</ul>
+    </div></section>` : "";
+  };
+  const extras = reference(EXTRA, "Inside the model, from scratch", n => `${n} lessons`) + reference(LIBRARY, "Drills, glossary and reading", n => `${n} pages`);
   const minutes = COURSE.reduce((s, e) => s + e.minutes, 0);
   const strip = `<p class="meta"><span>${n} of ${trackable.length} lessons done</span><span>Up next: <a href="#${next.id}">${esc(next.short || next.title)}</a></span><span>${(g[10] ? 10 : 6)} weeks, about ${Math.round(minutes / 60)} hours</span><span>Free</span></p>`;
   return `<div class="sheet"><div class="cover">${strip}
@@ -699,7 +703,7 @@ function renderHome() {
     <div class="weeks">${CORE.map(week).join("")}</div>
     ${ENTERPRISE.some(w => g[w]) ? `<section class="track"><h2>Enterprise track</h2>
       <p>Four more weeks on running agents across a company: a gateway for every model, identity and policy for every tool call, a registry of what is approved, many tenants, and the economics. Each week builds on a tested reference service.</p></section>
-    <div class="weeks">${ENTERPRISE.filter(w => g[w]).map(week).join("")}${library.length ? extras : ""}</div>` : `<div class="weeks">${library.length ? extras : ""}</div>`}
+    <div class="weeks">${ENTERPRISE.filter(w => g[w]).map(week).join("")}${extras}</div>` : `<div class="weeks">${extras}</div>`}
   </div></div>`;
 }
 
@@ -710,11 +714,11 @@ function renderEntry(e) {
   const no = sheetNo[e.id];
   figPrefix = no ? `${Number(no)}.` : "";
   const body = marked.parse(e.body);
-  const tracked = e.week < LIBRARY;
+  const tracked = e.week < EXTRA;
   const kind = { lesson: "Lesson", lab: "Lab", page: "Reference" }[e.kind] || e.kind;
-  const weekCell = e.week >= 1 && e.week < LIBRARY ? `Week ${e.week}: ${WEEKS[e.week].title}` : groupName(e.week);
+  const weekCell = e.week >= 1 && e.week < EXTRA ? `Week ${e.week}: ${WEEKS[e.week].title}` : groupName(e.week);
   const strip = `<p class="meta"><span>${esc(weekCell)}</span><span>${no ? `Lesson ${Number(no)} of ${trackable.length}` : "Reference"}</span>${e.minutes ? `<span>${e.minutes} min</span>` : ""}${tracked && done.has(e.id) ? "<span>Done</span>" : ""}</p>`;
-  const nextLabel = n => `${sheetNo[n.id] ? `Lesson ${Number(sheetNo[n.id])}` : "Library"}`;
+  const nextLabel = n => `${sheetNo[n.id] ? `Lesson ${Number(sheetNo[n.id])}` : groupName(n.week)}`;
   return `<div class="sheet"><div class="sheet-body"><article>
     ${strip}
     <h1>${esc(e.title)}</h1>
