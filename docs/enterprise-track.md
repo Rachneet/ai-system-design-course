@@ -11,7 +11,7 @@ The large platforms now sell the same set of components for running agents insid
 | Registry | Agent Registry: "indexing every internal agent and tool across your organization" | Registry: catalog of agents, MCP servers, tools, skills; publish, review, approve; hybrid search |
 | Gateway | Agent Gateway: understands MCP and A2A, "centralized, real-time policy enforcement", inline prompt-injection and data-leak protection | Gateway: turns APIs into MCP tools, connects MCP servers, semantic tool search |
 | Identity | Agent Identity: "a unique cryptographic ID and well defined authorization policies" per agent | Identity: inbound and outbound auth, works with existing IdPs |
-| Policy | (via Gateway) | Policy: deterministic rules (Cedar-compatible) that "intercept every tool call before execution" |
+| Policy | (via Gateway) | Policy: deterministic rules written in Cedar that "intercept every tool call before execution" |
 | Quality | Agent Observability | Observability (OpenTelemetry), Evaluations, Optimization (versioned configs, A/B tests) |
 
 Anthropic's [Agent Skills](https://platform.claude.com/docs/en/agents-and-tools/agent-skills/overview) define a portable
@@ -29,7 +29,7 @@ Each project is a separate service in a `platform/` monorepo, built to the same 
 with its own design doc, threat model, ADRs, OpenAPI spec, tests, eval suite where relevant, container, and CI.
 
 ### E1. Switchboard: AI gateway
-One endpoint between every internal app and every model provider. **Built:** `platform/switchboard` (33 tests, CI).
+One endpoint between every internal app and every model provider. **Built:** `platform/switchboard` (35 tests, CI).
 - Anthropic- and OpenAI-compatible APIs, streaming passthrough, prompt-cache-safe (no prefix rewriting)
 - Virtual keys with hierarchical budgets (org → team → app), RPM and TPM limits, model allow-lists
 - Routing, retries, circuit breakers, cross-provider fallback; per-tenant data residency rules
@@ -42,12 +42,13 @@ The catalog that says what exists, who owns it, and whether it is approved. **Bu
 - Resource types: A2A Agent Cards, MCP servers (`server.json`-compatible), Agent Skills (`SKILL.md` packages)
 - Versioning, ownership, publish → automated checks → human review → approved → deprecated lifecycle
 - Automated checks: schema validation, skill static analysis (network calls, file writes, shell use, secrets),
-  dependency and licence scan, signature verification, and eval gates (no approval below a score threshold)
+  licence allow-list, and eval gates (no approval below a score threshold). Built. Planned: dependency scanning,
+  signature verification, and pinning each server's tool list so a changed tool description needs review again
 - Hybrid search (reuses Relay's retrieval), RBAC, audit log, and a sync from the public MCP registry
   into a private, curated sub-registry
 
 ### E3. Checkpoint: MCP and agent gateway with policy
-The control point every tool call passes through. **Built:** `platform/checkpoint` (9 end-to-end tests, CI).
+The control point every tool call passes through. **Built:** `platform/checkpoint` (9 tests, CI).
 - Fronts approved MCP servers from Atlas behind one MCP endpoint per agent
 - Agent identity: each agent authenticates with its own credentials; user context flows with OAuth token
   exchange (on-behalf-of), so tools see both "which agent" and "for which user"

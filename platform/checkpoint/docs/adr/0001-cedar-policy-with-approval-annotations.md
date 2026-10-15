@@ -16,6 +16,6 @@ approval is single use. Decisions record the `@id` of the policies that produced
 
 ## Consequences
 + The rules live in one reviewable file, with deny-by-default and forbid-wins semantics security teams expect.
-+ AWS Bedrock AgentCore Policy describes its rules as Cedar-compatible, so the skill transfers.
++ AWS Bedrock AgentCore Policy policies are written in Cedar ([AWS docs](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/policy.html)), so the skill transfers.
 - `cedarpy` is a community binding; pin it and watch for releases. The engine itself is Amazon's Cedar.
 - Arguments are free-form JSON, so policies are not schema-validated yet; a per-tool Cedar schema is a next step.

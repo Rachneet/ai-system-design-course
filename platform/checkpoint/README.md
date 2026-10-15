@@ -79,7 +79,7 @@ bearer token and the user's JWT in `X-User-Token`. Approvers use `GET /approvals
 
 ## Tests
 
-`uv run pytest` runs 9 end-to-end tests against a real Postgres, a mock Atlas, a modern MCP server and an
+`uv run pytest` runs 9 tests (8 end to end and a migration round trip) against a real Postgres, a mock Atlas, a modern MCP server and an
 initialize-era one: transport rules, catalog filtering, assertions verified against the published JWKS, Cedar
 denials with reasons, single-use approvals bound to arguments, output scanning, `x-mcp-header` handling in both
 directions, rate limits, forged user tokens, the decision log and refusal of a broken policy file. CI adds ruff,
