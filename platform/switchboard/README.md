@@ -83,7 +83,7 @@ Chargeback: `GET /admin/usage?month=2026-10&group_by=team`.
 ## Tests and measurements
 
 ```bash
-uv run pytest                                   # 27 tests on an embedded Postgres; no provider key needed
+uv run pytest                                   # 35 tests on an embedded Postgres; no provider key needed
 uv run python -m loadtest.overhead --concurrency 32
 ```
 

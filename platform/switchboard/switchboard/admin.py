@@ -110,6 +110,25 @@ async def create_app(body: AppIn, request: Request, actor: str = Depends(admin))
     return await insert(request, actor, "apps", body.model_dump())
 
 
+class BudgetIn(Strict):
+    budget_usd_month: Decimal | None = Field(ge=0)  # null removes the limit at this level
+
+
+@router.put("/{scope}/{scope_id}/budget")
+async def set_budget(
+    scope: Literal["orgs", "teams"], scope_id: str, body: BudgetIn, request: Request, actor: str = Depends(admin)
+):
+    """Change an org's or team's monthly budget. Apps change theirs through their policy."""
+    query = sql.SQL("UPDATE {} SET budget_usd_month = %s WHERE id = %s RETURNING id").format(sql.Identifier(scope))
+    async with request.app.state.pool.connection() as c:
+        row = await (await c.execute(query, (body.budget_usd_month, scope_id))).fetchone()
+    if row is None:
+        raise HTTPException(404, f"{scope[:-1].title()} not found")
+    request.app.state.gateway.budgets.forget()
+    await audit(request, actor, "set_budget", f"{scope}/{scope_id}", {"budget_usd_month": str(body.budget_usd_month)})
+    return {"id": scope_id, "budget_usd_month": body.budget_usd_month}
+
+
 @router.put("/apps/{app_id}/policy")
 async def set_policy(app_id: str, body: AppPolicy, request: Request, actor: str = Depends(admin)):
     values = body.model_dump()

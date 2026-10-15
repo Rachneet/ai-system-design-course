@@ -154,7 +154,8 @@ class Gateway:
                 429,
                 "rate_limit_error",
                 f"The monthly budget for this {scope} is used up.",
-                **{"x-switchboard-limit": f"budget:{scope}"},
+                # Still a 429 for compatibility, but tell the official SDKs not to retry: money will not refill in seconds.
+                **{"x-switchboard-limit": f"budget:{scope}", "x-should-retry": "false"},
             )
 
         forward, findings, audit_body = raw, 0, None
@@ -315,7 +316,9 @@ class Gateway:
             await resp.aclose()
             event |= {
                 "status": status,
-                "served_model": parser.model or served,
+                # Bill under the catalog name we chose: providers may report an alias or a dated snapshot
+                # name in the stream, which would miss the price table and record $0.
+                "served_model": served,
                 "usage": parser.usage,
                 "latency_ms": int((time.perf_counter() - started) * 1000),
                 "ttfb_ms": int((first - started) * 1000) if first else None,

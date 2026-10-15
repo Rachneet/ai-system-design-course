@@ -223,3 +223,17 @@ def test_pii_patterns_leave_ids_alone():
         assert scrub(f"call {phone} now")[0] == "call [PHONE] now", phone
     assert scrub("IBAN DE89 3704 0044 0532 0130 00")[1] == 1
     assert json.loads(json.dumps({"ok": True}))
+
+
+async def test_spent_budgets_tell_sdks_not_to_retry_and_can_be_raised(gw):
+    key = await provision(gw, app_id="a1", team="t1", org="o1")
+    assert (await gw.put("/admin/teams/t1/budget", json={"budget_usd_month": 0}, headers=ADMIN)).status_code == 200
+    r = await gw.post("/v1/messages", json=msg(), headers={"x-api-key": key})
+    assert (
+        r.status_code == 429
+        and r.headers["x-should-retry"] == "false"
+        and r.headers["x-switchboard-limit"] == "budget:team"
+    )
+    await gw.put("/admin/teams/t1/budget", json={"budget_usd_month": None}, headers=ADMIN)
+    assert (await gw.post("/v1/messages", json=msg(), headers={"x-api-key": key})).status_code == 200
+    assert (await gw.put("/admin/orgs/nope/budget", json={"budget_usd_month": 1}, headers=ADMIN)).status_code == 404

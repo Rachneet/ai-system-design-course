@@ -63,3 +63,15 @@ async def test_pii_redaction_applies_to_chat_messages(gw, upstream):
     )
     sent = upstream.state.received[0].decode()
     assert "ada@example.com" not in sent and "1042" in sent
+
+
+async def test_streamed_aliases_are_billed_under_the_catalog_name(gw, upstream):
+    key = await provision(gw)
+    upstream.state.fail = {"gpt-test": 503}  # fall back to llama-local, which the provider knows by another name
+    async with gw.stream(
+        "POST", "/v1/chat/completions", json=chat(stream=True), headers={"authorization": f"Bearer {key}"}
+    ) as r:
+        b"".join([c async for c in r.aiter_raw()])
+    await settle(gw)
+    [event] = await ledger(gw, "SELECT served_model FROM usage_events")
+    assert event["served_model"] == "llama-local"  # not the provider's meta-llama/... name, which has no price
