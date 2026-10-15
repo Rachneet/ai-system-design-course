@@ -1,0 +1,15 @@
+[project]
+name = "under-the-hood"
+version = "0.1.0"
+description = "Five small, runnable models of what happens inside an LLM, each tied to a system design decision."
+requires-python = ">=3.12"
+dependencies = ["numpy>=2.3"]
+
+[dependency-groups]
+dev = ["pytest>=9.1.1", "ruff>=0.17.0"]
+
+[tool.ruff]
+line-length = 120
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

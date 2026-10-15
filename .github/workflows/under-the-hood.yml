@@ -1,0 +1,26 @@
+name: under-the-hood
+on:
+  push:
+    paths: ["under-the-hood/**", ".github/workflows/under-the-hood.yml"]
+  pull_request:
+    paths: ["under-the-hood/**", ".github/workflows/under-the-hood.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: under-the-hood
+    steps:
+      - uses: actions/checkout@v7
+      - uses: astral-sh/setup-uv@v10.0.1
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - run: uv run ruff check . && uv run ruff format --check .
+      - run: uv run pytest -q
+      - name: Every module runs end to end
+        run: for m in bpe kv_cache sampling lora test_time; do uv run python -m uth.$m > /dev/null; done
