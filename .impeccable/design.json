@@ -1,132 +1,29 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-14T17:24:10+00:00",
+  "generatedAt": "2026-10-15T06:19:46+00:00",
   "title": "Design System: AI System Design",
   "extensions": {
     "colorMeta": {
-      "pad": {
-        "role": "neutral",
-        "displayName": "Quiet Frame",
-        "tonalRamp": [
-          "oklch(15% 0.003 264.5)",
-          "oklch(26% 0.003 264.5)",
-          "oklch(37% 0.003 264.5)",
-          "oklch(48% 0.003 264.5)",
-          "oklch(59% 0.003 264.5)",
-          "oklch(70% 0.003 264.5)",
-          "oklch(82% 0.003 264.5)",
-          "oklch(95% 0.003 264.5)"
-        ],
-        "darkValue": "#0d0f12"
-      },
-      "pad-major": {
-        "role": "neutral",
-        "displayName": "Frame Line",
-        "tonalRamp": [
-          "oklch(15% 0.014 262.4)",
-          "oklch(26% 0.014 262.4)",
-          "oklch(37% 0.014 262.4)",
-          "oklch(48% 0.014 262.4)",
-          "oklch(59% 0.014 262.4)",
-          "oklch(70% 0.014 262.4)",
-          "oklch(82% 0.014 262.4)",
-          "oklch(95% 0.014 262.4)"
-        ],
-        "darkValue": "#4a505b"
-      },
-      "sheet": {
-        "role": "neutral",
-        "displayName": "White Sheet",
-        "tonalRamp": [
-          "oklch(15% 0.000 89.9)",
-          "oklch(26% 0.000 89.9)",
-          "oklch(37% 0.000 89.9)",
-          "oklch(48% 0.000 89.9)",
-          "oklch(59% 0.000 89.9)",
-          "oklch(70% 0.000 89.9)",
-          "oklch(82% 0.000 89.9)",
-          "oklch(95% 0.000 89.9)"
-        ],
-        "darkValue": "#16181c"
-      },
-      "box": {
-        "role": "neutral",
-        "displayName": "Answer Box",
-        "tonalRamp": [
-          "oklch(15% 0.003 264.5)",
-          "oklch(26% 0.003 264.5)",
-          "oklch(37% 0.003 264.5)",
-          "oklch(48% 0.003 264.5)",
-          "oklch(59% 0.003 264.5)",
-          "oklch(70% 0.003 264.5)",
-          "oklch(82% 0.003 264.5)",
-          "oklch(95% 0.003 264.5)"
-        ],
-        "darkValue": "#1e2126"
-      },
-      "ink": {
-        "role": "neutral",
-        "displayName": "Ink",
-        "tonalRamp": [
-          "oklch(15% 0.009 255.6)",
-          "oklch(26% 0.009 255.6)",
-          "oklch(37% 0.009 255.6)",
-          "oklch(48% 0.009 255.6)",
-          "oklch(59% 0.009 255.6)",
-          "oklch(70% 0.009 255.6)",
-          "oklch(82% 0.009 255.6)",
-          "oklch(95% 0.009 255.6)"
-        ],
-        "darkValue": "#eceef1"
-      },
-      "ink-2": {
-        "role": "neutral",
-        "displayName": "Secondary Ink",
-        "tonalRamp": [
-          "oklch(15% 0.022 261.3)",
-          "oklch(26% 0.022 261.3)",
-          "oklch(37% 0.022 261.3)",
-          "oklch(48% 0.022 261.3)",
-          "oklch(59% 0.022 261.3)",
-          "oklch(70% 0.022 261.3)",
-          "oklch(82% 0.022 261.3)",
-          "oklch(95% 0.022 261.3)"
-        ],
-        "darkValue": "#b0b6c0"
-      },
-      "rule": {
-        "role": "neutral",
-        "displayName": "Hairline",
-        "tonalRamp": [
-          "oklch(15% 0.009 264.5)",
-          "oklch(26% 0.009 264.5)",
-          "oklch(37% 0.009 264.5)",
-          "oklch(48% 0.009 264.5)",
-          "oklch(59% 0.009 264.5)",
-          "oklch(70% 0.009 264.5)",
-          "oklch(82% 0.009 264.5)",
-          "oklch(95% 0.009 264.5)"
-        ],
-        "darkValue": "#2e323a"
-      },
       "pen": {
         "role": "primary",
         "displayName": "Ballpoint Blue",
+        "canonical": "#1f4f9c",
         "tonalRamp": [
-          "oklch(15% 0.136 259.6)",
-          "oklch(26% 0.136 259.6)",
-          "oklch(37% 0.136 259.6)",
-          "oklch(48% 0.136 259.6)",
-          "oklch(59% 0.136 259.6)",
-          "oklch(70% 0.136 259.6)",
-          "oklch(82% 0.136 259.6)",
-          "oklch(95% 0.030 259.6)"
+          "oklch(15% 0.120 259.6)",
+          "oklch(26% 0.120 259.6)",
+          "oklch(37% 0.120 259.6)",
+          "oklch(48% 0.120 259.6)",
+          "oklch(59% 0.120 259.6)",
+          "oklch(70% 0.120 259.6)",
+          "oklch(82% 0.120 259.6)",
+          "oklch(95% 0.120 259.6)"
         ],
         "darkValue": "#93b4ef"
       },
       "pen-soft": {
         "role": "primary",
         "displayName": "Pale Ballpoint Wash",
+        "canonical": "#dbe5f4",
         "tonalRamp": [
           "oklch(15% 0.023 258.4)",
           "oklch(26% 0.023 258.4)",
@@ -142,21 +39,135 @@
       "red": {
         "role": "secondary",
         "displayName": "Margin Red",
+        "canonical": "#b8352a",
         "tonalRamp": [
-          "oklch(15% 0.169 28.9)",
-          "oklch(26% 0.169 28.9)",
-          "oklch(37% 0.169 28.9)",
-          "oklch(48% 0.169 28.9)",
-          "oklch(59% 0.169 28.9)",
-          "oklch(70% 0.169 28.9)",
-          "oklch(82% 0.169 28.9)",
-          "oklch(95% 0.030 28.9)"
+          "oklch(15% 0.120 28.9)",
+          "oklch(26% 0.120 28.9)",
+          "oklch(37% 0.120 28.9)",
+          "oklch(48% 0.120 28.9)",
+          "oklch(59% 0.120 28.9)",
+          "oklch(70% 0.120 28.9)",
+          "oklch(82% 0.120 28.9)",
+          "oklch(95% 0.120 28.9)"
         ],
         "darkValue": "#f07a6a"
       },
+      "sheet": {
+        "role": "neutral",
+        "displayName": "White Page",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "oklch(15% 0.000 89.9)",
+          "oklch(26% 0.000 89.9)",
+          "oklch(37% 0.000 89.9)",
+          "oklch(48% 0.000 89.9)",
+          "oklch(59% 0.000 89.9)",
+          "oklch(70% 0.000 89.9)",
+          "oklch(82% 0.000 89.9)",
+          "oklch(95% 0.000 89.9)"
+        ],
+        "darkValue": "#16181c"
+      },
+      "pad": {
+        "role": "neutral",
+        "displayName": "Quiet Rail",
+        "canonical": "#f7f8fa",
+        "tonalRamp": [
+          "oklch(15% 0.003 264.5)",
+          "oklch(26% 0.003 264.5)",
+          "oklch(37% 0.003 264.5)",
+          "oklch(48% 0.003 264.5)",
+          "oklch(59% 0.003 264.5)",
+          "oklch(70% 0.003 264.5)",
+          "oklch(82% 0.003 264.5)",
+          "oklch(95% 0.003 264.5)"
+        ],
+        "darkValue": "#0d0f12"
+      },
+      "pad-major": {
+        "role": "neutral",
+        "displayName": "Rail Scroll Line",
+        "canonical": "#b9bec7",
+        "tonalRamp": [
+          "oklch(15% 0.014 262.4)",
+          "oklch(26% 0.014 262.4)",
+          "oklch(37% 0.014 262.4)",
+          "oklch(48% 0.014 262.4)",
+          "oklch(59% 0.014 262.4)",
+          "oklch(70% 0.014 262.4)",
+          "oklch(82% 0.014 262.4)",
+          "oklch(95% 0.014 262.4)"
+        ],
+        "darkValue": "#4a505b"
+      },
+      "box": {
+        "role": "neutral",
+        "displayName": "Soft Fill",
+        "canonical": "#f4f6f8",
+        "tonalRamp": [
+          "oklch(15% 0.003 247.9)",
+          "oklch(26% 0.003 247.9)",
+          "oklch(37% 0.003 247.9)",
+          "oklch(48% 0.003 247.9)",
+          "oklch(59% 0.003 247.9)",
+          "oklch(70% 0.003 247.9)",
+          "oklch(82% 0.003 247.9)",
+          "oklch(95% 0.003 247.9)"
+        ],
+        "darkValue": "#1e2126"
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#1b1f24",
+        "tonalRamp": [
+          "oklch(15% 0.011 254.1)",
+          "oklch(26% 0.011 254.1)",
+          "oklch(37% 0.011 254.1)",
+          "oklch(48% 0.011 254.1)",
+          "oklch(59% 0.011 254.1)",
+          "oklch(70% 0.011 254.1)",
+          "oklch(82% 0.011 254.1)",
+          "oklch(95% 0.011 254.1)"
+        ],
+        "darkValue": "#eceef1"
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Secondary Ink",
+        "canonical": "#57606a",
+        "tonalRamp": [
+          "oklch(15% 0.020 251.0)",
+          "oklch(26% 0.020 251.0)",
+          "oklch(37% 0.020 251.0)",
+          "oklch(48% 0.020 251.0)",
+          "oklch(59% 0.020 251.0)",
+          "oklch(70% 0.020 251.0)",
+          "oklch(82% 0.020 251.0)",
+          "oklch(95% 0.020 251.0)"
+        ],
+        "darkValue": "#b0b6c0"
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Hairline",
+        "canonical": "#e4e7eb",
+        "tonalRamp": [
+          "oklch(15% 0.006 255.5)",
+          "oklch(26% 0.006 255.5)",
+          "oklch(37% 0.006 255.5)",
+          "oklch(48% 0.006 255.5)",
+          "oklch(59% 0.006 255.5)",
+          "oklch(70% 0.006 255.5)",
+          "oklch(82% 0.006 255.5)",
+          "oklch(95% 0.006 255.5)"
+        ],
+        "darkValue": "#2e323a"
+      },
       "code-str": {
         "role": "neutral",
-        "displayName": "Code String Ink",
+        "displayName": "Code String Green",
+        "canonical": "#1d6b3a",
         "tonalRamp": [
           "oklch(15% 0.108 151.7)",
           "oklch(26% 0.108 151.7)",
@@ -165,13 +176,14 @@
           "oklch(59% 0.108 151.7)",
           "oklch(70% 0.108 151.7)",
           "oklch(82% 0.108 151.7)",
-          "oklch(95% 0.030 151.7)"
+          "oklch(95% 0.108 151.7)"
         ],
         "darkValue": "#9fd3a8"
       },
       "code-com": {
         "role": "neutral",
         "displayName": "Code Comment Gray",
+        "canonical": "#5f6672",
         "tonalRamp": [
           "oklch(15% 0.021 261.3)",
           "oklch(26% 0.021 261.3)",
@@ -186,7 +198,8 @@
       },
       "code-num": {
         "role": "neutral",
-        "displayName": "Code Number Umber",
+        "displayName": "Code Number Brown",
+        "canonical": "#8a4b12",
         "tonalRamp": [
           "oklch(15% 0.108 56.6)",
           "oklch(26% 0.108 56.6)",
@@ -195,234 +208,123 @@
           "oklch(59% 0.108 56.6)",
           "oklch(70% 0.108 56.6)",
           "oklch(82% 0.108 56.6)",
-          "oklch(95% 0.030 56.6)"
+          "oklch(95% 0.108 56.6)"
         ],
         "darkValue": "#e3b07a"
       },
-      "pad-dark": {
-        "role": "neutral",
-        "displayName": "Quiet Frame (dark)",
+      "vz-compute": {
+        "role": "diagram",
+        "displayName": "Compute Blue",
+        "canonical": "#2a5db0",
         "tonalRamp": [
-          "oklch(15% 0.007 258.4)",
-          "oklch(26% 0.007 258.4)",
-          "oklch(37% 0.007 258.4)",
-          "oklch(48% 0.007 258.4)",
-          "oklch(59% 0.007 258.4)",
-          "oklch(70% 0.007 258.4)",
-          "oklch(82% 0.007 258.4)",
-          "oklch(95% 0.007 258.4)"
+          "oklch(15% 0.120 259.7)",
+          "oklch(26% 0.120 259.7)",
+          "oklch(37% 0.120 259.7)",
+          "oklch(48% 0.120 259.7)",
+          "oklch(59% 0.120 259.7)",
+          "oklch(70% 0.120 259.7)",
+          "oklch(82% 0.120 259.7)",
+          "oklch(95% 0.120 259.7)"
         ],
-        "lightValue": "#f2f3f5"
+        "darkValue": "#8db2f2"
       },
-      "pad-major-dark": {
-        "role": "neutral",
-        "displayName": "Frame Line (dark)",
+      "vz-memory": {
+        "role": "diagram",
+        "displayName": "Memory Violet",
+        "canonical": "#6c4aa6",
         "tonalRamp": [
-          "oklch(15% 0.020 262.7)",
-          "oklch(26% 0.020 262.7)",
-          "oklch(37% 0.020 262.7)",
-          "oklch(48% 0.020 262.7)",
-          "oklch(59% 0.020 262.7)",
-          "oklch(70% 0.020 262.7)",
-          "oklch(82% 0.020 262.7)",
-          "oklch(95% 0.020 262.7)"
+          "oklch(15% 0.120 298.0)",
+          "oklch(26% 0.120 298.0)",
+          "oklch(37% 0.120 298.0)",
+          "oklch(48% 0.120 298.0)",
+          "oklch(59% 0.120 298.0)",
+          "oklch(70% 0.120 298.0)",
+          "oklch(82% 0.120 298.0)",
+          "oklch(95% 0.120 298.0)"
         ],
-        "lightValue": "#b9bec7"
+        "darkValue": "#c0a6f0"
       },
-      "sheet-dark": {
-        "role": "neutral",
-        "displayName": "White Sheet (dark)",
+      "vz-good": {
+        "role": "diagram",
+        "displayName": "Win Green",
+        "canonical": "#23784a",
         "tonalRamp": [
-          "oklch(15% 0.009 264.4)",
-          "oklch(26% 0.009 264.4)",
-          "oklch(37% 0.009 264.4)",
-          "oklch(48% 0.009 264.4)",
-          "oklch(59% 0.009 264.4)",
-          "oklch(70% 0.009 264.4)",
-          "oklch(82% 0.009 264.4)",
-          "oklch(95% 0.009 264.4)"
+          "oklch(15% 0.109 155.3)",
+          "oklch(26% 0.109 155.3)",
+          "oklch(37% 0.109 155.3)",
+          "oklch(48% 0.109 155.3)",
+          "oklch(59% 0.109 155.3)",
+          "oklch(70% 0.109 155.3)",
+          "oklch(82% 0.109 155.3)",
+          "oklch(95% 0.109 155.3)"
         ],
-        "lightValue": "#ffffff"
+        "darkValue": "#7fcf9f"
       },
-      "box-dark": {
-        "role": "neutral",
-        "displayName": "Answer Box (dark)",
+      "vz-warn": {
+        "role": "diagram",
+        "displayName": "Cost Amber",
+        "canonical": "#a8650f",
         "tonalRamp": [
-          "oklch(15% 0.010 260.7)",
-          "oklch(26% 0.010 260.7)",
-          "oklch(37% 0.010 260.7)",
-          "oklch(48% 0.010 260.7)",
-          "oklch(59% 0.010 260.7)",
-          "oklch(70% 0.010 260.7)",
-          "oklch(82% 0.010 260.7)",
-          "oklch(95% 0.010 260.7)"
+          "oklch(15% 0.120 64.5)",
+          "oklch(26% 0.120 64.5)",
+          "oklch(37% 0.120 64.5)",
+          "oklch(48% 0.120 64.5)",
+          "oklch(59% 0.120 64.5)",
+          "oklch(70% 0.120 64.5)",
+          "oklch(82% 0.120 64.5)",
+          "oklch(95% 0.120 64.5)"
         ],
-        "lightValue": "#f4f5f7"
+        "darkValue": "#e8b464"
       },
-      "ink-dark": {
-        "role": "neutral",
-        "displayName": "Ink (dark)",
+      "vz-bad": {
+        "role": "diagram",
+        "displayName": "Waste Red",
+        "canonical": "#b3362b",
         "tonalRamp": [
-          "oklch(15% 0.005 258.3)",
-          "oklch(26% 0.005 258.3)",
-          "oklch(37% 0.005 258.3)",
-          "oklch(48% 0.005 258.3)",
-          "oklch(59% 0.005 258.3)",
-          "oklch(70% 0.005 258.3)",
-          "oklch(82% 0.005 258.3)",
-          "oklch(95% 0.005 258.3)"
+          "oklch(15% 0.120 29.0)",
+          "oklch(26% 0.120 29.0)",
+          "oklch(37% 0.120 29.0)",
+          "oklch(48% 0.120 29.0)",
+          "oklch(59% 0.120 29.0)",
+          "oklch(70% 0.120 29.0)",
+          "oklch(82% 0.120 29.0)",
+          "oklch(95% 0.120 29.0)"
         ],
-        "lightValue": "#111418"
-      },
-      "ink-2-dark": {
-        "role": "neutral",
-        "displayName": "Secondary Ink (dark)",
-        "tonalRamp": [
-          "oklch(15% 0.016 260.7)",
-          "oklch(26% 0.016 260.7)",
-          "oklch(37% 0.016 260.7)",
-          "oklch(48% 0.016 260.7)",
-          "oklch(59% 0.016 260.7)",
-          "oklch(70% 0.016 260.7)",
-          "oklch(82% 0.016 260.7)",
-          "oklch(95% 0.016 260.7)"
-        ],
-        "lightValue": "#474e5a"
-      },
-      "rule-dark": {
-        "role": "neutral",
-        "displayName": "Hairline (dark)",
-        "tonalRamp": [
-          "oklch(15% 0.015 264.3)",
-          "oklch(26% 0.015 264.3)",
-          "oklch(37% 0.015 264.3)",
-          "oklch(48% 0.015 264.3)",
-          "oklch(59% 0.015 264.3)",
-          "oklch(70% 0.015 264.3)",
-          "oklch(82% 0.015 264.3)",
-          "oklch(95% 0.015 264.3)"
-        ],
-        "lightValue": "#d9dce2"
-      },
-      "pen-dark": {
-        "role": "primary",
-        "displayName": "Ballpoint Blue (dark)",
-        "tonalRamp": [
-          "oklch(15% 0.093 261.8)",
-          "oklch(26% 0.093 261.8)",
-          "oklch(37% 0.093 261.8)",
-          "oklch(48% 0.093 261.8)",
-          "oklch(59% 0.093 261.8)",
-          "oklch(70% 0.093 261.8)",
-          "oklch(82% 0.093 261.8)",
-          "oklch(95% 0.030 261.8)"
-        ],
-        "lightValue": "#1f4f9c"
-      },
-      "pen-soft-dark": {
-        "role": "primary",
-        "displayName": "Pale Ballpoint Wash (dark)",
-        "tonalRamp": [
-          "oklch(15% 0.052 259.8)",
-          "oklch(26% 0.052 259.8)",
-          "oklch(37% 0.052 259.8)",
-          "oklch(48% 0.052 259.8)",
-          "oklch(59% 0.052 259.8)",
-          "oklch(70% 0.052 259.8)",
-          "oklch(82% 0.052 259.8)",
-          "oklch(95% 0.030 259.8)"
-        ],
-        "lightValue": "#dbe5f4"
-      },
-      "red-dark": {
-        "role": "secondary",
-        "displayName": "Margin Red (dark)",
-        "tonalRamp": [
-          "oklch(15% 0.148 29.2)",
-          "oklch(26% 0.148 29.2)",
-          "oklch(37% 0.148 29.2)",
-          "oklch(48% 0.148 29.2)",
-          "oklch(59% 0.148 29.2)",
-          "oklch(70% 0.148 29.2)",
-          "oklch(82% 0.148 29.2)",
-          "oklch(95% 0.030 29.2)"
-        ],
-        "lightValue": "#b8352a"
-      },
-      "code-str-dark": {
-        "role": "neutral",
-        "displayName": "Code String Ink (dark)",
-        "tonalRamp": [
-          "oklch(15% 0.081 149.6)",
-          "oklch(26% 0.081 149.6)",
-          "oklch(37% 0.081 149.6)",
-          "oklch(48% 0.081 149.6)",
-          "oklch(59% 0.081 149.6)",
-          "oklch(70% 0.081 149.6)",
-          "oklch(82% 0.081 149.6)",
-          "oklch(95% 0.030 149.6)"
-        ],
-        "lightValue": "#1d6b3a"
-      },
-      "code-com-dark": {
-        "role": "neutral",
-        "displayName": "Code Comment Gray (dark)",
-        "tonalRamp": [
-          "oklch(15% 0.018 259.4)",
-          "oklch(26% 0.018 259.4)",
-          "oklch(37% 0.018 259.4)",
-          "oklch(48% 0.018 259.4)",
-          "oklch(59% 0.018 259.4)",
-          "oklch(70% 0.018 259.4)",
-          "oklch(82% 0.018 259.4)",
-          "oklch(95% 0.018 259.4)"
-        ],
-        "lightValue": "#5f6672"
-      },
-      "code-num-dark": {
-        "role": "neutral",
-        "displayName": "Code Number Umber (dark)",
-        "tonalRamp": [
-          "oklch(15% 0.092 67.4)",
-          "oklch(26% 0.092 67.4)",
-          "oklch(37% 0.092 67.4)",
-          "oklch(48% 0.092 67.4)",
-          "oklch(59% 0.092 67.4)",
-          "oklch(70% 0.092 67.4)",
-          "oklch(82% 0.092 67.4)",
-          "oklch(95% 0.030 67.4)"
-        ],
-        "lightValue": "#8a4b12"
+        "darkValue": "#f08a7e"
       }
     },
     "typographyMeta": {
       "display": {
         "displayName": "Display",
-        "purpose": "Home cover statement only, max 24ch."
+        "purpose": "Home cover title."
       },
       "headline": {
         "displayName": "Headline",
-        "purpose": "Sheet title at the top of each lesson."
-      },
-      "numeral": {
-        "displayName": "Numeral",
-        "purpose": "Week numerals in the home sheet list."
+        "purpose": "Lesson title."
       },
       "numeral-compact": {
         "displayName": "Numeral Compact",
-        "purpose": "Week numeral inline at phone width."
+        "purpose": "Week label at phone width."
       },
       "title": {
         "displayName": "Title",
-        "purpose": "Lesson section headings, opened by an Ink rule."
+        "purpose": "Lesson section headings (h2), no rule."
+      },
+      "numeral": {
+        "displayName": "Numeral",
+        "purpose": "Week labels on home."
+      },
+      "title-map": {
+        "displayName": "Title Map",
+        "purpose": "Home map heading."
       },
       "title-week": {
-        "displayName": "Week Title",
-        "purpose": "Home week titles and the Library heading."
+        "displayName": "Title Week",
+        "purpose": "Week and Library headings on home."
       },
-      "title-sm": {
-        "displayName": "Title Small",
-        "purpose": "Subsections."
+      "subtitle": {
+        "displayName": "Subtitle",
+        "purpose": "Lesson subsections (h3)."
       },
       "lede": {
         "displayName": "Lede",
@@ -430,62 +332,102 @@
       },
       "body": {
         "displayName": "Body",
-        "purpose": "Reading text at a 66ch measure."
-      },
-      "body-compact": {
-        "displayName": "Body Compact",
-        "purpose": "Body at phone width; minor headings and Library entry titles."
-      },
-      "blurb": {
-        "displayName": "Blurb",
-        "purpose": "Week blurb under each home week title."
-      },
-      "worked": {
-        "displayName": "Worked",
-        "purpose": "Text of the worked-numbers callout."
+        "purpose": "All reading text, 17px at 1.7."
       },
       "option": {
         "displayName": "Option",
         "purpose": "Quiz answer options."
       },
+      "worked": {
+        "displayName": "Worked",
+        "purpose": "Worked-numbers callout, tabular."
+      },
+      "blurb": {
+        "displayName": "Blurb",
+        "purpose": "Week blurbs, map intro, quiz explanations, Library titles."
+      },
       "ui": {
-        "displayName": "UI",
-        "purpose": "Strip values, buttons, tables."
+        "displayName": "Ui",
+        "purpose": "Buttons, quiz and calculator heads, sign-off."
+      },
+      "small": {
+        "displayName": "Small",
+        "purpose": "Home lesson lists, Library descriptions, notes."
+      },
+      "rail": {
+        "displayName": "Rail",
+        "purpose": "Index rail and search."
+      },
+      "meta": {
+        "displayName": "Meta",
+        "purpose": "The quiet meta line above the title; search result details."
       },
       "label": {
         "displayName": "Label",
-        "purpose": "Callout labels, table headers, figure captions."
+        "purpose": "Callout labels, table headers, rail group heads."
       },
-      "field-label": {
-        "displayName": "Field Label",
-        "purpose": "Field name above a header strip value."
+      "caption-sm": {
+        "displayName": "Caption Sm",
+        "purpose": "Tool buttons, pager labels, week counts."
       },
       "number": {
         "displayName": "Number",
-        "purpose": "Sheet numbers, counts, tallies, figure numbers."
+        "purpose": "Lesson numbers, tabular."
+      },
+      "tag": {
+        "displayName": "Tag",
+        "purpose": "The lab tag."
       },
       "code": {
         "displayName": "Code",
         "purpose": "Code blocks."
+      },
+      "code-input": {
+        "displayName": "Code Input",
+        "purpose": "Calculator input fields."
+      },
+      "readout": {
+        "displayName": "Readout",
+        "purpose": "Calculator results."
+      },
+      "hand-big": {
+        "displayName": "Hand Big",
+        "purpose": "Large numbers inside sketch figures."
+      },
+      "hand-title": {
+        "displayName": "Hand Title",
+        "purpose": "Sketch figure panel titles."
+      },
+      "hand": {
+        "displayName": "Hand",
+        "purpose": "Sketch figure labels."
+      },
+      "hand-chip": {
+        "displayName": "Hand Chip",
+        "purpose": "Sketch figure chips."
+      },
+      "hand-note": {
+        "displayName": "Hand Note",
+        "purpose": "Sketch figure notes."
       }
     },
     "shadows": [
       {
-        "name": "action-underside",
-        "value": "inset 0 -3px 0 var(--red)",
-        "purpose": "Drawn red rule under the single primary action; a rule, not elevation."
+        "name": "current-row-ring",
+        "value": "0 0 0 1px var(--rule)",
+        "purpose": "Hairline ring around the current rail row; a drawn line, not elevation."
       },
       {
-        "name": "double-rule",
-        "value": "inset 0 0 0 3px var(--sheet), inset 0 0 0 4px var(--ink)",
-        "purpose": "Inner second line of the design rule callout."
+        "name": "outline-marker",
+        "value": "-11px 0 0 -9px var(--pen)",
+        "purpose": "Short Ballpoint Blue marker beside the outline entry in view."
       }
     ],
     "motion": [
       {
         "name": "pen",
         "value": "420ms cubic-bezier(.2,.7,.2,1)",
-        "purpose": "Tick mark drawing in by stroke-dashoffset when a sheet is checked or an answer revealed."
+        "purpose": "Tick mark drawing in when a lesson is marked done or an answer revealed."
       },
       {
         "name": "drawer",
@@ -495,7 +437,7 @@
       {
         "name": "press",
         "value": "translateY(1px)",
-        "purpose": "Active state on pressable actions."
+        "purpose": "Active state on the primary and Mark as done buttons."
       },
       {
         "name": "reduced-motion",
@@ -505,164 +447,200 @@
     ],
     "breakpoints": [
       {
-        "name": "no-margin",
-        "value": "1240px"
-      },
-      {
         "name": "drawer",
         "value": "900px"
+      },
+      {
+        "name": "figure-stack",
+        "value": "640px"
       }
     ],
     "darkTheme": {
       "trigger": "prefers-color-scheme: dark unless data-theme=light; or data-theme=dark",
-      "note": "Every color token swaps in place for a neutral gray value; see the *-dark tokens in the frontmatter and colorMeta.darkValue."
+      "note": "Every color token swaps in place for its *-dark value; see the frontmatter and colorMeta.darkValue."
     }
   },
   "components": [
     {
-      "name": "Primary Action",
+      "name": "Primary Button",
       "kind": "button",
       "refersTo": "button-primary",
-      "description": "The single next action on home: ink on sheet with a 3px red underside rule.",
-      "html": "<a class=\"ds-go\" href=\"#\">Continue: sheet 07</a>",
-      "css": ".ds-go { display: inline-flex; align-items: center; gap: 10px; background: var(--sheet, #ffffff); color: var(--ink, #111418); border: 1.5px solid var(--ink, #111418); box-shadow: inset 0 -3px 0 var(--red, #b8352a); padding: 12px 18px; font: 700 16px \"Archivo\", \"Helvetica Neue\", Arial, sans-serif; text-decoration: none; border-radius: 0; } .ds-go:hover { background: var(--pen-soft, #dbe5f4); } .ds-go:focus-visible { outline: 2px solid var(--pen, #1f4f9c); outline-offset: 2px; } .ds-go:active { transform: translateY(1px); }"
+      "description": "The single next action on home: solid ink, white text, 8px corners.",
+      "html": "<a class=\"ds-go\" href=\"#\">Continue with lesson 7</a>",
+      "css": ".ds-go { display: inline-flex; align-items: center; gap: 10px; background: var(--ink, #1b1f24); color: var(--sheet, #ffffff); border-radius: 8px; padding: 11px 18px; font: 600 15px Inter, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif; text-decoration: none; } .ds-go:hover { background: var(--pen, #1f4f9c); } .ds-go:focus-visible { outline: 2px solid var(--pen, #1f4f9c); outline-offset: 2px; } .ds-go:active { transform: translateY(1px); }"
     },
     {
-      "name": "Check This Sheet",
+      "name": "Mark as Done",
       "kind": "button",
       "refersTo": "button-mark",
-      "description": "Sign-off toggle that ticks a sheet done.",
-      "html": "<button class=\"ds-mark\" type=\"button\" aria-pressed=\"true\"><i class=\"ds-tick\" aria-hidden=\"true\"><svg viewBox=\"0 0 21 18\"><path d=\"M3 10 L8.5 15 L19 2\"/></svg></i>Sheet checked</button>",
-      "css": ".ds-mark { display: inline-flex; align-items: center; gap: 10px; border: 1.5px solid var(--ink, #111418); background: var(--sheet, #ffffff); color: var(--ink, #111418); padding: 9px 14px; font: 700 15px \"Archivo\", \"Helvetica Neue\", Arial, sans-serif; cursor: pointer; border-radius: 0; } .ds-mark:hover { background: var(--pen-soft, #dbe5f4); } .ds-mark:focus-visible { outline: 2px solid var(--pen, #1f4f9c); outline-offset: 2px; } .ds-mark:active { transform: translateY(1px); } .ds-tick { position: relative; display: inline-block; width: 14px; height: 14px; border: 1.5px solid var(--ink, #111418); background: var(--sheet, #ffffff); flex: none; } .ds-tick svg { position: absolute; inset: -4px -5px -2px -1px; width: 21px; height: 18px; overflow: visible; } .ds-tick path { fill: none; stroke: var(--pen, #1f4f9c); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }"
+      "description": "Sign-off button with a tick box; hairline border on white.",
+      "html": "<button class=\"ds-mark\" type=\"button\"><i class=\"ds-tick\"></i>Mark as done</button>",
+      "css": ".ds-mark { display: inline-flex; align-items: center; gap: 10px; border: 1px solid var(--rule, #e4e7eb); background: var(--sheet, #ffffff); color: var(--ink, #1b1f24); padding: 9px 14px; font: 600 15px Inter, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif; border-radius: 8px; cursor: pointer; } .ds-mark:hover { background: var(--pen-soft, #dbe5f4); } .ds-mark:focus-visible { outline: 2px solid var(--pen, #1f4f9c); outline-offset: 2px; } .ds-mark:active { transform: translateY(1px); } .ds-tick { display: inline-block; width: 14px; height: 14px; border: 1.25px solid var(--ink-2, #57606a); border-radius: 3px; background: var(--sheet, #ffffff); }"
     },
     {
       "name": "Tool Button",
       "kind": "button",
       "refersTo": "button-tool",
-      "description": "Compact utility control (theme, clear ticks, index, copy).",
+      "description": "Compact quiet controls: Theme, Reset progress, Index, Copy.",
       "html": "<button class=\"ds-tool\" type=\"button\">Theme: system</button>",
-      "css": ".ds-tool { border: 1px solid var(--ink, #111418); background: var(--sheet, #ffffff); color: var(--ink, #111418); padding: 6px 10px; font: 600 12.5px \"Archivo\", \"Helvetica Neue\", Arial, sans-serif; cursor: pointer; border-radius: 0; } .ds-tool:hover { background: var(--box, #f4f5f7); } .ds-tool:focus-visible { outline: 2px solid var(--pen, #1f4f9c); outline-offset: 2px; }"
+      "css": ".ds-tool { border: 1px solid var(--rule, #e4e7eb); background: var(--sheet, #ffffff); color: var(--ink-2, #57606a); padding: 5px 10px; font: 500 12.5px Inter, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif; border-radius: 6px; cursor: pointer; } .ds-tool:hover { background: var(--box, #f4f6f8); } .ds-tool:focus-visible { outline: 2px solid var(--pen, #1f4f9c); outline-offset: 2px; }"
     },
     {
       "name": "Search Field",
       "kind": "input",
       "refersTo": "input-search",
-      "description": "Square course search with a red caret.",
-      "html": "<input class=\"ds-search\" type=\"search\" placeholder=\"Search the course\" aria-label=\"Search the course\">",
-      "css": ".ds-search { width: 260px; padding: 9px 11px; border: 1px solid var(--ink, #111418); border-radius: 0; background: var(--sheet, #ffffff); color: var(--ink, #111418); font: 15px \"Archivo\", \"Helvetica Neue\", Arial, sans-serif; caret-color: var(--red, #b8352a); } .ds-search::placeholder { color: var(--ink-2, #474e5a); } .ds-search:focus-visible { outline: 2px solid var(--pen, #1f4f9c); outline-offset: 2px; }"
+      "description": "Rail search: hairline border, 8px corners, red caret.",
+      "html": "<input class=\"ds-search\" type=\"search\" placeholder=\"Search the course\">",
+      "css": ".ds-search { width: 260px; padding: 8px 11px; border: 1px solid var(--rule, #e4e7eb); border-radius: 8px; background: var(--sheet, #ffffff); color: var(--ink, #1b1f24); font: 14px Inter, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif; caret-color: var(--red, #b8352a); } .ds-search::placeholder { color: var(--ink-2, #57606a); } .ds-search:focus-visible { outline: 2px solid var(--pen, #1f4f9c); outline-offset: 2px; }"
     },
     {
       "name": "Index Rail Item",
       "kind": "nav",
-      "refersTo": "nav-item-current",
-      "description": "Sheet row in the index: tick box, mono number, title; current sheet marked in red.",
-      "html": "<ul class=\"ds-nav\"><li><a href=\"#\"><i class=\"ds-tick\" aria-hidden=\"true\"><svg viewBox=\"0 0 21 18\"><path d=\"M3 10 L8.5 15 L19 2\"/></svg></i><span class=\"ds-no\">06</span><span class=\"ds-t\">Context engineering</span></a></li><li><a href=\"#\" aria-current=\"page\"><i class=\"ds-tick\" aria-hidden=\"true\"></i><span class=\"ds-no\">07</span><span class=\"ds-t\">Memory</span></a></li></ul>",
-      "css": ".ds-nav { list-style: none; margin: 0; padding: 0; width: 280px; font: 14px/1.35 \"Archivo\", \"Helvetica Neue\", Arial, sans-serif; } .ds-nav a { display: grid; grid-template-columns: 16px 28px 1fr; gap: 8px; align-items: start; padding: 6px 6px 6px 2px; color: var(--ink, #111418); text-decoration: none; } .ds-nav a:hover { background: var(--box, #f4f5f7); } .ds-nav a:focus-visible { outline: 2px solid var(--pen, #1f4f9c); outline-offset: 2px; } .ds-no { font: 12px \"JetBrains Mono\", ui-monospace, Menlo, monospace; color: var(--ink-2, #474e5a); padding-top: 1px; font-variant-numeric: tabular-nums; } .ds-nav a[aria-current=page] { background: var(--sheet, #ffffff); } .ds-nav a[aria-current=page] .ds-no { color: var(--red, #b8352a); font-weight: 600; } .ds-nav a[aria-current=page] .ds-t { text-decoration: underline; text-decoration-color: var(--red, #b8352a); text-decoration-thickness: 2px; text-underline-offset: 4px; } .ds-tick { position: relative; display: inline-block; width: 14px; height: 14px; border: 1.5px solid var(--ink, #111418); background: var(--sheet, #ffffff); flex: none; } .ds-tick svg { position: absolute; inset: -4px -5px -2px -1px; width: 21px; height: 18px; overflow: visible; } .ds-tick path { fill: none; stroke: var(--pen, #1f4f9c); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }"
+      "refersTo": "nav-item",
+      "description": "Rail row on the quiet panel; current row sits on white with a hairline ring and a red number.",
+      "html": "<div class=\"ds-rail\"><a class=\"ds-nav\" href=\"#\"><span class=\"ds-no\">06</span><span>Memory</span></a><a class=\"ds-nav\" aria-current=\"page\" href=\"#\"><span class=\"ds-no\">07</span><span>Basic evals</span></a></div>",
+      "css": ".ds-rail { background: var(--pad, #f7f8fa); padding: 12px; font: 14px/1.4 Inter, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif; width: 260px; } .ds-nav { display: grid; grid-template-columns: 22px 1fr; gap: 8px; padding: 5px 8px 5px 4px; color: var(--ink, #1b1f24); text-decoration: none; border-radius: 6px; } .ds-nav:hover { background: color-mix(in srgb, var(--ink, #1b1f24) 5%, transparent); } .ds-nav:focus-visible { outline: 2px solid var(--pen, #1f4f9c); outline-offset: 2px; } .ds-no { font-size: 12px; color: var(--ink-2, #57606a); font-variant-numeric: tabular-nums; padding-top: 2px; } .ds-nav[aria-current=page] { background: var(--sheet, #ffffff); box-shadow: 0 0 0 1px var(--rule, #e4e7eb); font-weight: 600; } .ds-nav[aria-current=page] .ds-no { color: var(--red, #b8352a); font-weight: 600; }"
     },
     {
-      "name": "Worksheet Header Strip",
+      "name": "Meta Line",
       "kind": "custom",
-      "refersTo": "header-strip-cell",
-      "description": "Ruled strip of field-labelled cells that opens every sheet.",
-      "html": "<div class=\"ds-strip\"><div><small>Sheet</small><span class=\"ds-m\">07 of 30</span></div><div><small>Section</small><span>Week 1: Agentic System Design</span></div><div><small>Time</small><span>45 min</span></div><div><small>Status</small><span>Open</span></div></div>",
-      "css": ".ds-strip { display: grid; grid-template-columns: auto 1fr auto auto; background: var(--sheet, #ffffff); border: 1px solid var(--ink, #111418); font-family: \"Archivo\", \"Helvetica Neue\", Arial, sans-serif; color: var(--ink, #111418); } .ds-strip > div { padding: 8px 14px; border-right: 1px solid var(--rule, #d9dce2); } .ds-strip > div:last-child { border-right: 0; } .ds-strip small { display: block; font-size: 11px; color: var(--ink-2, #474e5a); letter-spacing: .02em; } .ds-strip span { display: block; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; } .ds-strip .ds-m { font-family: \"JetBrains Mono\", ui-monospace, Menlo, monospace; }"
+      "refersTo": "meta",
+      "description": "One quiet line of facts above the lesson title; never a category label.",
+      "html": "<p class=\"ds-meta\"><span>Week 1: Agentic System Design</span><span>Lesson 7 of 38</span><span>25 min</span></p>",
+      "css": ".ds-meta { margin: 0; font: 13.5px/1.7 Inter, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif; color: var(--ink-2, #57606a); display: flex; flex-wrap: wrap; } .ds-meta span + span::before { content: '\\00b7'; margin: 0 9px; color: var(--rule, #e4e7eb); }"
     },
     {
-      "name": "Worked Numbers Callout",
+      "name": "Callout",
       "kind": "card",
-      "refersTo": "callout-numbers",
-      "description": "Plain white callout with a double-bar mark and each result boxed in mono; no texture behind the text.",
-      "html": "<div class=\"ds-callout\"><div class=\"ds-label\">Worked numbers</div><p>2,000 requests a minute at 1.2 s each needs about <strong>40</strong> concurrent workers.</p></div>",
-      "css": ".ds-callout { max-width: 520px; padding: 14px 18px; border: 1px solid var(--ink-2, #474e5a); background-color: var(--sheet, #ffffff); color: var(--ink, #111418); font: 16.5px/1.6 \"Archivo\", \"Helvetica Neue\", Arial, sans-serif; font-variant-numeric: tabular-nums; } .ds-label { display: flex; align-items: center; gap: 9px; font: 700 13px \"Archivo\", \"Helvetica Neue\", Arial, sans-serif; margin-bottom: 4px; } .ds-label::before { content: \"\"; width: 14px; height: 10px; border-top: 2px solid var(--ink, #111418); border-bottom: 2px solid var(--ink, #111418); } .ds-callout p { margin: 2px 0 0; } .ds-callout strong { font-family: \"JetBrains Mono\", ui-monospace, Menlo, monospace; font-size: .95em; border: 1.5px solid var(--ink, #111418); padding: 0 5px; background: var(--sheet, #ffffff); }"
-    },
-    {
-      "name": "Numbered Figure",
-      "kind": "custom",
-      "refersTo": "figure-frame",
-      "description": "Inline figure framed in graphite, numbered per sheet, scrolling when wide.",
-      "html": "<figure class=\"ds-fig\"><div class=\"ds-mmd\"><svg width=\"420\" height=\"60\" viewBox=\"0 0 420 60\"><rect x=\"1\" y=\"15\" width=\"110\" height=\"30\" fill=\"none\" stroke=\"currentColor\"/><line x1=\"111\" y1=\"30\" x2=\"300\" y2=\"30\" stroke=\"currentColor\"/><rect x=\"300\" y=\"15\" width=\"110\" height=\"30\" fill=\"none\" stroke=\"currentColor\"/></svg></div><figcaption><b>Fig. 7.1</b> Scroll sideways for the full figure.</figcaption></figure>",
-      "css": ".ds-fig { margin: 0; max-width: 360px; } .ds-mmd { padding: 18px; border: 1px solid var(--ink, #111418); background: var(--sheet, #ffffff); color: var(--ink-2, #474e5a); overflow-x: auto; } .ds-mmd::-webkit-scrollbar { height: 8px; } .ds-mmd::-webkit-scrollbar-thumb { background: var(--ink-2, #474e5a); } .ds-mmd::-webkit-scrollbar-track { background: var(--box, #f4f5f7); } .ds-fig figcaption { margin-top: 6px; font: 13px \"Archivo\", \"Helvetica Neue\", Arial, sans-serif; color: var(--ink-2, #474e5a); } .ds-fig figcaption b { color: var(--ink, #111418); font-variant-numeric: tabular-nums; }"
+      "refersTo": "callout",
+      "description": "Soft-filled callout with a shape mark before its label; the design rule type takes a light blue wash.",
+      "html": "<div class=\"ds-callout\"><div class=\"ds-label\">Design rule</div><p>Cache the prompt prefix before you shard the model.</p></div>",
+      "css": ".ds-callout { padding: 14px 18px; border-radius: 10px; background: color-mix(in srgb, var(--pen, #1f4f9c) 7%, var(--sheet, #ffffff)); font: 17px/1.7 Inter, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif; color: var(--ink, #1b1f24); max-width: 560px; } .ds-callout p { margin: 2px 0 0; } .ds-label { display: flex; align-items: center; gap: 8px; font: 600 13px Inter, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif; color: var(--ink-2, #57606a); } .ds-label::before { content: ''; width: 8px; height: 8px; border-radius: 2px; background: var(--pen, #1f4f9c); }"
     },
     {
       "name": "Code Block",
-      "kind": "custom",
+      "kind": "card",
       "refersTo": "code-block",
-      "description": "Answer-box code with an attached Copy tab.",
-      "html": "<div class=\"ds-code\"><button class=\"ds-copy\" type=\"button\">Copy</button><pre><code><span class=\"k\">def</span> route(q):\n    <span class=\"c\"># pick a retriever</span>\n    <span class=\"k\">return</span> <span class=\"s\">\"hybrid\"</span></code></pre></div>",
-      "css": ".ds-code { position: relative; max-width: 520px; } .ds-code pre { margin: 0; background: var(--box, #f4f5f7); border: 1px solid var(--ink-2, #474e5a); padding: 16px 18px; font: 13.5px/1.6 \"JetBrains Mono\", ui-monospace, Menlo, monospace; color: var(--ink, #111418); overflow-x: auto; } .ds-code .k { color: var(--pen, #1f4f9c); } .ds-code .s { color: var(--code-str, #1d6b3a); } .ds-code .c { color: var(--code-com, #5f6672); font-style: italic; } .ds-copy { position: absolute; top: 0; right: 0; border: 0; border-left: 1px solid var(--ink-2, #474e5a); border-bottom: 1px solid var(--ink-2, #474e5a); background: var(--sheet, #ffffff); color: var(--ink, #111418); font: 600 12px \"Archivo\", \"Helvetica Neue\", Arial, sans-serif; padding: 4px 10px; cursor: pointer; } .ds-copy:hover { background: var(--pen-soft, #dbe5f4); } .ds-copy:focus-visible { outline: 2px solid var(--pen, #1f4f9c); outline-offset: 2px; }"
+      "description": "Soft fill, 10px corners, JetBrains Mono 13.5px, quiet Copy tool.",
+      "html": "<div class=\"ds-codewrap\"><button class=\"ds-copy\" type=\"button\">Copy</button><pre class=\"ds-pre\"><code><span class=\"ds-k\">def</span> per_token(layers, heads):\n    <span class=\"ds-k\">return</span> <span class=\"ds-n\">2</span> * layers * heads</code></pre></div>",
+      "css": ".ds-codewrap { position: relative; max-width: 560px; } .ds-pre { margin: 0; background: var(--box, #f4f6f8); border-radius: 10px; padding: 16px 18px; font: 13.5px/1.65 \"JetBrains Mono\", ui-monospace, Menlo, monospace; color: var(--ink, #1b1f24); overflow-x: auto; } .ds-k { color: var(--code-key, #1f4f9c); } .ds-n { color: var(--code-num, #8a4b12); } .ds-copy { position: absolute; top: 8px; right: 8px; border: 1px solid var(--rule, #e4e7eb); border-radius: 6px; background: var(--sheet, #ffffff); color: var(--ink-2, #57606a); font: 500 12px Inter, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif; padding: 3px 9px; cursor: pointer; } .ds-copy:hover { background: var(--pen-soft, #dbe5f4); } .ds-copy:focus-visible { outline: 2px solid var(--pen, #1f4f9c); outline-offset: 2px; }"
+    },
+    {
+      "name": "Quiz Option",
+      "kind": "custom",
+      "refersTo": "quiz-option",
+      "description": "Answer row inside a 12px hairline quiz; the correct answer gains a blue outline.",
+      "html": "<div class=\"ds-quiz\"><button class=\"ds-opt\" type=\"button\"><i class=\"ds-box\"></i><span>Batch more users per step</span></button><button class=\"ds-opt ds-right\" type=\"button\"><i class=\"ds-box\"></i><span>Shrink the KV cache with GQA</span></button></div>",
+      "css": ".ds-quiz { border: 1px solid var(--rule, #e4e7eb); border-radius: 12px; padding: 12px; display: grid; gap: 4px; max-width: 520px; } .ds-opt { display: grid; grid-template-columns: 18px 1fr; gap: 12px; text-align: left; padding: 8px 10px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink, #1b1f24); font: 16px/1.45 Inter, system-ui, -apple-system, \"Segoe UI\", Roboto, sans-serif; cursor: pointer; } .ds-opt:hover { border-color: var(--rule, #e4e7eb); background: var(--box, #f4f6f8); } .ds-opt:focus-visible { outline: 2px solid var(--pen, #1f4f9c); outline-offset: 2px; } .ds-right { border-color: var(--pen, #1f4f9c); } .ds-box { width: 14px; height: 14px; margin-top: 3px; border: 1.25px solid var(--ink-2, #57606a); border-radius: 3px; }"
+    },
+    {
+      "name": "Sketch Figure Chip",
+      "kind": "chip",
+      "refersTo": "hand-chip",
+      "description": "Kalam label in a diagram ink with a 15% tint; rough.js draws the outline in the live reader.",
+      "html": "<span class=\"ds-ch\">prefill</span> <span class=\"ds-ch ds-m\">decode</span>",
+      "css": ".ds-ch { display: inline-flex; padding: 3px 9px; font: 15px 'Kalam', 'Comic Neue', cursive; color: var(--ink, #1b1f24); border: 1.5px solid var(--vz-compute, #2a5db0); background: color-mix(in srgb, var(--vz-compute, #2a5db0) 15%, transparent); } .ds-m { border-color: var(--vz-memory, #6c4aa6); background: color-mix(in srgb, var(--vz-memory, #6c4aa6) 15%, transparent); }"
     }
   ],
   "narrative": {
-    "northStar": "The Worksheet",
-    "overview": "Each lesson is one numbered engineering worksheet: a white sheet outlined in near-black ink, opened by a ruled header strip, and read in a calm serif column. The sheets sit on a plain, quiet neutral frame (the index rail and the outer margin) that recedes so the sheet reads first. Everything on the sheet is drawn the way a careful engineer would draw it by hand: hairline rules, tick boxes, boxed answers, numbered figures, blue pen for links and marks, and a single red mark for where you are and what comes next.\n\nLegibility comes before atmosphere. Text sits on flat, untextured surfaces at high contrast: near-black ink on white for reading, and a dark secondary gray that still clears AA comfortably on the sheet, the frame, and the answer boxes. Nothing patterned, gradiented, or tinted ever sits behind text. This holds everywhere, including the worked-numbers callout.\n\nDensity is moderate and steady. The reading column is fixed, the furniture around it is compact and set in a narrow grotesque, and numbers are set in mono or tabular figures so tallies line up. Surfaces are flat inks on paper, separated by rules rather than by depth.",
+    "northStar": "The Quiet Page",
+    "overview": "Each lesson is one calm page of prose: a single centered column on white, opened by a quiet line of facts (week, lesson number, minutes) and a plain, heavy title. Nothing frames the text. The index rail sits to the left as a soft gray panel that holds the course, the reader's progress, and the outline of the lesson being read, so the page itself carries nothing but the lesson.\n\nThe system was rebuilt at the owner's request because the earlier worksheet look (black frames, ruled header strips, a second display face) felt heavy and cluttered. What remains is subtraction: one family, one accent, soft fills and hairlines instead of outlines, and a small set of gentle corners. Hierarchy comes from size and weight. The only expressive material left is the hand-drawn sketch figures, which keep their rough.js strokes and their fixed diagram inks.\n\nLegibility leads. Text sits on flat white or a near-white fill, never on a pattern or an image; secondary text is a gray that clears AA on every surface it uses.",
     "keyCharacteristics": [
-      "A plain neutral frame and a white sheet; no textures anywhere.",
-      "Near-black ink, blue ballpoint for links and marks, one reserved red.",
-      "Square corners and 1px rules everywhere; state shown by mark shape.",
-      "Archivo condensed for structure, Literata for reading, JetBrains Mono for numbers.",
-      "Numbered sheets, numbered figures, numbered sections in the margin."
+      "White page, quiet #f7f8fa index rail, no textures anywhere.",
+      "Inter for headings, interface and reading; JetBrains Mono for code; Kalam only inside sketch diagrams.",
+      "One centered 680px column shared by text, tables, code and figures.",
+      "No boxed strips, no heading rules, no black frames; soft fills, hairlines, small radii.",
+      "One accent (Ballpoint Blue) for links, focus and marks; a solid ink primary button.",
+      "Hand-drawn sketch figures with one meaning per ink."
+    ],
+    "readingPrinciples": [
+      {
+        "name": "One family.",
+        "body": "Inter sets headings, interface and body. Mono appears only for code and calculator values; the hand font appears only inside sketch diagrams."
+      },
+      {
+        "name": "Body at 16 to 18px, line height 1.6 to 1.75.",
+        "body": "Lesson body is 17px at 1.7 on every width."
+      },
+      {
+        "name": "About 65 to 80 characters per line, with figures on the same edge.",
+        "body": "Text and figures share one column, so every left and right edge lines up. The 680px column sets about 84 characters of 17px Inter on lesson prose: the top of the comfortable range, kept slightly wide so figures and tables still have room."
+      },
+      {
+        "name": "Hierarchy from size and weight, not from boxes or rules.",
+        "body": "Headings are larger and heavier; they carry no underline, overline, frame or fill."
+      },
+      {
+        "name": "At most one accent colour.",
+        "body": "Ballpoint Blue is the accent. The diagram inks belong to figures and calculator readouts only; Margin Red is a small position mark, not a second accent."
+      },
+      {
+        "name": "Secondary text at AA contrast.",
+        "body": "Secondary Ink is about 6.4:1 on white, 5.9:1 on the soft fill and 6.0:1 on the rail; in dark it is about 8.7:1 on the page."
+      },
+      {
+        "name": "Generous vertical space between sections.",
+        "body": "Section headings open with 2.4em above them; the sign-off sits 56px below the lesson."
+      },
+      {
+        "name": "No chrome that does not help the reader.",
+        "body": "Every box, line or label must carry information or an action. If it only decorates, it goes."
+      }
     ],
     "rules": [
       {
         "name": "The Clear Ground Rule",
-        "body": "Text always sits on a flat, solid surface at high contrast. No grids, patterns, gradients, tints, or images behind text, on the frame, the sheet, or any callout. Body text stays near-black on white; secondary text never drops below the Secondary Ink value.",
+        "body": "Text always sits on flat white, the rail gray, or the soft fill. No grids, patterns, gradients, or images behind text.",
         "section": "colors"
       },
       {
-        "name": "The One Red Rule",
-        "body": "Red marks position and the next step, nothing else. Never use it for errors, emphasis, decoration, or a second action on the same screen.",
+        "name": "The One Accent Rule",
+        "body": "Ballpoint Blue is the only interface accent. Diagram inks stay inside figures, calculators and the two tinted callouts; Margin Red marks position and nothing else.",
         "section": "colors"
       },
       {
-        "name": "The Ink Structure Rule",
-        "body": "Structural edges (sheet, strip, table, figure, callout, quiz, pager) are Ink; dividers inside them are Hairline. Colour never separates surfaces on its own.",
-        "section": "colors"
+        "name": "The One Family Rule",
+        "body": "Inter carries every heading, control and paragraph. A second family never enters for emphasis or display.",
+        "section": "typography"
       },
       {
         "name": "The Counted Things Rule",
-        "body": "Anything counted (sheet numbers, tallies, scores, worked numbers, figure numbers) is set in mono or with tabular figures, zero padded to two digits where it is a sheet number.",
+        "body": "Counts, tallies, scores, lesson numbers and calculator results use tabular figures so columns line up.",
         "section": "typography"
       },
       {
-        "name": "The Two Voices Rule",
-        "body": "Archivo for the worksheet furniture, Literata for the reading. Body prose is never set in Archivo, and structure is never set in Literata. The worked-numbers callout is furniture and stays in Archivo.",
-        "section": "typography"
-      },
-      {
-        "name": "The Fixed Measure Rule",
-        "body": "Reading text holds at 66ch at every width that can afford it. Wider sheets gain margin, not line length.",
+        "name": "The Shared Edge Rule",
+        "body": "Prose, tables, code and figures share the one 680px column. Nothing is pulled into a narrower or wider measure of its own.",
         "section": "layout"
       },
       {
-        "name": "The Paper Not Glass Rule",
-        "body": "Surfaces sit on the page; they do not hover above it. Use a rule, a fill change to Answer Box, or a heavier border to separate, never a blur shadow, gradient fill, or translucency on content.",
+        "name": "The Flat Page Rule",
+        "body": "Separate with a soft fill or a Hairline, never with a blur shadow, gradient or translucency on content.",
         "section": "elevation"
       },
       {
         "name": "The Mark Shape Rule",
-        "body": "State and type are told apart by shape, never colour alone: a drawn tick for done, a struck cross and strikethrough for a wrong answer, and a distinct drawn shape (solid square, triangle, hollow circle, short dash, double bar) before each callout label.",
+        "body": "Type and state are told apart by shape, not colour alone: a drawn tick for done, a struck cross and strikethrough for a wrong answer, and a distinct small mark before each callout label (square, triangle, dot, dash, double bar).",
         "section": "shapes"
       }
     ],
     "dos": [
-      "Do keep every surface flat and solid: quiet frame, white sheet, Answer Box. Text always sits on one of them.",
-      "Do keep body text Ink on White Sheet and secondary text no lighter than Secondary Ink.",
-      "Do draw every edge as a 1px Ink or Hairline rule, and keep corners square.",
-      "Do number things: sheets (two digits), sections in the margin, figures per sheet.",
-      "Do keep figures inline at a legible size and let wide ones scroll with a caption hint.",
-      "Do set every count in mono or tabular figures.",
+      "Do set everything in Inter, with body at 17px and 1.7 line height.",
+      "Do keep text, tables, code and figures on the one 680px column.",
+      "Do make hierarchy with size and weight alone.",
+      "Do use the soft fill or a Hairline to set a block apart, with a radius from the 2, 3, 4, 6, 8, 10, 12px scale.",
+      "Do keep secondary text at Secondary Ink or darker.",
       "Do give every new state a distinct mark shape before giving it a colour.",
-      "Do swap tokens in place for dark mode, using the neutral gray `*-dark` values."
+      "Do swap tokens in place for dark mode using the `*-dark` values."
     ],
     "donts": [
-      "Don't put grids, patterns, gradients, tinted washes, or images behind text anywhere, including callouts and the frame.",
-      "Don't tint the frame or sheet with a hue; the neutrals stay near-gray.",
-      "Don't use Margin Red for anything other than the current position and the single next action.",
+      "Don't put a rule, border or fill on a heading.",
+      "Don't frame content in black or Ink outlines.",
+      "Don't add a second family for display, labels or emphasis.",
+      "Don't put a small uppercase label or category kicker above a heading; the meta line holds facts only.",
+      "Don't add a second interface accent; diagram inks stay in figures and calculators, and Margin Red marks position only.",
       "Don't use blur shadows, gradients, or translucent content surfaces.",
-      "Don't round containers; circles belong to marks only.",
-      "Don't set reading prose in Archivo or let the reading column exceed 66ch.",
-      "Don't put small uppercase labels above headings; the only small labels are the field names inside header strip cells.",
-      "Don't turn the home into a card grid; sheets are listed as numbered rows."
+      "Don't add a right margin, sidebar or panel beside the reading column."
     ]
   }
 }

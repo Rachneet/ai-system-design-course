@@ -198,7 +198,7 @@ rounded:
   panel: "12px"
 spacing:
   rail: "304px"
-  column: "760px"
+  column: "680px"
   frame: "28px"
   frame-phone: "16px"
   page-block: "40px 96px"
@@ -322,7 +322,7 @@ Legibility leads. Text sits on flat white or a near-white fill, never on a patte
 **Key Characteristics:**
 - White page, quiet #f7f8fa index rail, no textures anywhere.
 - Inter for headings, interface and reading; JetBrains Mono for code; Kalam only inside sketch diagrams.
-- One centered 760px column shared by text, tables, code and figures.
+- One centered 680px column shared by text, tables, code and figures.
 - No boxed strips, no heading rules, no black frames; soft fills, hairlines, small radii.
 - One accent (Ballpoint Blue) for links, focus and marks; a solid ink primary button.
 - Hand-drawn sketch figures with one meaning per ink.
@@ -333,7 +333,7 @@ These are the rules the reader follows. Every new surface is checked against the
 
 - **One family.** Inter sets headings, interface and body. Mono appears only for code and calculator values; the hand font appears only inside sketch diagrams.
 - **Body at 16 to 18px, line height 1.6 to 1.75.** Lesson body is 17px at 1.7 on every width.
-- **About 65 to 80 characters per line, with figures on the same edge.** Text and figures share one column, so every left and right edge lines up. The current column (760px at 17px Inter) sets about 94 characters on lesson prose, which is above this range; the rule stands and the column width is the open item, not the rule.
+- **About 65 to 80 characters per line, with figures on the same edge.** Text and figures share one column, so every left and right edge lines up. The 680px column sets about 84 characters of 17px Inter on lesson prose: the top of the comfortable range, kept slightly wide so figures and tables still have room.
 - **Hierarchy from size and weight, not from boxes or rules.** Headings are larger and heavier; they carry no underline, overline, frame or fill.
 - **At most one accent colour.** Ballpoint Blue is the accent. The diagram inks belong to figures and calculator readouts only; Margin Red is a small position mark, not a second accent.
 - **Secondary text at AA contrast.** Secondary Ink is about 6.4:1 on white, 5.9:1 on the soft fill and 6.0:1 on the rail; in dark it is about 8.7:1 on the page.
@@ -407,13 +407,13 @@ Every token swaps in place for its `*-dark` value: a near-black rail, a dark gra
 
 ## Layout
 
-A two-column grid: a sticky 304px index rail with a Hairline right edge, then the main area with 28px side padding and 40px above, 96px below. Inside it sits one centered column, 760px wide, shared by the meta line, title, prose, tables, code, callouts and figures, so every edge lines up. There is no right margin. The lesson outline lives in the rail, nested under the current lesson behind a Hairline left edge; the section in view is set in Ink at 600 with a short Ballpoint Blue marker.
+A two-column grid: a sticky 304px index rail with a Hairline right edge, then the main area with 28px side padding and 40px above, 96px below. Inside it sits one centered column, 680px wide, shared by the meta line, title, prose, tables, code, callouts and figures, so every edge lines up. There is no right margin. The lesson outline lives in the rail, nested under the current lesson behind a Hairline left edge; the section in view is set in Ink at 600 with a short Ballpoint Blue marker.
 
 Home uses the same column: a meta line, the cover title and lede, one primary button, the five-lab sketch map, then each week as a row (a 96px numeral column beside the title, blurb, and an auto-filling list of lessons, at least 200px per column), separated by Hairlines.
 
 At 900px and below the rail becomes an off-canvas drawer (min(88vw, 340px)) behind an Index button in a sticky top bar, hidden from focus when closed, and the column runs edge to edge with 16px insets (more where safe-area insets require). Body stays at 17px.
 
-**The Shared Edge Rule.** Prose, tables, code and figures share the one 760px column. Nothing is pulled into a narrower or wider measure of its own.
+**The Shared Edge Rule.** Prose, tables, code and figures share the one 680px column. Nothing is pulled into a narrower or wider measure of its own.
 
 ## Elevation & Depth
 
@@ -462,7 +462,7 @@ Corners are small and graded by size: 2px on the focus outline, 3px on tick boxe
 
 ### Do:
 - **Do** set everything in Inter, with body at 17px and 1.7 line height.
-- **Do** keep text, tables, code and figures on the one 760px column.
+- **Do** keep text, tables, code and figures on the one 680px column.
 - **Do** make hierarchy with size and weight alone.
 - **Do** use the soft fill or a Hairline to set a block apart, with a radius from the 2, 3, 4, 6, 8, 10, 12px scale.
 - **Do** keep secondary text at Secondary Ink or darker.
