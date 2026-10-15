@@ -161,7 +161,7 @@ Levers and their costs:
 | Smaller/faster model on simple routes | Large | Quality risk; evals |
 | Shorter outputs | Large | Product decision |
 | Prompt caching | Lower TTFT on long prefixes | None |
-| Skipping reranking | 100 to 300 ms | Recall loss |
+| Skipping reranking | Tens of ms (82 ms in Relay on a CPU) | Recall loss |
 | Lower reasoning effort settings | Medium to large | Quality on hard cases |
 
 ## Choosing between designs

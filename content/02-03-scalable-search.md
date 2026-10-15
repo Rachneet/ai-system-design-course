@@ -117,7 +117,7 @@ caption: A bi-encoder embeds documents ahead of time, so it can search millions.
 
 Options: hosted rerank APIs (for example [Cohere Rerank](https://docs.cohere.com/docs/rerank-overview) and [Voyage's rerankers](https://docs.voyageai.com/docs/reranker)), open models you run yourself such as [bge-reranker-v2-m3](https://huggingface.co/BAAI/bge-reranker-v2-m3) or the small MS MARCO MiniLM cross-encoders, or an LLM from any provider scoring candidates (accurate, slow, and expensive). Sentence-Transformers documents the [retrieve and re-rank](https://sbert.net/examples/sentence_transformer/applications/retrieve_rerank/README.html) pattern well.
 
-> [!numbers] Reranking 50 candidates of 400 tokens each with a hosted reranker typically adds 100 to 300 ms. On a GPU-hosted open model, a batch of 50 pairs takes tens of milliseconds. Both are small next to multi-second generation, and reranking usually lifts precision enough that you can send fewer chunks to the LLM, which saves more time and money than the reranker costs.
+> [!numbers] In the course's reference implementation, adding a small open cross-encoder on a laptop CPU took p50 retrieval latency from 3 ms to 82 ms and recall@1 from 0.77 to 0.89 ([Relay's retrieval measurements](https://github.com/Rachneet/ai-system-design-course/tree/main/relay#measure-retrieval-free-local)). A hosted reranker adds a network round trip on top of model time, and a GPU-hosted model is faster than a CPU; measure yours with your candidate count and chunk size. Either way it is small next to multi-second generation, and better precision lets you send fewer chunks to the LLM, which usually saves more than the reranker costs.
 
 ## Context assembly
 

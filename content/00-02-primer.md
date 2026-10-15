@@ -91,7 +91,7 @@ Models read and write tokens, which are word pieces. In English, one token is ro
 - **Latency.** Input tokens are processed in parallel and are fast. Output tokens are generated one at a time, so latency is dominated by how many tokens the model writes.
 - **Limits.** The context window is the maximum number of tokens in one request plus response. Current frontier models accept up to 1 million tokens, but more context is slower, costlier, and can reduce accuracy.
 
-> [!numbers] A request with 20,000 input tokens and 400 output tokens. Prefill (reading input) on a hosted model runs at thousands of tokens per second, so roughly 0.3 to 1 s before the first output token. Generation at 60 to 120 tokens per second takes 3 to 7 s for 400 tokens. **Output length, not input length, usually dominates latency.** Ask for shorter answers and you get faster ones.
+> [!numbers] A request with 20,000 input tokens and 400 output tokens, with illustrative speeds (measure your own provider; [Artificial Analysis](https://artificialanalysis.ai/) publishes measured first-token time and output speed per model). If prefill reads 20,000 tokens per second, the first token arrives after about 1 s. If generation runs at 80 tokens per second, the 400 output tokens take another 5 s. **Output length, not input length, usually dominates latency**, because output is produced one token at a time (the [inference lesson](#w5-inference) shows why). Ask for shorter answers and you get faster ones.
 
 ```viz
 caption: On every major API an output token costs 4 to 8 times an input token. Long answers are where both the money and the waiting go.
