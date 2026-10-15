@@ -146,7 +146,9 @@ button { font: inherit; color: inherit; }
 .results li:last-child a { border-bottom: 0; }
 .results a:hover { background: var(--box); }
 .results small { display: block; color: var(--ink-2); font-family: var(--font-read); font-size: 13.5px; margin-top: 2px; }
-.results .empty { padding: 10px; color: var(--ink-2); font-size: 13.5px; }
+.results .empty, .results .count { padding: 10px; color: var(--ink-2); font-size: 13.5px; }
+.results .count { padding: 8px 10px; border-bottom: 1px solid var(--rule); font-size: 12.5px; }
+.results mark { background: var(--pen-soft); color: var(--ink); border-radius: 2px; padding: 0 1px; }
 .rail-foot { margin-top: 26px; display: flex; gap: 8px; flex-wrap: wrap; }
 .tool { border: 1px solid var(--rule); background: var(--sheet); color: var(--ink-2); padding: 5px 10px; font: 500 12.5px var(--font-display); cursor: pointer; border-radius: 6px; }
 .tool:hover { background: var(--box); }
@@ -292,7 +294,7 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
 .opt { display: grid; grid-template-columns: 18px 1fr; gap: 12px; align-items: start; text-align: left; padding: 8px 10px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: var(--ink); cursor: pointer; font-family: var(--font-read); font-size: 16px; line-height: 1.45; }
 .opt:hover:not(:disabled) { border-color: var(--rule); background: var(--box); }
 .opt:disabled { cursor: default; }
-.opt .tick { margin-top: 3px; }
+.opt .tick { margin-top: 3px; border-radius: 50%; } /* one answer per question: round, as single choice is everywhere */
 .opt.wrong .tick { border-color: var(--ink-2); }
 .opt.wrong .tick::before, .opt.wrong .tick::after { content: ""; position: absolute; left: 50%; top: -3px; width: 2px; height: 18px; background: var(--ink-2); transform: rotate(45deg); }
 .opt.wrong .tick::after { transform: rotate(-45deg); }
@@ -351,9 +353,11 @@ figure.scrolls figcaption::after { content: " Scroll sideways for the full figur
 .wk h2 { margin: 0 0 4px; font-size: 20px; font-weight: 650; letter-spacing: -0.01em; }
 .wk p { margin: 0 0 12px; color: var(--ink-2); font-size: 15.5px; }
 .sheets { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0 18px; }
-.sheets a { display: grid; grid-template-columns: 16px 24px 1fr; gap: 8px; align-items: start; padding: 5px 0; color: var(--ink); text-decoration: none; font-family: var(--font-display); font-size: 14.5px; line-height: 1.35; }
+.sheets a { display: grid; grid-template-columns: 22px 1fr; gap: 8px; align-items: start; padding: 5px 0; color: var(--ink); text-decoration: none; font-family: var(--font-display); font-size: 14.5px; line-height: 1.35; }
 .sheets a:hover .t { text-decoration: underline; text-decoration-color: var(--pen); }
-.sheets .no { font-size: 12px; color: var(--ink-2); padding-top: 2px; }
+.sheets .no { font-size: 12px; color: var(--ink-2); padding-top: 2px; font-variant-numeric: tabular-nums; }
+.sheets .no.ok svg { width: 13px; height: 11px; overflow: visible; }
+.sheets .no.ok path { fill: none; stroke: var(--pen); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
 .sheets a.next-up .no { color: var(--red); font-weight: 600; }
 .note { margin-top: 40px; color: var(--ink-2); font-size: 14.5px; max-width: 72ch; }
 
@@ -714,7 +718,7 @@ function renderHome() {
     const c = items.filter(e => done.has(e.id)).length;
     return `<section class="wk"><div class="wk-no"><b>${w === 0 ? "Start" : `Week ${w}`}</b><small>${items.length} lessons</small><small>${c} of ${items.length} done</small></div><div>
       <h2>${esc(WEEKS[w].title)}</h2><p>${esc(WEEKS[w].blurb)}</p>
-      <ul class="sheets">${items.map(e => `<li><a href="#${e.id}"${e.id === next.id ? ' class="next-up"' : ""}>${tickBox(done.has(e.id))}<span class="no">${inWeek[e.id]}</span><span class="t">${esc(e.short || e.title)}${e.kind === "lab" ? '<span class="lab-tag">lab</span>' : ""}</span></a></li>`).join("")}</ul>
+      <ul class="sheets">${items.map(e => `<li><a href="#${e.id}"${e.id === next.id ? ' class="next-up"' : ""}><span class="no${done.has(e.id) ? " ok" : ""}">${done.has(e.id) ? TICK : inWeek[e.id]}</span><span class="t">${esc(e.short || e.title)}${e.kind === "lab" ? '<span class="lab-tag">lab</span>' : ""}</span></a></li>`).join("")}</ul>
     </div></section>`;
   };
   const reference = (w, heading, label) => {
@@ -914,26 +918,39 @@ window.addEventListener("hashchange", () => {
 });
 
 /* ---------- Search ---------- */
-const plain = COURSE.map(e => ({ e, text: (e.title + " " + e.body).toLowerCase() }));
+const plain = COURSE.map(e => ({ e, text: (e.title + " " + e.body).toLowerCase(), body: e.body.toLowerCase() }));
+const clean = t => t.replace(/[#*`>\[\]|]/g, "").replace(/\s+/g, " ");
+function snippet(e, body, terms) {
+  // Cut around the first term found in the body, at word boundaries, and mark every term.
+  const i = Math.max(0, ...terms.map(t => body.indexOf(t)).filter(x => x >= 0).slice(0, 1));
+  let a = Math.max(0, i - 60), b = Math.min(e.body.length, i + 110);
+  while (a > 0 && /\S/.test(e.body[a - 1])) a--;
+  while (b < e.body.length && /\S/.test(e.body[b])) b++;
+  let html = esc(clean(e.body.slice(a, b)));
+  for (const t of terms) html = html.replace(new RegExp(t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "gi"), m => `<mark>${m}</mark>`);
+  return `${a > 0 ? "…" : ""}${html}${b < e.body.length ? "…" : ""}`;
+}
+function clearSearch() {
+  qInput.value = ""; document.getElementById("results").hidden = true; document.getElementById("navWrap").hidden = false;
+}
 const qInput = document.getElementById("q");
 qInput.addEventListener("input", ev => {
   const q = ev.target.value.trim().toLowerCase();
   const out = document.getElementById("results"), nav = document.getElementById("navWrap");
   if (q.length < 2) { out.hidden = true; nav.hidden = false; return; }
   const terms = q.split(/\s+/);
-  const hits = plain.filter(p => terms.every(t => p.text.includes(t))).slice(0, 12);
-  out.innerHTML = hits.length ? hits.map(({ e, text }) => {
-    const i = text.indexOf(terms[0]);
-    const snip = e.body.slice(Math.max(0, i - 50), i + 90).replace(/[#*`>\[\]]/g, "").replace(/\s+/g, " ");
-    return `<li><a href="#${e.id}">${sheetNo[e.id] ? `${esc(lessonLabel(e))} · ` : ""}${esc(e.title)}<small>…${esc(snip)}…</small></a></li>`;
-  }).join("") : `<li class="empty">Nothing matches “${esc(q)}”. Try a shorter term such as “cache” or “judge”.</li>`;
+  const all = plain.filter(p => terms.every(t => p.text.includes(t))), hits = all.slice(0, 12);
+  const head = `<li class="count">${all.length === 1 ? "1 page matches" : `${all.length} pages match`}${all.length > hits.length ? `, top ${hits.length} shown` : ""}. Esc clears.</li>`;
+  out.innerHTML = hits.length ? head + hits.map(({ e, body }) =>
+    `<li><a href="#${e.id}">${sheetNo[e.id] ? `${esc(lessonLabel(e))} · ` : ""}${esc(e.title)}<small>${snippet(e, body, terms)}</small></a></li>`
+  ).join("") : `<li class="empty">Nothing matches “${esc(q)}”. Try a shorter term such as “cache” or “judge”. Esc clears.</li>`;
   out.hidden = false; nav.hidden = true;
 });
 document.getElementById("navWrap").addEventListener("toggle", ev => {
   const w = Number(ev.target.dataset.w);
   if (ev.target.open) openWeeks.add(w); else openWeeks.delete(w);
 }, true);
-document.getElementById("results").addEventListener("click", () => { qInput.value = ""; document.getElementById("results").hidden = true; document.getElementById("navWrap").hidden = false; });
+document.getElementById("results").addEventListener("click", ev => { if (ev.target.closest("a")) clearSearch(); });
 
 /* ---------- Theme, menu, reset ---------- */
 const themes = ["system", "light", "dark"];
@@ -954,7 +971,7 @@ const app = document.getElementById("app"), scrim = document.getElementById("scr
 function closeMenu() { const was = app.classList.contains("open"); app.classList.remove("open"); scrim.hidden = true; menuBtn.setAttribute("aria-expanded", "false"); if (was) menuBtn.focus(); }
 menuBtn.addEventListener("click", () => { app.classList.add("open"); scrim.hidden = false; menuBtn.setAttribute("aria-expanded", "true"); qInput.focus(); });
 scrim.addEventListener("click", closeMenu);
-document.addEventListener("keydown", ev => { if (ev.key === "Escape") closeMenu(); if (ev.key === "/" && document.activeElement !== qInput) { ev.preventDefault(); qInput.focus(); } });
+document.addEventListener("keydown", ev => { if (ev.key === "Escape") { if (qInput.value) { clearSearch(); qInput.focus(); return; } closeMenu(); } if (ev.key === "/" && document.activeElement !== qInput) { ev.preventDefault(); qInput.focus(); } });
 
 route();
 </script>

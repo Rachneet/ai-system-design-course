@@ -432,6 +432,9 @@ Corners are small and graded by size: 2px on the focus outline, 3px on tick boxe
 ### Buttons
 - **Primary:** solid Ink with White Page text, 600 15px, 11px 18px padding, 8px corners. One per screen, on home only. Hover turns Ballpoint Blue; active presses down 1px.
 - **Mark as done:** White Page with a Hairline border, 8px corners, 9px 14px padding, a tick box before the label; hover lays the Pale Ballpoint Wash. The tick draws in over 420ms.
+- **Mark done and continue:** the end-of-lesson primary action, Ink fill on White Page text, beside Mark as done; once the self-check is finished the note beside them says how it went, and finishing a week names the next one.
+- **Search:** results replace the index with a count line ("33 pages match, top 12 shown. Esc clears."), each result a lesson label and title over a snippet that starts at a word, matched terms on the Pale Ballpoint Wash; Escape clears.
+- **Home lesson rows:** the rail's status column (number, or a tick once done), never a checkbox.
 - **Tool:** Theme, Reset progress, Index and Copy: White Page, Hairline border, 6px corners, 500 12px to 12.5px Secondary Ink; hover lays the soft fill.
 
 ### Chips
@@ -455,7 +458,7 @@ Corners are small and graded by size: 2px on the focus outline, 3px on tick boxe
 - Every figure carries a numbered caption ("Fig. 3.2") in 13px Secondary Ink.
 
 ### Quiz and calculators
-- **Quiz:** Hairline border, 12px corners, a 600 15px head ("Check yourself" and a tabular score). Options are 8px-cornered rows with a tick box; the correct answer gains a Ballpoint Blue outline and a drawn tick, a wrong pick is crossed and struck through, and a short explanation follows in Secondary Ink.
+- **Quiz:** Hairline border, 12px corners, a 600 15px head ("Check yourself" and a tabular score). Options are 8px-cornered rows with a round marker (one answer per question); the correct answer gains a Ballpoint Blue outline and a drawn tick, a wrong pick is crossed and struck through, and a short explanation follows in Secondary Ink.
 - **Calculator:** Hairline border, 12px corners, a 600 15px head, mono inputs, results as 22px mono readouts (Win or Waste when a target is met or missed), one meter, and a one-paragraph note.
 
 ## Do's and Don'ts
